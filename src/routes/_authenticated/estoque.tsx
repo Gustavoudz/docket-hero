@@ -227,8 +227,8 @@ function EstoquePage() {
                   {[i.color, i.storage].filter(Boolean).join(" · ") || "Sem cor/configuração"}
                 </p>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                  <span className="truncate">{i.apple_id}</span>
                   {i.serial_number && <span>Série: {i.serial_number}</span>}
+                  {i.imei && <span>IMEI: {i.imei}</span>}
                   {isGerente && costs[i.id] != null && <span>Custo: {formatBRL(costs[i.id]!)}</span>}
                   {i.sale_price != null && <span>Venda: {formatBRL(Number(i.sale_price))}</span>}
                 </div>
