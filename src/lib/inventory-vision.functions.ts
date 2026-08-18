@@ -9,18 +9,21 @@ type Extracted = {
 };
 
 export const extractDeviceFromPhoto = createServerFn({ method: "POST" })
-  .inputValidator((input: { image: string; condition: "lacrado" | "seminovo"; models: string[] }) => {
-    if (!input?.image?.startsWith("data:image/")) throw new Error("Imagem inválida");
+  .inputValidator((input: { images: string[]; condition: "lacrado" | "seminovo"; models: string[] }) => {
+    const images = (input?.images ?? []).filter((i) => typeof i === "string" && i.startsWith("data:image/"));
+    if (images.length === 0) throw new Error("Imagem inválida");
+    if (images.length > 5) throw new Error("Envie no máximo 5 fotos");
+    input.images = images;
     return input;
   })
   .handler(async ({ data }): Promise<Extracted> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("IA indisponível no momento");
 
-    const context =
-      data.condition === "lacrado"
-        ? "A foto é da etiqueta da caixa de um aparelho Apple lacrado."
-        : "A foto é da tela de Ajustes (Sobre) de um iPhone/MacBook seminovo.";
+    const seminovo = data.condition === "seminovo";
+    const context = seminovo
+      ? "As fotos são da tela de Ajustes (Geral > Sobre) de um iPhone/MacBook seminovo. Elas podem ser partes diferentes da mesma tela (role para baixo): combine as informações de todas as fotos em um único resultado."
+      : "A(s) foto(s) são da etiqueta da caixa de um aparelho Apple lacrado.";
 
     const list = data.models.slice(0, 200).join(" | ");
 
@@ -35,13 +38,21 @@ export const extractDeviceFromPhoto = createServerFn({ method: "POST" })
             content:
               `${context} Extraia SOMENTE o que estiver claramente legível na imagem. ` +
               `Nunca invente, adivinhe ou complete dados: se um campo não estiver legível, retorne null. ` +
+              (seminovo
+                ? `Extraia apenas: nome do modelo, número de série, capacidade (armazenamento) e IMEI. Retorne color sempre null. `
+                : "") +
               `Para o modelo, escolha exatamente um item desta lista quando houver correspondência clara, senão null. Lista: ${list}`,
           },
           {
             role: "user",
             content: [
-              { type: "text", text: "Leia modelo, número de série, IMEI, cor e capacidade de armazenamento." },
-              { type: "image_url", image_url: { url: data.image } },
+              {
+                type: "text",
+                text: seminovo
+                  ? "Leia modelo, número de série, IMEI e capacidade de armazenamento."
+                  : "Leia modelo, número de série, IMEI, cor e capacidade de armazenamento.",
+              },
+              ...data.images.map((url) => ({ type: "image_url", image_url: { url } })),
             ],
           },
         ],
@@ -85,7 +96,7 @@ export const extractDeviceFromPhoto = createServerFn({ method: "POST" })
       device_model: clean(parsed.device_model),
       serial_number: clean(parsed.serial_number),
       imei: clean(parsed.imei),
-      color: clean(parsed.color),
+      color: seminovo ? null : clean(parsed.color),
       storage: clean(parsed.storage),
     };
   });
