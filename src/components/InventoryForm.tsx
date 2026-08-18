@@ -77,17 +77,22 @@ export function InventoryForm({
     if (el) el.value = value;
   }
 
-  async function handlePhoto(file: File) {
+  async function handlePhoto(files: File[]) {
     setReading(true);
     try {
-      const image = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(new Error("Não foi possível ler a foto"));
-        reader.readAsDataURL(file);
-      });
+      const images = await Promise.all(
+        files.slice(0, 5).map(
+          (file) =>
+            new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result));
+              reader.onerror = () => reject(new Error("Não foi possível ler a foto"));
+              reader.readAsDataURL(file);
+            }),
+        ),
+      );
       const result = await extract({
-        data: { image, condition, models: activeModels.map((m) => m.name) },
+        data: { images, condition, models: activeModels.map((m) => m.name) },
       });
       let filled = 0;
       if (result.device_model && activeModels.some((m) => m.name === result.device_model)) {
@@ -102,7 +107,7 @@ export function InventoryForm({
         setField("imei", result.imei);
         filled++;
       }
-      if (result.color) {
+      if (result.color && condition === "lacrado") {
         setField("color", result.color);
         filled++;
       }
