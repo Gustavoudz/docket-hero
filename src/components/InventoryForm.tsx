@@ -77,17 +77,22 @@ export function InventoryForm({
     if (el) el.value = value;
   }
 
-  async function handlePhoto(file: File) {
+  async function handlePhoto(files: File[]) {
     setReading(true);
     try {
-      const image = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(new Error("Não foi possível ler a foto"));
-        reader.readAsDataURL(file);
-      });
+      const images = await Promise.all(
+        files.slice(0, 5).map(
+          (file) =>
+            new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result));
+              reader.onerror = () => reject(new Error("Não foi possível ler a foto"));
+              reader.readAsDataURL(file);
+            }),
+        ),
+      );
       const result = await extract({
-        data: { image, condition, models: activeModels.map((m) => m.name) },
+        data: { images, condition, models: activeModels.map((m) => m.name) },
       });
       let filled = 0;
       if (result.device_model && activeModels.some((m) => m.name === result.device_model)) {
@@ -102,7 +107,7 @@ export function InventoryForm({
         setField("imei", result.imei);
         filled++;
       }
-      if (result.color) {
+      if (result.color && condition === "lacrado") {
         setField("color", result.color);
         filled++;
       }
@@ -213,11 +218,11 @@ export function InventoryForm({
               ref={fileRef}
               type="file"
               accept="image/*"
-              capture="environment"
+              multiple={condition === "seminovo"}
               className="hidden"
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handlePhoto(file);
+                const files = Array.from(e.target.files ?? []);
+                if (files.length) void handlePhoto(files);
               }}
             />
             <Button
@@ -236,11 +241,12 @@ export function InventoryForm({
                 ? "Lendo foto…"
                 : condition === "lacrado"
                   ? "Tirar/enviar foto da caixa"
-                  : "Tirar/enviar foto da tela de Ajustes"}
+                  : "Tirar/enviar fotos da tela de Ajustes"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Opcional: preenche modelo, número de série e IMEI. Você pode pular e digitar tudo
-              manualmente — os campos lidos continuam editáveis.
+              {condition === "seminovo"
+                ? "Opcional: envie até 5 fotos da tela Ajustes > Geral > Sobre (role a tela). Preenche modelo, número de série, capacidade e IMEI — tudo continua editável."
+                : "Opcional: preenche modelo, número de série, IMEI, cor e capacidade. Você pode pular e digitar tudo manualmente."}
             </p>
           </div>
 
