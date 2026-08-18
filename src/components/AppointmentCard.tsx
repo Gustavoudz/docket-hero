@@ -22,14 +22,14 @@ export function AppointmentCard({
 }: {
   appointment: Appointment;
   attendantName?: string;
-  onEdit?: (a: Appointment) => void;
+  onEdit?: ((a: Appointment) => void) | undefined;
 }) {
   const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState("");
 
   const update = useMutation({
-    mutationFn: async (patch: Record<string, unknown>) => {
+    mutationFn: async (patch: { status: Appointment["status"]; cancel_reason?: string }) => {
       const { error } = await supabase.from("appointments").update(patch).eq("id", appointment.id);
       if (error) throw new Error(error.message);
     },

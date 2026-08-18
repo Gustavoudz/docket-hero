@@ -43,11 +43,17 @@ function AuthPage() {
       email: form.get("email"),
       password: form.get("password"),
     });
-    if (!parsed.success) return toast.error(parsed.error.issues[0]!.message);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]!.message);
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword(parsed.data);
     setLoading(false);
-    if (error) return toast.error("Não foi possível entrar. Confira e-mail e senha.");
+    if (error) {
+      toast.error("Não foi possível entrar. Confira e-mail e senha.");
+      return;
+    }
     navigate({ to: "/agenda", replace: true });
   }
 
@@ -59,8 +65,14 @@ function AuthPage() {
       email: form.get("email"),
       password: form.get("password"),
     });
-    if (!name) return toast.error("Informe seu nome");
-    if (!parsed.success) return toast.error(parsed.error.issues[0]!.message);
+    if (!name) {
+      toast.error("Informe seu nome");
+      return;
+    }
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]!.message);
+      return;
+    }
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       ...parsed.data,
@@ -70,7 +82,10 @@ function AuthPage() {
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (!data.session) {
       toast.success("Conta criada. Confirme o e-mail para entrar.");
       return;
