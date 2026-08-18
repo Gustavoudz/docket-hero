@@ -5,10 +5,14 @@ export type Appointment = {
   attendant_id: string;
   customer_name: string;
   customer_phone: string | null;
+  customer_instagram?: string | null;
   device_model: string;
   scheduled_at: string;
   scheduled_date: string;
   deposit_paid: boolean;
+  deposit_amount?: number | null;
+  payment_method?: string | null;
+  installments?: number | null;
   notes: string | null;
   status: AppointmentStatus;
   cancel_reason: string | null;
@@ -21,6 +25,22 @@ export const STATUS_LABEL: Record<AppointmentStatus, string> = {
   concluido: "Concluído",
   cancelado: "Cancelado",
 };
+
+export const PAYMENT_METHODS = [
+  { value: "pix", label: "Pix" },
+  { value: "dinheiro", label: "Dinheiro vivo" },
+  { value: "debito", label: "Cartão de débito" },
+  { value: "credito", label: "Cartão de crédito" },
+  { value: "boleto", label: "Boleto" },
+] as const;
+
+export const PAYMENT_LABEL: Record<string, string> = Object.fromEntries(
+  PAYMENT_METHODS.map((p) => [p.value, p.label]),
+);
+
+export function formatBRL(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
 export function todayISO() {
   return toISODate(new Date());
