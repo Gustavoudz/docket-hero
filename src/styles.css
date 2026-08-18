@@ -114,6 +114,10 @@
   border: 1px solid oklch(0.85 0.05 22 / 18%);
 }
 
+@utility font-script {
+  font-family: "Dancing Script", cursive;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
