@@ -103,6 +103,14 @@ export function InventoryForm({
         setField("imei", result.imei);
         filled++;
       }
+      if (result.color) {
+        setField("color", result.color);
+        filled++;
+      }
+      if (result.storage) {
+        setField("storage", result.storage);
+        filled++;
+      }
       if (filled === 0) toast.info("Nada legível na foto — preencha manualmente.");
       else toast.success(`${filled} campo(s) preenchido(s). Confira antes de salvar.`);
     } catch (e) {

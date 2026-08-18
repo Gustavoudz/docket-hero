@@ -4,6 +4,8 @@ type Extracted = {
   device_model: string | null;
   serial_number: string | null;
   imei: string | null;
+  color: string | null;
+  storage: string | null;
 };
 
 export const extractDeviceFromPhoto = createServerFn({ method: "POST" })
@@ -38,7 +40,7 @@ export const extractDeviceFromPhoto = createServerFn({ method: "POST" })
           {
             role: "user",
             content: [
-              { type: "text", text: "Leia modelo, número de série e IMEI." },
+              { type: "text", text: "Leia modelo, número de série, IMEI, cor e capacidade de armazenamento." },
               { type: "image_url", image_url: { url: data.image } },
             ],
           },
@@ -55,8 +57,10 @@ export const extractDeviceFromPhoto = createServerFn({ method: "POST" })
                   device_model: { type: ["string", "null"] },
                   serial_number: { type: ["string", "null"] },
                   imei: { type: ["string", "null"] },
+                  color: { type: ["string", "null"], description: "Cor do aparelho, em português (ex: Meia-noite, Estelar, Preto-espacial)" },
+                  storage: { type: ["string", "null"], description: "Capacidade de armazenamento, ex: 128GB, 256GB, 1TB" },
                 },
-                required: ["device_model", "serial_number", "imei"],
+                required: ["device_model", "serial_number", "imei", "color", "storage"],
                 additionalProperties: false,
               },
             },
@@ -74,12 +78,14 @@ export const extractDeviceFromPhoto = createServerFn({ method: "POST" })
       choices?: { message?: { tool_calls?: { function?: { arguments?: string } }[] } }[];
     };
     const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    if (!args) return { device_model: null, serial_number: null, imei: null };
+    if (!args) return { device_model: null, serial_number: null, imei: null, color: null, storage: null };
     const parsed = JSON.parse(args) as Extracted;
     const clean = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
     return {
       device_model: clean(parsed.device_model),
       serial_number: clean(parsed.serial_number),
       imei: clean(parsed.imei),
+      color: clean(parsed.color),
+      storage: clean(parsed.storage),
     };
   });
