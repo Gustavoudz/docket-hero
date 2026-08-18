@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   formatBRL,
+  saleTotal,
   formatTime,
   PAYMENT_LABEL,
   STATUS_LABEL,
