@@ -115,6 +115,78 @@ function NotificationBell() {
   );
 }
 
+function SideMenu() {
+  const [open, setOpen] = useState(false);
+  const currentPath = useRouterState({
+    select: (router) => router.location.pathname,
+  });
+
+  const menuItems = [
+    { title: "Agenda", url: "/agenda", icon: Calendar, active: currentPath === "/agenda" },
+    { title: "Estoque", url: "/estoque", icon: Package, maintenance: true },
+    { title: "Controle de Vendas", url: "/vendas", icon: Receipt, maintenance: true },
+  ];
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Abrir menu">
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="glass-strong w-4/5 border-r border-border/20 sm:max-w-xs">
+        <SheetHeader className="mb-6 text-left">
+          <SheetTitle className="font-script text-2xl text-primary">Legado Phones</SheetTitle>
+          <p className="text-xs text-muted-foreground">Sistema interno</p>
+        </SheetHeader>
+        <nav className="flex flex-col gap-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            if (item.maintenance) {
+              return (
+                <button
+                  key={item.title}
+                  onClick={() => {
+                    toast.info("Em Manutenção", {
+                      description: `${item.title} está temporariamente indisponível.`,
+                    });
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+                >
+                  <span className="flex items-center gap-3">
+                    <Icon className="h-5 w-5" />
+                    {item.title}
+                  </span>
+                  <Badge variant="outline" className="text-[10px] font-normal">
+                    Em Manutenção
+                  </Badge>
+                </button>
+              );
+            }
+            return (
+              <SheetClose asChild key={item.title}>
+                <Link
+                  to={item.url}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
+                    item.active
+                      ? "bg-primary/15 text-primary"
+                      : "text-foreground hover:bg-primary/10 hover:text-primary",
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {item.title}
+                </Link>
+              </SheetClose>
+            );
+          })}
+        </nav>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { role, fullName, signOut } = useAuth();
   const navigate = useNavigate();
