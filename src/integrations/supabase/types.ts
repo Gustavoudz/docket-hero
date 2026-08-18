@@ -63,6 +63,7 @@ export type Database = {
           inventory_device_id: string | null
           notes: string | null
           payment_method: string | null
+          payments: Json
           sale_amount: number | null
           sale_id: string | null
           scheduled_at: string
@@ -89,6 +90,7 @@ export type Database = {
           inventory_device_id?: string | null
           notes?: string | null
           payment_method?: string | null
+          payments?: Json
           sale_amount?: number | null
           sale_id?: string | null
           scheduled_at: string
@@ -115,6 +117,7 @@ export type Database = {
           inventory_device_id?: string | null
           notes?: string | null
           payment_method?: string | null
+          payments?: Json
           sale_amount?: number | null
           sale_id?: string | null
           scheduled_at?: string
