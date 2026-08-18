@@ -179,6 +179,10 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                 defaultValue={appointment?.device_model ?? ""}
                 required
                 className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+                onChange={(e) => {
+                  setModel(e.target.value);
+                  setInventoryItemId("");
+                }}
               >
                 <option value="">Selecione o modelo…</option>
                 {activeModels.map((m) => (
