@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatTime, type Appointment } from "@/lib/agenda";
+import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 
 const schema = z.object({
   customer_name: z.string().trim().min(1, "Informe o nome do cliente").max(120),
@@ -25,6 +26,7 @@ const schema = z.object({
   time: z.string().min(1, "Informe o horário"),
   customer_phone: z.string().trim().max(30).optional(),
   notes: z.string().trim().max(1000).optional(),
+  tag: z.string().trim().max(60).optional(),
 });
 
 type Props = {
@@ -38,6 +40,10 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
   const { user, fullName } = useAuth();
   const queryClient = useQueryClient();
   const [deposit, setDeposit] = useState(appointment?.deposit_paid ?? false);
+  const { data: models = [] } = useDeviceModels();
+  const { data: tags = [] } = useAppointmentTags();
+  const activeModels = models.filter((m) => m.active);
+  const activeTags = tags.filter((t) => t.active);
 
   const mutation = useMutation({
     mutationFn: async (form: FormData) => {
@@ -48,6 +54,7 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         time: form.get("time"),
         customer_phone: form.get("customer_phone") ?? "",
         notes: form.get("notes") ?? "",
+        tag: form.get("tag") ?? "",
       });
       if (!parsed.success) throw new Error(parsed.error.issues[0]!.message);
       const v = parsed.data;
@@ -56,6 +63,7 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         device_model: v.device_model,
         customer_phone: v.customer_phone || null,
         notes: v.notes || null,
+        tag: v.tag || null,
         deposit_paid: deposit,
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
@@ -103,14 +111,53 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="device_model">Modelo de interesse *</Label>
-            <Input
-              id="device_model"
-              name="device_model"
-              placeholder="iPhone 13 128GB"
-              defaultValue={appointment?.device_model ?? ""}
-              required
-            />
+            {activeModels.length > 0 ? (
+              <select
+                id="device_model"
+                name="device_model"
+                defaultValue={appointment?.device_model ?? ""}
+                required
+                className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+              >
+                <option value="">Selecione o modelo…</option>
+                {activeModels.map((m) => (
+                  <option key={m.id} value={m.name}>
+                    {m.name}
+                  </option>
+                ))}
+                {appointment?.device_model &&
+                  !activeModels.some((m) => m.name === appointment.device_model) && (
+                    <option value={appointment.device_model}>{appointment.device_model}</option>
+                  )}
+              </select>
+            ) : (
+              <Input
+                id="device_model"
+                name="device_model"
+                placeholder="iPhone 13 128GB"
+                defaultValue={appointment?.device_model ?? ""}
+                required
+              />
+            )}
           </div>
+          {activeTags.length > 0 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="tag">Tag</Label>
+              <select
+                id="tag"
+                name="tag"
+                defaultValue={appointment?.tag ?? ""}
+                className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+              >
+                <option value="">Sem tag</option>
+                {activeTags.map((t) => (
+                  <option key={t.id} value={t.label}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="date">Data *</Label>

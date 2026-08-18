@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_tags: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          id: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           attendant_id: string
@@ -33,6 +63,7 @@ export type Database = {
           scheduled_at: string
           scheduled_date: string | null
           status: Database["public"]["Enums"]["appointment_status"]
+          tag: string | null
           updated_at: string
         }
         Insert: {
@@ -53,6 +84,7 @@ export type Database = {
           scheduled_at: string
           scheduled_date?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
+          tag?: string | null
           updated_at?: string
         }
         Update: {
@@ -73,6 +105,52 @@ export type Database = {
           scheduled_at?: string
           scheduled_date?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
+          tag?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      attendant_colors: {
+        Row: {
+          color: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cancel_reasons: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
@@ -110,6 +188,33 @@ export type Database = {
           conversion_rate?: number
           id?: string
           total_appointments?: number
+        }
+        Relationships: []
+      }
+      device_models: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -171,6 +276,24 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      status_colors: {
+        Row: {
+          color: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+        }
+        Insert: {
+          color: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
           updated_at?: string
         }
         Relationships: []

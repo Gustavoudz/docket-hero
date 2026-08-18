@@ -25,6 +25,8 @@ import {
 } from "@/lib/agenda";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
+  validateSearch: (search: Record<string, unknown>): { date?: string } =>
+    typeof search['date'] === "string" ? { date: search['date'] } : {},
   head: () => ({
     meta: [
       { title: "Agenda do dia — Agenda da Loja" },
@@ -41,8 +43,9 @@ export const Route = createFileRoute("/_authenticated/agenda")({
 
 function AgendaPage() {
   const { user, role } = useAuth();
+  const { date: dateParam } = Route.useSearch();
   const queryClient = useQueryClient();
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate] = useState(dateParam ?? todayISO());
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
