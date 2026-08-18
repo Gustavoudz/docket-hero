@@ -68,6 +68,8 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  const depositNumber = deposit ? Number(depositAmount.replace(",", ".")) || 0 : 0;
+  const totalVenda = paymentsTotal(payments) + depositNumber;
   const { data: models = [] } = useDeviceModels();
   const { data: tags = [] } = useAppointmentTags();
   const activeModels = models.filter((m) => m.active);
