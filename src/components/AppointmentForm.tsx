@@ -239,6 +239,17 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
               }
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="product_price">Valor do produto (R$)</Label>
+            <Input
+              id="product_price"
+              name="product_price"
+              inputMode="decimal"
+              placeholder="Ex.: 3500"
+              value={productPrice}
+              onChange={(e) => setProductPrice(e.target.value)}
+            />
+          </div>
           <div className="space-y-2 rounded-md border px-3 py-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="deposit">Sinal pago?</Label>
@@ -360,6 +371,26 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                 <p className="text-base font-semibold text-foreground">
                   Total da venda: {formatBRL(totalVenda)}
                 </p>
+                {productPriceNumber > 0 && (
+                  <>
+                    <p className="text-muted-foreground">
+                      Valor do produto: {formatBRL(productPriceNumber)}
+                    </p>
+                    <p
+                      className={
+                        restante > 0
+                          ? "text-sm font-semibold text-destructive"
+                          : "text-sm font-semibold text-primary"
+                      }
+                    >
+                      {restante > 0
+                        ? `Falta: ${formatBRL(restante)}`
+                        : restante < 0
+                          ? `Excedente: ${formatBRL(Math.abs(restante))}`
+                          : "Pagamento completo"}
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>
