@@ -2,6 +2,7 @@ export type AppointmentStatus = "pendente" | "concluido" | "cancelado";
 
 export type PaymentEntry = {
   method: string;
+  amount?: number | null;
   installments?: number | null;
   installment_value?: number | null;
 };

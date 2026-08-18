@@ -87,6 +87,7 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         .filter((p) => p.method)
         .map((p) => ({
           method: p.method,
+          amount: p.amount ? Number(p.amount) : null,
           installments: p.method === "credito" ? (p.installments ?? 1) : null,
           installment_value:
             p.method === "credito" && p.installment_value ? Number(p.installment_value) : null,
