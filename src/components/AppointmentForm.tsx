@@ -49,6 +49,9 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
   const { user, fullName } = useAuth();
   const queryClient = useQueryClient();
   const [deposit, setDeposit] = useState(appointment?.deposit_paid ?? false);
+  const [depositAmount, setDepositAmount] = useState<string>(
+    appointment?.deposit_amount != null ? String(appointment.deposit_amount) : "",
+  );
   const [payments, setPayments] = useState<PaymentEntry[]>(() => {
     const existing = appointment?.payments;
     if (existing && existing.length > 0) return existing;
@@ -236,7 +239,8 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                   name="deposit_amount"
                   inputMode="decimal"
                   placeholder="Ex.: 50, 100..."
-                  defaultValue={appointment?.deposit_amount ?? ""}
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
                 />
               </div>
             )}
