@@ -11,7 +11,7 @@ export type InventoryItem = {
   device_model: string;
   color: string | null;
   storage: string | null;
-  apple_id: string;
+  apple_id: string | null;
   serial_number: string | null;
   imei: string | null;
   condition: "lacrado" | "seminovo";
