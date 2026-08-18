@@ -50,6 +50,24 @@ export function formatBRL(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+export function paymentEntryTotal(p: PaymentEntry) {
+  if (p.amount != null && Number(p.amount) > 0) return Number(p.amount);
+  if (p.method === "credito" && p.installments && p.installment_value)
+    return Number(p.installments) * Number(p.installment_value);
+  return 0;
+}
+
+export function paymentsTotal(payments: PaymentEntry[] | null | undefined) {
+  return (payments ?? []).reduce((sum, p) => sum + paymentEntryTotal(p), 0);
+}
+
+export function saleTotal(
+  payments: PaymentEntry[] | null | undefined,
+  depositAmount?: number | null,
+) {
+  return paymentsTotal(payments) + (Number(depositAmount) || 0);
+}
+
 export function todayISO() {
   return toISODate(new Date());
 }

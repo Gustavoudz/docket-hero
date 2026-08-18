@@ -23,6 +23,8 @@ import {
   type Appointment,
   type PaymentEntry,
   formatBRL,
+  paymentEntryTotal,
+  paymentsTotal,
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 
@@ -49,6 +51,9 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
   const { user, fullName } = useAuth();
   const queryClient = useQueryClient();
   const [deposit, setDeposit] = useState(appointment?.deposit_paid ?? false);
+  const [depositAmount, setDepositAmount] = useState<string>(
+    appointment?.deposit_amount != null ? String(appointment.deposit_amount) : "",
+  );
   const [payments, setPayments] = useState<PaymentEntry[]>(() => {
     const existing = appointment?.payments;
     if (existing && existing.length > 0) return existing;
@@ -63,6 +68,8 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  const depositNumber = deposit ? Number(depositAmount.replace(",", ".")) || 0 : 0;
+  const totalVenda = paymentsTotal(payments) + depositNumber;
   const { data: models = [] } = useDeviceModels();
   const { data: tags = [] } = useAppointmentTags();
   const activeModels = models.filter((m) => m.active);
@@ -236,7 +243,8 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                   name="deposit_amount"
                   inputMode="decimal"
                   placeholder="Ex.: 50, 100..."
-                  defaultValue={appointment?.deposit_amount ?? ""}
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
                 />
               </div>
             )}
@@ -311,6 +319,11 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                     />
                   </div>
                 )}
+                {paymentEntryTotal(p) > 0 && (
+                  <p className="text-right text-xs text-muted-foreground">
+                    Subtotal: {formatBRL(paymentEntryTotal(p))}
+                  </p>
+                )}
               </div>
             ))}
             <Button
@@ -327,10 +340,18 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
             >
               <Plus className="mr-1 h-4 w-4" /> Adicionar forma de pagamento
             </Button>
-            {payments.some((p) => p.amount) && (
-              <p className="text-right text-sm text-muted-foreground">
-                Total: {formatBRL(payments.reduce((s, p) => s + (Number(p.amount) || 0), 0))}
-              </p>
+            {(paymentsTotal(payments) > 0 || depositNumber > 0) && (
+              <div className="space-y-0.5 border-t pt-2 text-right text-sm">
+                <p className="text-muted-foreground">
+                  Pagamentos: {formatBRL(paymentsTotal(payments))}
+                </p>
+                {deposit && depositNumber > 0 && (
+                  <p className="text-muted-foreground">Sinal: {formatBRL(depositNumber)}</p>
+                )}
+                <p className="text-base font-semibold text-foreground">
+                  Total da venda: {formatBRL(totalVenda)}
+                </p>
+              </div>
             )}
           </div>
           <div className="space-y-1.5">
