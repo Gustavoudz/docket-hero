@@ -114,6 +114,40 @@ export function AppointmentCard({
             {attendantName && <span>Atendente: {attendantName}</span>}
             {appointment.customer_instagram && <span>@{appointment.customer_instagram}</span>}
           </div>
+          {saleTotal(
+            appointment.payments && appointment.payments.length > 0
+              ? appointment.payments
+              : appointment.payment_method
+                ? [
+                    {
+                      method: appointment.payment_method,
+                      installments: appointment.installments,
+                      installment_value: appointment.installment_value,
+                    },
+                  ]
+                : [],
+            appointment.deposit_paid ? appointment.deposit_amount : null,
+          ) > 0 && (
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              Total da venda:{" "}
+              {formatBRL(
+                saleTotal(
+                  appointment.payments && appointment.payments.length > 0
+                    ? appointment.payments
+                    : appointment.payment_method
+                      ? [
+                          {
+                            method: appointment.payment_method,
+                            installments: appointment.installments,
+                            installment_value: appointment.installment_value,
+                          },
+                        ]
+                      : [],
+                  appointment.deposit_paid ? appointment.deposit_amount : null,
+                ),
+              )}
+            </p>
+          )}
           {appointment.notes && <p className="mt-1 text-sm">{appointment.notes}</p>}
           {appointment.cancel_reason && (
             <p className="mt-1 text-sm text-destructive">Motivo: {appointment.cancel_reason}</p>
