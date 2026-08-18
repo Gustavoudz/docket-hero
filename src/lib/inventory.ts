@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { todayISO } from "@/lib/agenda";
+
+export const todayForInventory = todayISO;
 
 export type InventoryStatus = "disponivel" | "reservado" | "vendido" | "manutencao";
 
