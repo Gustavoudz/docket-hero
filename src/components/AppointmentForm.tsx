@@ -23,6 +23,8 @@ import {
   type Appointment,
   type PaymentEntry,
   formatBRL,
+  paymentEntryTotal,
+  paymentsTotal,
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 
