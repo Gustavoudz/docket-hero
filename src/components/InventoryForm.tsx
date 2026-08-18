@@ -31,7 +31,6 @@ const schema = z.object({
   device_model: z.string().trim().min(1, "Selecione o modelo do aparelho").max(120),
   color: z.string().trim().max(60).optional(),
   storage: z.string().trim().max(60).optional(),
-  apple_id: z.string().trim().min(1, "Informe o e-mail (Apple ID)").max(160),
   serial_number: z.string().trim().max(80).optional(),
   imei: z.string().trim().max(40).optional(),
   cost_price: z.string().trim().optional(),
