@@ -36,6 +36,7 @@ const schema = z.object({
   customer_phone: z.string().trim().max(30).optional(),
   customer_instagram: z.string().trim().max(60).optional(),
   deposit_amount: z.string().trim().max(20).optional(),
+  product_price: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(1000).optional(),
   tag: z.string().trim().max(60).optional(),
 });
@@ -65,11 +66,16 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
       },
     ];
   });
+  const [productPrice, setProductPrice] = useState<string>(
+    appointment?.product_price != null ? String(appointment.product_price) : "",
+  );
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   const depositNumber = deposit ? Number(depositAmount.replace(",", ".")) || 0 : 0;
   const totalVenda = paymentsTotal(payments) + depositNumber;
+  const productPriceNumber = Number(productPrice.replace(",", ".")) || 0;
+  const restante = productPriceNumber - totalVenda;
   const { data: models = [] } = useDeviceModels();
   const { data: tags = [] } = useAppointmentTags();
   const activeModels = models.filter((m) => m.active);
@@ -85,12 +91,14 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         customer_phone: form.get("customer_phone") ?? "",
         customer_instagram: form.get("customer_instagram") ?? "",
         deposit_amount: form.get("deposit_amount") ?? "",
+        product_price: form.get("product_price") ?? "",
         notes: form.get("notes") ?? "",
         tag: form.get("tag") ?? "",
       });
       if (!parsed.success) throw new Error(parsed.error.issues[0]!.message);
       const v = parsed.data;
       const amount = v.deposit_amount ? Number(v.deposit_amount.replace(",", ".")) : NaN;
+      const price = v.product_price ? Number(v.product_price.replace(",", ".")) : NaN;
       const cleanPayments: PaymentEntry[] = payments
         .filter((p) => p.method)
         .map((p) => ({
@@ -112,6 +120,7 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         tag: v.tag || null,
         deposit_paid: deposit,
         deposit_amount: deposit && Number.isFinite(amount) && amount > 0 ? amount : null,
+        product_price: Number.isFinite(price) && price > 0 ? price : null,
         payments: cleanPayments,
         payment_method: first?.method ?? null,
         installments: first?.installments ?? null,
@@ -228,6 +237,17 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
               defaultValue={
                 appointment?.customer_instagram ? `@${appointment.customer_instagram}` : ""
               }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="product_price">Valor do produto (R$)</Label>
+            <Input
+              id="product_price"
+              name="product_price"
+              inputMode="decimal"
+              placeholder="Ex.: 3500"
+              value={productPrice}
+              onChange={(e) => setProductPrice(e.target.value)}
             />
           </div>
           <div className="space-y-2 rounded-md border px-3 py-2">
@@ -351,6 +371,26 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                 <p className="text-base font-semibold text-foreground">
                   Total da venda: {formatBRL(totalVenda)}
                 </p>
+                {productPriceNumber > 0 && (
+                  <>
+                    <p className="text-muted-foreground">
+                      Valor do produto: {formatBRL(productPriceNumber)}
+                    </p>
+                    <p
+                      className={
+                        restante > 0
+                          ? "text-sm font-semibold text-destructive"
+                          : "text-sm font-semibold text-primary"
+                      }
+                    >
+                      {restante > 0
+                        ? `Falta: ${formatBRL(restante)}`
+                        : restante < 0
+                          ? `Excedente: ${formatBRL(Math.abs(restante))}`
+                          : "Pagamento completo"}
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>
