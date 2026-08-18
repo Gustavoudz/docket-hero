@@ -24,6 +24,7 @@ import {
   type PaymentEntry,
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
+import { itemLabel, useAvailableItems } from "@/lib/inventory";
 
 const schema = z.object({
   customer_name: z.string().trim().min(1, "Informe o nome do cliente").max(120),
@@ -65,6 +66,12 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
   });
   const [productPrice, setProductPrice] = useState<string>(
     appointment?.product_price != null ? String(appointment.product_price) : "",
+  );
+  const [model, setModel] = useState(appointment?.device_model ?? "");
+  const [inventoryItemId, setInventoryItemId] = useState(appointment?.inventory_device_id ?? "");
+  const { data: availableItems = [] } = useAvailableItems(
+    model,
+    appointment?.inventory_device_id ?? null,
   );
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
@@ -120,6 +127,7 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         installment_value: first?.installment_value ?? null,
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
+        inventory_device_id: inventoryItemId || null,
       };
       const query = appointment
         ? supabase.from("appointments").update(payload).eq("id", appointment.id)
@@ -190,9 +198,36 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                 placeholder="iPhone 13 128GB"
                 defaultValue={appointment?.device_model ?? ""}
                 required
+                onChange={(e) => {
+                  setModel(e.target.value);
+                  setInventoryItemId("");
+                }}
               />
             )}
           </div>
+          {model && (
+            <div className="space-y-1.5">
+              <Label htmlFor="inventory_device_id">Aparelho vinculado (estoque)</Label>
+              <select
+                id="inventory_device_id"
+                value={inventoryItemId}
+                onChange={(e) => setInventoryItemId(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+              >
+                <option value="">Sem aparelho vinculado</option>
+                {availableItems.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {itemLabel(i)}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                {availableItems.length === 0
+                  ? "Nenhum aparelho disponível deste modelo no estoque."
+                  : "Ao vincular, o aparelho fica reservado automaticamente."}
+              </p>
+            </div>
+          )}
           {activeTags.length > 0 && (
             <div className="space-y-1.5">
               <Label htmlFor="tag">Tag</Label>
