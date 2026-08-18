@@ -13,6 +13,8 @@ export type InventoryItem = {
   storage: string | null;
   apple_id: string;
   serial_number: string | null;
+  imei: string | null;
+  condition: "lacrado" | "seminovo";
   sale_price: number | null;
   notes: string | null;
   status: InventoryStatus;
@@ -44,7 +46,7 @@ export const INVENTORY_STATUSES: InventoryStatus[] = [
 ];
 
 const ITEM_COLUMNS =
-  "id, device_model, color, storage, apple_id, serial_number, sale_price, notes, status, entered_at, sold_at, appointment_id, created_by";
+  "id, device_model, color, storage, apple_id, serial_number, imei, condition, sale_price, notes, status, entered_at, sold_at, appointment_id, created_by";
 
 export function useInventoryItems() {
   return useQuery({

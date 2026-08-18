@@ -341,11 +341,13 @@ export type Database = {
           apple_id: string
           appointment_id: string | null
           color: string | null
+          condition: string
           created_at: string
           created_by: string | null
           device_model: string
           entered_at: string
           id: string
+          imei: string | null
           notes: string | null
           sale_price: number | null
           serial_number: string | null
@@ -358,11 +360,13 @@ export type Database = {
           apple_id: string
           appointment_id?: string | null
           color?: string | null
+          condition?: string
           created_at?: string
           created_by?: string | null
           device_model: string
           entered_at?: string
           id?: string
+          imei?: string | null
           notes?: string | null
           sale_price?: number | null
           serial_number?: string | null
@@ -375,11 +379,13 @@ export type Database = {
           apple_id?: string
           appointment_id?: string | null
           color?: string | null
+          condition?: string
           created_at?: string
           created_by?: string | null
           device_model?: string
           entered_at?: string
           id?: string
+          imei?: string | null
           notes?: string | null
           sale_price?: number | null
           serial_number?: string | null
