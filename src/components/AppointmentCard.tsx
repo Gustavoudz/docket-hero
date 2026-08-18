@@ -14,9 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   formatBRL,
-  paymentEntryTotal,
   type PaymentEntry,
-  saleTotal,
   formatTime,
   PAYMENT_LABEL,
   STATUS_LABEL,
@@ -56,12 +54,6 @@ export function AppointmentCard({
             },
           ]
         : [];
-  const total = saleTotal(
-    paymentEntries,
-    appointment.deposit_paid ? (appointment.deposit_amount ?? null) : null,
-  );
-  const price = Number(appointment.product_price) || 0;
-  const remaining = price - total;
 
   const update = useMutation({
     mutationFn: async (patch: { status: Appointment["status"]; cancel_reason?: string }) => {
@@ -113,7 +105,7 @@ export function AppointmentCard({
             {paymentEntries.map((p, i) => (
               <span key={i}>
                 {PAYMENT_LABEL[p.method] ?? p.method}
-                {paymentEntryTotal(p) > 0 ? ` · ${formatBRL(paymentEntryTotal(p))}` : ""}
+                {p.amount && p.amount > 0 ? ` · ${formatBRL(p.amount)}` : ""}
                 {p.method === "credito" && p.installments
                   ? ` ${p.installments}x${
                       p.installment_value ? ` de ${formatBRL(Number(p.installment_value))}` : ""
@@ -124,23 +116,6 @@ export function AppointmentCard({
             {attendantName && <span>Atendente: {attendantName}</span>}
             {appointment.customer_instagram && <span>@{appointment.customer_instagram}</span>}
           </div>
-          {total > 0 && (
-            <p className="mt-1 text-sm font-semibold text-foreground">
-              Total da venda: {formatBRL(total)}
-            </p>
-          )}
-          {price > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Valor do produto: {formatBRL(price)}
-              {remaining > 0 ? (
-                <span className="ml-2 font-semibold text-destructive">
-                  Falta {formatBRL(remaining)}
-                </span>
-              ) : (
-                <span className="ml-2 font-semibold text-primary">Pago integralmente</span>
-              )}
-            </p>
-          )}
           {appointment.notes && <p className="mt-1 text-sm">{appointment.notes}</p>}
           {appointment.cancel_reason && (
             <p className="mt-1 text-sm text-destructive">Motivo: {appointment.cancel_reason}</p>
