@@ -22,6 +22,7 @@ export type Appointment = {
   installments?: number | null;
   installment_value?: number | null;
   payments?: PaymentEntry[] | null;
+  product_price?: number | null;
   notes: string | null;
   status: AppointmentStatus;
   cancel_reason: string | null;
