@@ -239,6 +239,165 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_audits: {
+        Row: {
+          audit_date: string
+          confirmed_by: string | null
+          created_at: string
+          divergence_note: string | null
+          id: string
+          items_count: number
+          matched: boolean
+          total_cost: number
+        }
+        Insert: {
+          audit_date: string
+          confirmed_by?: string | null
+          created_at?: string
+          divergence_note?: string | null
+          id?: string
+          items_count?: number
+          matched?: boolean
+          total_cost?: number
+        }
+        Update: {
+          audit_date?: string
+          confirmed_by?: string | null
+          created_at?: string
+          divergence_note?: string | null
+          id?: string
+          items_count?: number
+          matched?: boolean
+          total_cost?: number
+        }
+        Relationships: []
+      }
+      inventory_costs: {
+        Row: {
+          cost_price: number
+          item_id: string
+          updated_at: string
+        }
+        Insert: {
+          cost_price: number
+          item_id: string
+          updated_at?: string
+        }
+        Update: {
+          cost_price?: number
+          item_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_costs_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_events: {
+        Row: {
+          actor_id: string | null
+          appointment_id: string | null
+          created_at: string
+          id: string
+          item_id: string
+          kind: string
+          reason: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          item_id: string
+          kind: string
+          reason?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          appointment_id?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string
+          kind?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_events_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          apple_id: string
+          appointment_id: string | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          device_model: string
+          entered_at: string
+          id: string
+          notes: string | null
+          sale_price: number | null
+          serial_number: string | null
+          sold_at: string | null
+          status: Database["public"]["Enums"]["inventory_status"]
+          storage: string | null
+          updated_at: string
+        }
+        Insert: {
+          apple_id: string
+          appointment_id?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_model: string
+          entered_at?: string
+          id?: string
+          notes?: string | null
+          sale_price?: number | null
+          serial_number?: string | null
+          sold_at?: string | null
+          status?: Database["public"]["Enums"]["inventory_status"]
+          storage?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apple_id?: string
+          appointment_id?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          device_model?: string
+          entered_at?: string
+          id?: string
+          notes?: string | null
+          sale_price?: number | null
+          serial_number?: string | null
+          sold_at?: string | null
+          status?: Database["public"]["Enums"]["inventory_status"]
+          storage?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string | null
@@ -357,6 +516,7 @@ export type Database = {
     Enums: {
       app_role: "gerente" | "atendente"
       appointment_status: "pendente" | "concluido" | "cancelado"
+      inventory_status: "disponivel" | "reservado" | "vendido" | "manutencao"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -486,6 +646,7 @@ export const Constants = {
     Enums: {
       app_role: ["gerente", "atendente"],
       appointment_status: ["pendente", "concluido", "cancelado"],
+      inventory_status: ["disponivel", "reservado", "vendido", "manutencao"],
     },
   },
 } as const

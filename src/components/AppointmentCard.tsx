@@ -21,6 +21,8 @@ import {
   type Appointment,
 } from "@/lib/agenda";
 import { useAppointmentTags, useCancelReasons, useStatusColors } from "@/lib/settings";
+import { itemLabel, logInventoryEvent, useAvailableItems } from "@/lib/inventory";
+import { useAuth } from "@/hooks/useAuth";
 
 export function AppointmentCard({
   appointment,
@@ -33,6 +35,14 @@ export function AppointmentCard({
 }) {
   const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkChoice, setLinkChoice] = useState("");
+  const [revertOpen, setRevertOpen] = useState(false);
+  const [revertReason, setRevertReason] = useState("");
+  const { user } = useAuth();
+  const { data: availableItems = [] } = useAvailableItems(
+    linkOpen ? appointment.device_model : "",
+  );
   const [reason, setReason] = useState("");
   const [reasonChoice, setReasonChoice] = useState("");
   const { data: reasons = [] } = useCancelReasons();
@@ -56,15 +66,50 @@ export function AppointmentCard({
         : [];
 
   const update = useMutation({
-    mutationFn: async (patch: { status: Appointment["status"]; cancel_reason?: string }) => {
+    mutationFn: async (patch: {
+      status: Appointment["status"];
+      cancel_reason?: string;
+      inventory_device_id?: string | null;
+    }) => {
       const { error } = await supabase.from("appointments").update(patch).eq("id", appointment.id);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
       setCancelOpen(false);
+      setLinkOpen(false);
+      setLinkChoice("");
       setReason("");
       setReasonChoice("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const revert = useMutation({
+    mutationFn: async (why: string) => {
+      const itemId = appointment.inventory_device_id;
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "cancelado", cancel_reason: `Venda revertida: ${why}` })
+        .eq("id", appointment.id);
+      if (error) throw new Error(error.message);
+      if (itemId) {
+        await logInventoryEvent({
+          itemId,
+          kind: "reversao",
+          reason: why,
+          appointmentId: appointment.id,
+          actorId: user?.id ?? null,
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
+      toast.success("Venda revertida — aparelho voltou para o estoque");
+      setRevertOpen(false);
+      setRevertReason("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -132,7 +177,13 @@ export function AppointmentCard({
             size="sm"
             className="flex-1"
             disabled={update.isPending}
-            onClick={() => update.mutate({ status: "concluido" })}
+            onClick={() => {
+              if (appointment.inventory_device_id) {
+                update.mutate({ status: "concluido" });
+              } else {
+                setLinkOpen(true);
+              }
+            }}
           >
             Concluir
           </Button>
@@ -148,7 +199,7 @@ export function AppointmentCard({
       )}
 
       {appointment.status !== "pendente" && (
-        <div className="mt-3">
+        <div className="mt-3 flex gap-2">
           <Button
             size="sm"
             variant="ghost"
@@ -158,8 +209,90 @@ export function AppointmentCard({
           >
             Reabrir
           </Button>
+          {appointment.status === "concluido" && appointment.inventory_device_id && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setRevertOpen(true)}
+            >
+              Reverter venda
+            </Button>
+          )}
         </div>
       )}
+
+      <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Vincular aparelho do estoque</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Para concluir a venda é obrigatório escolher o aparelho real de{" "}
+            <strong>{appointment.device_model}</strong> que saiu do estoque.
+          </p>
+          <select
+            aria-label="Aparelho do estoque"
+            value={linkChoice}
+            onChange={(e) => setLinkChoice(e.target.value)}
+            className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+          >
+            <option value="">Selecione o aparelho…</option>
+            {availableItems.map((i) => (
+              <option key={i.id} value={i.id}>
+                {itemLabel(i)}
+              </option>
+            ))}
+          </select>
+          {availableItems.length === 0 && (
+            <p className="text-sm text-destructive">
+              Nenhum aparelho disponível deste modelo. Cadastre o item no estoque antes de concluir.
+            </p>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setLinkOpen(false)}>
+              Voltar
+            </Button>
+            <Button
+              disabled={!linkChoice || update.isPending}
+              onClick={() =>
+                update.mutate({ status: "concluido", inventory_device_id: linkChoice })
+              }
+            >
+              Concluir venda
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={revertOpen} onOpenChange={setRevertOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reverter venda</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            O aparelho volta para Disponível no estoque. Informe o motivo.
+          </p>
+          <Textarea
+            value={revertReason}
+            onChange={(e) => setRevertReason(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="Ex.: cliente devolveu, cartão estornado…"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRevertOpen(false)}>
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!revertReason.trim() || revert.isPending}
+              onClick={() => revert.mutate(revertReason.trim())}
+            >
+              Confirmar reversão
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="sm:max-w-md">
