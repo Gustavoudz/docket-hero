@@ -1,5 +1,11 @@
 export type AppointmentStatus = "pendente" | "concluido" | "cancelado";
 
+export type PaymentEntry = {
+  method: string;
+  installments?: number | null;
+  installment_value?: number | null;
+};
+
 export type Appointment = {
   id: string;
   attendant_id: string;
@@ -14,6 +20,7 @@ export type Appointment = {
   payment_method?: string | null;
   installments?: number | null;
   installment_value?: number | null;
+  payments?: PaymentEntry[] | null;
   notes: string | null;
   status: AppointmentStatus;
   cancel_reason: string | null;
