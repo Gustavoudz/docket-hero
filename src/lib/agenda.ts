@@ -13,6 +13,7 @@ export type Appointment = {
   deposit_amount?: number | null;
   payment_method?: string | null;
   installments?: number | null;
+  installment_value?: number | null;
   notes: string | null;
   status: AppointmentStatus;
   cancel_reason: string | null;
@@ -31,7 +32,6 @@ export const PAYMENT_METHODS = [
   { value: "dinheiro", label: "Dinheiro vivo" },
   { value: "debito", label: "Cartão de débito" },
   { value: "credito", label: "Cartão de crédito" },
-  { value: "boleto", label: "Boleto" },
 ] as const;
 
 export const PAYMENT_LABEL: Record<string, string> = Object.fromEntries(
