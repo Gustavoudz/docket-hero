@@ -50,14 +50,18 @@ export type Database = {
           cancel_reason: string | null
           completed_at: string | null
           created_at: string
+          customer_instagram: string | null
           customer_name: string
           customer_phone: string | null
+          deposit_amount: number | null
           deposit_paid: boolean
           device_model: string
           device_serial_number: string | null
           id: string
+          installments: number | null
           inventory_device_id: string | null
           notes: string | null
+          payment_method: string | null
           sale_amount: number | null
           sale_id: string | null
           scheduled_at: string
@@ -71,14 +75,18 @@ export type Database = {
           cancel_reason?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_instagram?: string | null
           customer_name: string
           customer_phone?: string | null
+          deposit_amount?: number | null
           deposit_paid?: boolean
           device_model: string
           device_serial_number?: string | null
           id?: string
+          installments?: number | null
           inventory_device_id?: string | null
           notes?: string | null
+          payment_method?: string | null
           sale_amount?: number | null
           sale_id?: string | null
           scheduled_at: string
@@ -92,14 +100,18 @@ export type Database = {
           cancel_reason?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_instagram?: string | null
           customer_name?: string
           customer_phone?: string | null
+          deposit_amount?: number | null
           deposit_paid?: boolean
           device_model?: string
           device_serial_number?: string | null
           id?: string
+          installments?: number | null
           inventory_device_id?: string | null
           notes?: string | null
+          payment_method?: string | null
           sale_amount?: number | null
           sale_id?: string | null
           scheduled_at?: string

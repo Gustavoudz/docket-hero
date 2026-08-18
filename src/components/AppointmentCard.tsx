@@ -12,7 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatTime, STATUS_LABEL, type Appointment } from "@/lib/agenda";
+import {
+  formatBRL,
+  formatTime,
+  PAYMENT_LABEL,
+  STATUS_LABEL,
+  type Appointment,
+} from "@/lib/agenda";
 import { useAppointmentTags, useCancelReasons, useStatusColors } from "@/lib/settings";
 
 export function AppointmentCard({
@@ -79,10 +85,19 @@ export function AppointmentCard({
             {appointment.deposit_paid && (
               <span className="inline-flex items-center gap-1 font-medium text-foreground">
                 <BadgeCheck className="h-3.5 w-3.5" /> Sinal pago
+                {appointment.deposit_amount ? ` · ${formatBRL(Number(appointment.deposit_amount))}` : ""}
+              </span>
+            )}
+            {appointment.payment_method && (
+              <span>
+                {PAYMENT_LABEL[appointment.payment_method] ?? appointment.payment_method}
+                {appointment.payment_method === "credito" && appointment.installments
+                  ? ` ${appointment.installments}x`
+                  : ""}
               </span>
             )}
             {attendantName && <span>Atendente: {attendantName}</span>}
-            {appointment.customer_phone && <span>{appointment.customer_phone}</span>}
+            {appointment.customer_instagram && <span>@{appointment.customer_instagram}</span>}
           </div>
           {appointment.notes && <p className="mt-1 text-sm">{appointment.notes}</p>}
           {appointment.cancel_reason && (
