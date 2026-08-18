@@ -239,52 +239,79 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
               </div>
             )}
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="payment_method">Forma de pagamento</Label>
-            <select
-              id="payment_method"
-              name="payment_method"
-              value={payment}
-              onChange={(e) => setPayment(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+          <div className="space-y-3 rounded-md border px-3 py-3">
+            <p className="text-sm font-medium">Formas de pagamento</p>
+            {payments.map((p, i) => (
+              <div key={i} className="space-y-2 rounded-md bg-muted/30 p-2">
+                <div className="flex items-center gap-2">
+                  <select
+                    aria-label={`Forma de pagamento ${i + 1}`}
+                    value={p.method}
+                    onChange={(e) => updatePayment(i, { method: e.target.value })}
+                    className="h-9 flex-1 rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+                  >
+                    <option value="">Selecione…</option>
+                    {PAYMENT_METHODS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                  {payments.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Remover forma de pagamento"
+                      onClick={() => setPayments((rows) => rows.filter((_, idx) => idx !== i))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {p.method === "credito" && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      aria-label="Parcelas"
+                      value={String(p.installments ?? 1)}
+                      onChange={(e) => updatePayment(i, { installments: Number(e.target.value) })}
+                      className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+                    >
+                      {Array.from({ length: 18 }, (_, n) => n + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {n}x
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      aria-label="Valor da parcela"
+                      inputMode="decimal"
+                      placeholder="Valor da parcela"
+                      value={p.installment_value ?? ""}
+                      onChange={(e) =>
+                        updatePayment(i, {
+                          installment_value: e.target.value
+                            ? Number(e.target.value.replace(",", "."))
+                            : null,
+                        })
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() =>
+                setPayments((rows) => [...rows, { method: "", installments: 1, installment_value: null }])
+              }
             >
-              <option value="">Selecione…</option>
-              {PAYMENT_METHODS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
+              <Plus className="mr-1 h-4 w-4" /> Adicionar forma de pagamento
+            </Button>
           </div>
-          {payment === "credito" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="installments">Parcelas</Label>
-                <select
-                  id="installments"
-                  name="installments"
-                  defaultValue={String(appointment?.installments ?? 1)}
-                  className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
-                >
-                  {Array.from({ length: 18 }, (_, i) => i + 1).map((n) => (
-                    <option key={n} value={n}>
-                      {n}x
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="installment_value">Valor da parcela (R$)</Label>
-                <Input
-                  id="installment_value"
-                  name="installment_value"
-                  inputMode="decimal"
-                  placeholder="Ex.: 700"
-                  defaultValue={appointment?.installment_value ?? ""}
-                />
-              </div>
-            </div>
-          )}
           <div className="space-y-1.5">
             <Label htmlFor="notes">Observações</Label>
             <Textarea id="notes" name="notes" rows={3} defaultValue={appointment?.notes ?? ""} />
