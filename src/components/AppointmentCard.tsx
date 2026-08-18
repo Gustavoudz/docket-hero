@@ -41,6 +41,23 @@ export function AppointmentCard({
   const activeReasons = reasons.filter((r) => r.active);
   const finalReason = reasonChoice && reasonChoice !== "outro" ? reasonChoice : reason.trim();
   const tagColor = tags.find((t) => t.label === appointment.tag)?.color;
+  const paymentEntries: PaymentEntry[] =
+    appointment.payments && appointment.payments.length > 0
+      ? appointment.payments
+      : appointment.payment_method
+        ? [
+            {
+              method: appointment.payment_method,
+              amount: null,
+              installments: appointment.installments ?? null,
+              installment_value: appointment.installment_value ?? null,
+            },
+          ]
+        : [];
+  const total = saleTotal(
+    paymentEntries,
+    appointment.deposit_paid ? (appointment.deposit_amount ?? null) : null,
+  );
 
   const update = useMutation({
     mutationFn: async (patch: { status: Appointment["status"]; cancel_reason?: string }) => {
