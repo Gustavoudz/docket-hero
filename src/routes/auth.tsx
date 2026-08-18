@@ -96,10 +96,13 @@ function AuthPage() {
   return (
     <main className="flex min-h-screen flex-col justify-center px-4 py-10">
       <div className="glass-strong mx-auto w-full max-w-sm rounded-2xl p-6 shadow-2xl">
-        <h1 className="text-2xl font-semibold tracking-tight">Agenda da Loja</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Agendamentos de iPhones e MacBooks seminovos.
-        </p>
+        <div className="text-center">
+          <p className="font-script text-3xl text-primary">Bem vindo a Legado Phones</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Agenda da Loja</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Agendamentos de iPhones e MacBooks seminovos.
+          </p>
+        </div>
 
         <Tabs defaultValue="login" className="mt-6">
           <TabsList className="glass grid w-full grid-cols-2">
