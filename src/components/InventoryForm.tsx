@@ -31,7 +31,6 @@ const schema = z.object({
   device_model: z.string().trim().min(1, "Selecione o modelo do aparelho").max(120),
   color: z.string().trim().max(60).optional(),
   storage: z.string().trim().max(60).optional(),
-  apple_id: z.string().trim().min(1, "Informe o e-mail (Apple ID)").max(160),
   serial_number: z.string().trim().max(80).optional(),
   imei: z.string().trim().max(40).optional(),
   cost_price: z.string().trim().optional(),
@@ -127,7 +126,6 @@ export function InventoryForm({
         device_model: form.get("device_model"),
         color: form.get("color") ?? "",
         storage: form.get("storage") ?? "",
-        apple_id: form.get("apple_id"),
         serial_number: form.get("serial_number") ?? "",
         imei: form.get("imei") ?? "",
         cost_price: form.get("cost_price") ?? "",
@@ -144,7 +142,6 @@ export function InventoryForm({
         device_model: v.device_model,
         color: v.color || null,
         storage: v.storage || null,
-        apple_id: v.apple_id.toLowerCase(),
         serial_number: v.serial_number || null,
         imei: v.imei || null,
         condition,
@@ -276,17 +273,6 @@ export function InventoryForm({
               <Label htmlFor="storage">Armazenamento</Label>
               <Input id="storage" name="storage" placeholder="256GB" defaultValue={item?.storage ?? ""} />
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="apple_id">E-mail (Apple ID) *</Label>
-            <Input
-              id="apple_id"
-              name="apple_id"
-              type="email"
-              required
-              placeholder="aparelho01@icloud.com"
-              defaultValue={item?.apple_id ?? ""}
-            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="serial_number">Número de série</Label>

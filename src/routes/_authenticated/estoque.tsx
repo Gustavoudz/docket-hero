@@ -83,8 +83,9 @@ function EstoquePage() {
     const term = search.trim().toLowerCase();
     if (!term) return true;
     return (
-      i.apple_id.toLowerCase().includes(term) ||
-      (i.serial_number ?? "").toLowerCase().includes(term)
+      (i.apple_id ?? "").toLowerCase().includes(term) ||
+      (i.serial_number ?? "").toLowerCase().includes(term) ||
+      (i.imei ?? "").toLowerCase().includes(term)
     );
   });
 
@@ -147,7 +148,7 @@ function EstoquePage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por e-mail ou número de série"
+            placeholder="Buscar por série ou IMEI"
             className="pl-9"
           />
         </div>
@@ -226,8 +227,8 @@ function EstoquePage() {
                   {[i.color, i.storage].filter(Boolean).join(" · ") || "Sem cor/configuração"}
                 </p>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                  <span className="truncate">{i.apple_id}</span>
                   {i.serial_number && <span>Série: {i.serial_number}</span>}
+                  {i.imei && <span>IMEI: {i.imei}</span>}
                   {isGerente && costs[i.id] != null && <span>Custo: {formatBRL(costs[i.id]!)}</span>}
                   {i.sale_price != null && <span>Venda: {formatBRL(Number(i.sale_price))}</span>}
                 </div>
