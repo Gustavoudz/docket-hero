@@ -83,7 +83,7 @@ function PainelPage() {
   if (role && role !== "gerente") {
     return (
       <AppShell>
-        <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+        <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground backdrop-blur-xl">
           Este painel é exclusivo do gerente.
         </p>
       </AppShell>
@@ -109,7 +109,7 @@ function PainelPage() {
             id="attendant"
             value={attendant}
             onChange={(e) => setAttendant(e.target.value)}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
           >
             <option value="todas">Todas</option>
             {profiles.map((p) => (
@@ -130,7 +130,7 @@ function PainelPage() {
       <p className="mt-2 text-xs text-muted-foreground">{pending} ainda pendente(s) no período.</p>
 
       {topReasons.length > 0 && (
-        <section className="mt-5 rounded-lg border bg-card p-3">
+        <section className="mt-5 rounded-lg border bg-card p-3 backdrop-blur-xl">
           <h2 className="text-sm font-medium">Motivos de cancelamento mais comuns</h2>
           <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
             {topReasons.map(([reason, count]) => (
@@ -160,7 +160,7 @@ function PainelPage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border bg-card p-3">
+    <div className="rounded-md border bg-card p-3 backdrop-blur-xl">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="text-xl font-semibold">{value}</dd>
     </div>
