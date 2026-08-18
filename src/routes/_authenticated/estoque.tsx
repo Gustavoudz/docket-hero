@@ -83,8 +83,9 @@ function EstoquePage() {
     const term = search.trim().toLowerCase();
     if (!term) return true;
     return (
-      i.apple_id.toLowerCase().includes(term) ||
-      (i.serial_number ?? "").toLowerCase().includes(term)
+      (i.apple_id ?? "").toLowerCase().includes(term) ||
+      (i.serial_number ?? "").toLowerCase().includes(term) ||
+      (i.imei ?? "").toLowerCase().includes(term)
     );
   });
 

@@ -97,8 +97,8 @@ export function useAvailableItems(model: string, currentItemId?: string | null) 
 }
 
 export function itemLabel(item: InventoryItem) {
-  const bits = [item.device_model, item.color, item.storage].filter(Boolean).join(" · ");
-  return `${bits} — ${item.apple_id}`;
+  const bits = [item.device_model, item.color, item.storage, item.apple_id].filter(Boolean).join(" · ");
+  return bits || "Item sem identificação";
 }
 
 export async function logInventoryEvent(input: {

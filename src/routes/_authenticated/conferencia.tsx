@@ -145,7 +145,7 @@ function ConferenciaPage() {
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{i.device_model}</p>
               <p className="truncate text-xs text-muted-foreground">
-                {[i.color, i.storage].filter(Boolean).join(" · ")} · {i.apple_id}
+                {[i.color, i.storage, i.apple_id].filter(Boolean).join(" · ")}
               </p>
             </div>
             <span className="shrink-0 text-sm">{formatBRL(costs[i.id] ?? 0)}</span>
