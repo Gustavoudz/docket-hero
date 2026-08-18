@@ -88,18 +88,27 @@ export function AppointmentCard({
                 {appointment.deposit_amount ? ` · ${formatBRL(Number(appointment.deposit_amount))}` : ""}
               </span>
             )}
-            {appointment.payment_method && (
-              <span>
-                {PAYMENT_LABEL[appointment.payment_method] ?? appointment.payment_method}
-                {appointment.payment_method === "credito" && appointment.installments
-                  ? ` ${appointment.installments}x${
-                      appointment.installment_value
-                        ? ` de ${formatBRL(Number(appointment.installment_value))}`
-                        : ""
+            {(appointment.payments && appointment.payments.length > 0
+              ? appointment.payments
+              : appointment.payment_method
+                ? [
+                    {
+                      method: appointment.payment_method,
+                      installments: appointment.installments,
+                      installment_value: appointment.installment_value,
+                    },
+                  ]
+                : []
+            ).map((p, i) => (
+              <span key={i}>
+                {PAYMENT_LABEL[p.method] ?? p.method}
+                {p.method === "credito" && p.installments
+                  ? ` ${p.installments}x${
+                      p.installment_value ? ` de ${formatBRL(Number(p.installment_value))}` : ""
                     }`
                   : ""}
               </span>
-            )}
+            ))}
             {attendantName && <span>Atendente: {attendantName}</span>}
             {appointment.customer_instagram && <span>@{appointment.customer_instagram}</span>}
           </div>
