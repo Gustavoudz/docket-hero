@@ -29,6 +29,7 @@ const schema = z.object({
   deposit_amount: z.string().trim().max(20).optional(),
   payment_method: z.string().trim().max(20).optional(),
   installments: z.string().trim().max(3).optional(),
+  installment_value: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(1000).optional(),
   tag: z.string().trim().max(60).optional(),
 });
@@ -62,12 +63,14 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         deposit_amount: form.get("deposit_amount") ?? "",
         payment_method: form.get("payment_method") ?? "",
         installments: form.get("installments") ?? "",
+        installment_value: form.get("installment_value") ?? "",
         notes: form.get("notes") ?? "",
         tag: form.get("tag") ?? "",
       });
       if (!parsed.success) throw new Error(parsed.error.issues[0]!.message);
       const v = parsed.data;
       const amount = v.deposit_amount ? Number(v.deposit_amount.replace(",", ".")) : NaN;
+      const parcela = v.installment_value ? Number(v.installment_value.replace(",", ".")) : NaN;
       const payload = {
         customer_name: v.customer_name,
         device_model: v.device_model,
@@ -82,6 +85,10 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         payment_method: v.payment_method || null,
         installments:
           v.payment_method === "credito" && v.installments ? Number(v.installments) : null,
+        installment_value:
+          v.payment_method === "credito" && Number.isFinite(parcela) && parcela > 0
+            ? parcela
+            : null,
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
       };
@@ -232,20 +239,32 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
             </select>
           </div>
           {payment === "credito" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="installments">Parcelas no crédito</Label>
-              <select
-                id="installments"
-                name="installments"
-                defaultValue={String(appointment?.installments ?? 1)}
-                className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
-              >
-                {Array.from({ length: 18 }, (_, i) => i + 1).map((n) => (
-                  <option key={n} value={n}>
-                    {n}x
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="installments">Parcelas</Label>
+                <select
+                  id="installments"
+                  name="installments"
+                  defaultValue={String(appointment?.installments ?? 1)}
+                  className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+                >
+                  {Array.from({ length: 18 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>
+                      {n}x
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="installment_value">Valor da parcela (R$)</Label>
+                <Input
+                  id="installment_value"
+                  name="installment_value"
+                  inputMode="decimal"
+                  placeholder="Ex.: 700"
+                  defaultValue={appointment?.installment_value ?? ""}
+                />
+              </div>
             </div>
           )}
           <div className="space-y-1.5">
