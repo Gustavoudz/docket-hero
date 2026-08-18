@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatTime, type Appointment } from "@/lib/agenda";
+import { formatTime, PAYMENT_METHODS, type Appointment } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 
 const schema = z.object({
@@ -25,6 +25,10 @@ const schema = z.object({
   date: z.string().min(1, "Informe a data"),
   time: z.string().min(1, "Informe o horário"),
   customer_phone: z.string().trim().max(30).optional(),
+  customer_instagram: z.string().trim().max(60).optional(),
+  deposit_amount: z.string().trim().max(20).optional(),
+  payment_method: z.string().trim().max(20).optional(),
+  installments: z.string().trim().max(3).optional(),
   notes: z.string().trim().max(1000).optional(),
   tag: z.string().trim().max(60).optional(),
 });
@@ -40,6 +44,7 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
   const { user, fullName } = useAuth();
   const queryClient = useQueryClient();
   const [deposit, setDeposit] = useState(appointment?.deposit_paid ?? false);
+  const [payment, setPayment] = useState(appointment?.payment_method ?? "");
   const { data: models = [] } = useDeviceModels();
   const { data: tags = [] } = useAppointmentTags();
   const activeModels = models.filter((m) => m.active);
@@ -53,18 +58,30 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         date: form.get("date"),
         time: form.get("time"),
         customer_phone: form.get("customer_phone") ?? "",
+        customer_instagram: form.get("customer_instagram") ?? "",
+        deposit_amount: form.get("deposit_amount") ?? "",
+        payment_method: form.get("payment_method") ?? "",
+        installments: form.get("installments") ?? "",
         notes: form.get("notes") ?? "",
         tag: form.get("tag") ?? "",
       });
       if (!parsed.success) throw new Error(parsed.error.issues[0]!.message);
       const v = parsed.data;
+      const amount = v.deposit_amount ? Number(v.deposit_amount.replace(",", ".")) : NaN;
       const payload = {
         customer_name: v.customer_name,
         device_model: v.device_model,
         customer_phone: v.customer_phone || null,
+        customer_instagram: v.customer_instagram
+          ? v.customer_instagram.replace(/^@+/, "")
+          : null,
         notes: v.notes || null,
         tag: v.tag || null,
         deposit_paid: deposit,
+        deposit_amount: deposit && Number.isFinite(amount) && amount > 0 ? amount : null,
+        payment_method: v.payment_method || null,
+        installments:
+          v.payment_method === "credito" && v.installments ? Number(v.installments) : null,
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
       };
@@ -169,18 +186,68 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="customer_phone">Telefone</Label>
+            <Label htmlFor="customer_instagram">@ do Instagram</Label>
             <Input
-              id="customer_phone"
-              name="customer_phone"
-              inputMode="tel"
-              defaultValue={appointment?.customer_phone ?? ""}
+              id="customer_instagram"
+              name="customer_instagram"
+              placeholder="@cliente"
+              defaultValue={
+                appointment?.customer_instagram ? `@${appointment.customer_instagram}` : ""
+              }
             />
           </div>
-          <div className="flex items-center justify-between rounded-md border px-3 py-2">
-            <Label htmlFor="deposit">Sinal pago?</Label>
-            <Switch id="deposit" checked={deposit} onCheckedChange={setDeposit} />
+          <div className="space-y-2 rounded-md border px-3 py-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="deposit">Sinal pago?</Label>
+              <Switch id="deposit" checked={deposit} onCheckedChange={setDeposit} />
+            </div>
+            {deposit && (
+              <div className="space-y-1.5">
+                <Label htmlFor="deposit_amount">Valor do sinal (R$)</Label>
+                <Input
+                  id="deposit_amount"
+                  name="deposit_amount"
+                  inputMode="decimal"
+                  placeholder="Ex.: 50, 100..."
+                  defaultValue={appointment?.deposit_amount ?? ""}
+                />
+              </div>
+            )}
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="payment_method">Forma de pagamento</Label>
+            <select
+              id="payment_method"
+              name="payment_method"
+              value={payment}
+              onChange={(e) => setPayment(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+            >
+              <option value="">Selecione…</option>
+              {PAYMENT_METHODS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {payment === "credito" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="installments">Parcelas no crédito</Label>
+              <select
+                id="installments"
+                name="installments"
+                defaultValue={String(appointment?.installments ?? 1)}
+                className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+              >
+                {Array.from({ length: 18 }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {n}x
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="notes">Observações</Label>
             <Textarea id="notes" name="notes" rows={3} defaultValue={appointment?.notes ?? ""} />
