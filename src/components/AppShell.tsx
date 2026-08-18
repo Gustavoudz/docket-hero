@@ -10,6 +10,7 @@ import {
   Settings,
   Package,
   Receipt,
+  ClipboardCheck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,7 +164,17 @@ function SideMenu() {
           },
         ]
       : []),
-    { title: "Estoque", url: "/estoque", icon: Package, maintenance: true },
+    { title: "Estoque", url: "/estoque", icon: Package, active: currentPath === "/estoque" },
+    ...(role === "gerente"
+      ? [
+          {
+            title: "Conferência do estoque",
+            url: "/conferencia",
+            icon: ClipboardCheck,
+            active: currentPath === "/conferencia",
+          },
+        ]
+      : []),
     { title: "Controle de Vendas", url: "/vendas", icon: Receipt, maintenance: true },
   ];
 
