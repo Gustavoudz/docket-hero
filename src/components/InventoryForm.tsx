@@ -218,11 +218,11 @@ export function InventoryForm({
               ref={fileRef}
               type="file"
               accept="image/*"
-              capture="environment"
+              multiple={condition === "seminovo"}
               className="hidden"
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handlePhoto(file);
+                const files = Array.from(e.target.files ?? []);
+                if (files.length) void handlePhoto(files);
               }}
             />
             <Button
@@ -241,11 +241,12 @@ export function InventoryForm({
                 ? "Lendo foto…"
                 : condition === "lacrado"
                   ? "Tirar/enviar foto da caixa"
-                  : "Tirar/enviar foto da tela de Ajustes"}
+                  : "Tirar/enviar fotos da tela de Ajustes"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Opcional: preenche modelo, número de série e IMEI. Você pode pular e digitar tudo
-              manualmente — os campos lidos continuam editáveis.
+              {condition === "seminovo"
+                ? "Opcional: envie até 5 fotos da tela Ajustes > Geral > Sobre (role a tela). Preenche modelo, número de série, capacidade e IMEI — tudo continua editável."
+                : "Opcional: preenche modelo, número de série, IMEI, cor e capacidade. Você pode pular e digitar tudo manualmente."}
             </p>
           </div>
 
