@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDeviceModels } from "@/lib/settings";
+import { extractDeviceFromPhoto } from "@/lib/inventory-vision.functions";
 import {
   INVENTORY_STATUS_LABEL,
   INVENTORY_STATUSES,
@@ -30,6 +33,7 @@ const schema = z.object({
   storage: z.string().trim().max(60).optional(),
   apple_id: z.string().trim().min(1, "Informe o e-mail (Apple ID)").max(160),
   serial_number: z.string().trim().max(80).optional(),
+  imei: z.string().trim().max(40).optional(),
   cost_price: z.string().trim().optional(),
   sale_price: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(1000).optional(),
@@ -60,6 +64,54 @@ export function InventoryForm({
   const { data: models = [] } = useDeviceModels();
   const activeModels = models.filter((m) => m.active);
   const [status, setStatus] = useState<InventoryStatus>(item?.status ?? "disponivel");
+  const [condition, setCondition] = useState<"lacrado" | "seminovo">(item?.condition ?? "seminovo");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const extract = useServerFn(extractDeviceFromPhoto);
+  const [reading, setReading] = useState(false);
+
+  function setField(name: string, value: string) {
+    const el = formRef.current?.elements.namedItem(name) as
+      | HTMLInputElement
+      | HTMLSelectElement
+      | null;
+    if (el) el.value = value;
+  }
+
+  async function handlePhoto(file: File) {
+    setReading(true);
+    try {
+      const image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Não foi possível ler a foto"));
+        reader.readAsDataURL(file);
+      });
+      const result = await extract({
+        data: { image, condition, models: activeModels.map((m) => m.name) },
+      });
+      let filled = 0;
+      if (result.device_model && activeModels.some((m) => m.name === result.device_model)) {
+        setField("device_model", result.device_model);
+        filled++;
+      }
+      if (result.serial_number) {
+        setField("serial_number", result.serial_number);
+        filled++;
+      }
+      if (result.imei) {
+        setField("imei", result.imei);
+        filled++;
+      }
+      if (filled === 0) toast.info("Nada legível na foto — preencha manualmente.");
+      else toast.success(`${filled} campo(s) preenchido(s). Confira antes de salvar.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao ler a foto");
+    } finally {
+      setReading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   const mutation = useMutation({
     mutationFn: async (form: FormData) => {
@@ -69,6 +121,7 @@ export function InventoryForm({
         storage: form.get("storage") ?? "",
         apple_id: form.get("apple_id"),
         serial_number: form.get("serial_number") ?? "",
+        imei: form.get("imei") ?? "",
         cost_price: form.get("cost_price") ?? "",
         sale_price: form.get("sale_price") ?? "",
         notes: form.get("notes") ?? "",
@@ -85,6 +138,8 @@ export function InventoryForm({
         storage: v.storage || null,
         apple_id: v.apple_id.toLowerCase(),
         serial_number: v.serial_number || null,
+        imei: v.imei || null,
+        condition,
         sale_price: toNumber(v.sale_price),
         notes: v.notes || null,
         status,
@@ -131,12 +186,59 @@ export function InventoryForm({
         </DialogHeader>
         <form
           id="inventory-form"
+          ref={formRef}
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
             mutation.mutate(new FormData(e.currentTarget));
           }}
         >
+          <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-3">
+            <Label htmlFor="condition">Tipo de aparelho</Label>
+            <select
+              id="condition"
+              value={condition}
+              onChange={(e) => setCondition(e.target.value as "lacrado" | "seminovo")}
+              className={selectClass}
+            >
+              <option value="lacrado">Lacrado</option>
+              <option value="seminovo">Seminovo</option>
+            </select>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handlePhoto(file);
+              }}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              disabled={reading}
+              onClick={() => fileRef.current?.click()}
+            >
+              {reading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="mr-2 h-4 w-4" />
+              )}
+              {reading
+                ? "Lendo foto…"
+                : condition === "lacrado"
+                  ? "Tirar/enviar foto da caixa"
+                  : "Tirar/enviar foto da tela de Ajustes"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Opcional: preenche modelo, número de série e IMEI. Você pode pular e digitar tudo
+              manualmente — os campos lidos continuam editáveis.
+            </p>
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="device_model">Modelo *</Label>
             <select
@@ -186,6 +288,10 @@ export function InventoryForm({
               placeholder="Recomendado"
               defaultValue={item?.serial_number ?? ""}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="imei">IMEI</Label>
+            <Input id="imei" name="imei" placeholder="Opcional" defaultValue={item?.imei ?? ""} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             {(isGerente || !item) && (
