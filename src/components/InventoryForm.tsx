@@ -275,17 +275,6 @@ export function InventoryForm({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="apple_id">E-mail (Apple ID) *</Label>
-            <Input
-              id="apple_id"
-              name="apple_id"
-              type="email"
-              required
-              placeholder="aparelho01@icloud.com"
-              defaultValue={item?.apple_id ?? ""}
-            />
-          </div>
-          <div className="space-y-1.5">
             <Label htmlFor="serial_number">Número de série</Label>
             <Input
               id="serial_number"
