@@ -97,7 +97,10 @@ export function AppointmentCard({
           <p className="truncate text-sm text-muted-foreground">{appointment.device_model}</p>
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
             {appointment.deposit_paid && (
-              <span className="inline-flex items-center gap-1 font-medium text-foreground">
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-black"
+                style={{ backgroundColor: statusColors[appointment.status === "concluido" ? "concluido" : "pendente"] }}
+              >
                 <BadgeCheck className="h-3.5 w-3.5" /> Sinal pago
                 {appointment.deposit_amount ? ` · ${formatBRL(Number(appointment.deposit_amount))}` : ""}
               </span>
