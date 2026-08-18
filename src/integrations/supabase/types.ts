@@ -338,7 +338,7 @@ export type Database = {
       }
       inventory_items: {
         Row: {
-          apple_id: string
+          apple_id: string | null
           appointment_id: string | null
           color: string | null
           condition: string
@@ -357,7 +357,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          apple_id: string
+          apple_id?: string | null
           appointment_id?: string | null
           color?: string | null
           condition?: string
@@ -376,7 +376,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          apple_id?: string
+          apple_id?: string | null
           appointment_id?: string | null
           color?: string | null
           condition?: string
