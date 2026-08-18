@@ -22,9 +22,6 @@ import {
   PAYMENT_METHODS,
   type Appointment,
   type PaymentEntry,
-  formatBRL,
-  paymentEntryTotal,
-  paymentsTotal,
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 
@@ -72,10 +69,6 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
-  const depositNumber = deposit ? Number(depositAmount.replace(",", ".")) || 0 : 0;
-  const totalVenda = paymentsTotal(payments) + depositNumber;
-  const productPriceNumber = Number(productPrice.replace(",", ".")) || 0;
-  const restante = productPriceNumber - totalVenda;
   const { data: models = [] } = useDeviceModels();
   const { data: tags = [] } = useAppointmentTags();
   const activeModels = models.filter((m) => m.active);
@@ -339,11 +332,6 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                     />
                   </div>
                 )}
-                {paymentEntryTotal(p) > 0 && (
-                  <p className="text-right text-xs text-muted-foreground">
-                    Subtotal: {formatBRL(paymentEntryTotal(p))}
-                  </p>
-                )}
               </div>
             ))}
             <Button
@@ -360,39 +348,6 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
             >
               <Plus className="mr-1 h-4 w-4" /> Adicionar forma de pagamento
             </Button>
-            {(paymentsTotal(payments) > 0 || depositNumber > 0) && (
-              <div className="space-y-0.5 border-t pt-2 text-right text-sm">
-                <p className="text-muted-foreground">
-                  Pagamentos: {formatBRL(paymentsTotal(payments))}
-                </p>
-                {deposit && depositNumber > 0 && (
-                  <p className="text-muted-foreground">Sinal: {formatBRL(depositNumber)}</p>
-                )}
-                <p className="text-base font-semibold text-foreground">
-                  Total da venda: {formatBRL(totalVenda)}
-                </p>
-                {productPriceNumber > 0 && (
-                  <>
-                    <p className="text-muted-foreground">
-                      Valor do produto: {formatBRL(productPriceNumber)}
-                    </p>
-                    <p
-                      className={
-                        restante > 0
-                          ? "text-sm font-semibold text-destructive"
-                          : "text-sm font-semibold text-primary"
-                      }
-                    >
-                      {restante > 0
-                        ? `Falta: ${formatBRL(restante)}`
-                        : restante < 0
-                          ? `Excedente: ${formatBRL(Math.abs(restante))}`
-                          : "Pagamento completo"}
-                    </p>
-                  </>
-                )}
-              </div>
-            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Observações</Label>
