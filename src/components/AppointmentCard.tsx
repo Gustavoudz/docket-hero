@@ -106,22 +106,10 @@ export function AppointmentCard({
                 {appointment.deposit_amount ? ` · ${formatBRL(Number(appointment.deposit_amount))}` : ""}
               </span>
             )}
-            {(appointment.payments && appointment.payments.length > 0
-              ? appointment.payments
-              : appointment.payment_method
-                ? [
-                    {
-                      method: appointment.payment_method,
-                      amount: null,
-                      installments: appointment.installments,
-                      installment_value: appointment.installment_value,
-                    },
-                  ]
-                : []
-            ).map((p, i) => (
+            {paymentEntries.map((p, i) => (
               <span key={i}>
                 {PAYMENT_LABEL[p.method] ?? p.method}
-                {p.amount ? ` · ${formatBRL(Number(p.amount))}` : ""}
+                {paymentEntryTotal(p) > 0 ? ` · ${formatBRL(paymentEntryTotal(p))}` : ""}
                 {p.method === "credito" && p.installments
                   ? ` ${p.installments}x${
                       p.installment_value ? ` de ${formatBRL(Number(p.installment_value))}` : ""
@@ -132,38 +120,9 @@ export function AppointmentCard({
             {attendantName && <span>Atendente: {attendantName}</span>}
             {appointment.customer_instagram && <span>@{appointment.customer_instagram}</span>}
           </div>
-          {saleTotal(
-            appointment.payments && appointment.payments.length > 0
-              ? appointment.payments
-              : appointment.payment_method
-                ? [
-                    {
-                      method: appointment.payment_method,
-                      installments: appointment.installments,
-                      installment_value: appointment.installment_value,
-                    },
-                  ]
-                : [],
-            appointment.deposit_paid ? appointment.deposit_amount : null,
-          ) > 0 && (
+          {total > 0 && (
             <p className="mt-1 text-sm font-semibold text-foreground">
-              Total da venda:{" "}
-              {formatBRL(
-                saleTotal(
-                  appointment.payments && appointment.payments.length > 0
-                    ? appointment.payments
-                    : appointment.payment_method
-                      ? [
-                          {
-                            method: appointment.payment_method,
-                            installments: appointment.installments,
-                            installment_value: appointment.installment_value,
-                          },
-                        ]
-                      : [],
-                  appointment.deposit_paid ? appointment.deposit_amount : null,
-                ),
-              )}
+              Total da venda: {formatBRL(total)}
             </p>
           )}
           {appointment.notes && <p className="mt-1 text-sm">{appointment.notes}</p>}
