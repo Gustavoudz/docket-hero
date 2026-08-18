@@ -94,6 +94,7 @@ export function AppointmentCard({
                 ? [
                     {
                       method: appointment.payment_method,
+                      amount: null,
                       installments: appointment.installments,
                       installment_value: appointment.installment_value,
                     },
@@ -102,6 +103,7 @@ export function AppointmentCard({
             ).map((p, i) => (
               <span key={i}>
                 {PAYMENT_LABEL[p.method] ?? p.method}
+                {p.amount ? ` · ${formatBRL(Number(p.amount))}` : ""}
                 {p.method === "credito" && p.installments
                   ? ` ${p.installments}x${
                       p.installment_value ? ` de ${formatBRL(Number(p.installment_value))}` : ""

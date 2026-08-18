@@ -22,6 +22,7 @@ import {
   PAYMENT_METHODS,
   type Appointment,
   type PaymentEntry,
+  formatBRL,
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 
@@ -87,6 +88,7 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         .filter((p) => p.method)
         .map((p) => ({
           method: p.method,
+          amount: p.amount ? Number(p.amount) : null,
           installments: p.method === "credito" ? (p.installments ?? 1) : null,
           installment_value:
             p.method === "credito" && p.installment_value ? Number(p.installment_value) : null,
@@ -269,6 +271,17 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                     </Button>
                   )}
                 </div>
+                <Input
+                  aria-label={`Valor no pagamento ${i + 1}`}
+                  inputMode="decimal"
+                  placeholder="Valor (R$)"
+                  value={p.amount ?? ""}
+                  onChange={(e) =>
+                    updatePayment(i, {
+                      amount: e.target.value ? Number(e.target.value.replace(",", ".")) : null,
+                    })
+                  }
+                />
                 {p.method === "credito" && (
                   <div className="grid grid-cols-2 gap-2">
                     <select
@@ -306,11 +319,19 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
               size="sm"
               className="w-full"
               onClick={() =>
-                setPayments((rows) => [...rows, { method: "", installments: 1, installment_value: null }])
+                setPayments((rows) => [
+                  ...rows,
+                  { method: "", amount: null, installments: 1, installment_value: null },
+                ])
               }
             >
               <Plus className="mr-1 h-4 w-4" /> Adicionar forma de pagamento
             </Button>
+            {payments.some((p) => p.amount) && (
+              <p className="text-right text-sm text-muted-foreground">
+                Total: {formatBRL(payments.reduce((s, p) => s + (Number(p.amount) || 0), 0))}
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Observações</Label>
