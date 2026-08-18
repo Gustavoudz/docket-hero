@@ -1,6 +1,17 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, LogOut, Menu, Calendar, Package, Receipt } from "lucide-react";
+import {
+  Bell,
+  LogOut,
+  Menu,
+  Calendar,
+  CalendarDays,
+  CalendarRange,
+  BarChart3,
+  Settings,
+  Package,
+  Receipt,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -118,12 +129,37 @@ function NotificationBell() {
 
 function SideMenu() {
   const [open, setOpen] = useState(false);
+  const { role } = useAuth();
   const currentPath = useRouterState({
     select: (router) => router.location.pathname,
   });
 
-  const menuItems = [
+  const menuItems: {
+    title: string;
+    url: string;
+    icon: typeof Calendar;
+    active?: boolean;
+    maintenance?: boolean;
+  }[] = [
     { title: "Agenda", url: "/agenda", icon: Calendar, active: currentPath === "/agenda" },
+    { title: "Painel semanal", url: "/semana", icon: CalendarRange, active: currentPath === "/semana" },
+    { title: "Painel mensal", url: "/mes", icon: CalendarDays, active: currentPath === "/mes" },
+    ...(role === "gerente"
+      ? [
+          {
+            title: "Painel do gerente",
+            url: "/painel",
+            icon: BarChart3,
+            active: currentPath === "/painel",
+          },
+          {
+            title: "Configurações",
+            url: "/configuracoes",
+            icon: Settings,
+            active: currentPath === "/configuracoes",
+          },
+        ]
+      : []),
     { title: "Estoque", url: "/estoque", icon: Package, maintenance: true },
     { title: "Controle de Vendas", url: "/vendas", icon: Receipt, maintenance: true },
   ];

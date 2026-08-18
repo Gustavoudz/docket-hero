@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { BadgeCheck, Clock, Pencil, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -14,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatTime, STATUS_LABEL, type Appointment } from "@/lib/agenda";
+import { useAppointmentTags, useCancelReasons, useStatusColors } from "@/lib/settings";
 
 export function AppointmentCard({
   appointment,
@@ -27,6 +27,13 @@ export function AppointmentCard({
   const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [reasonChoice, setReasonChoice] = useState("");
+  const { data: reasons = [] } = useCancelReasons();
+  const { data: tags = [] } = useAppointmentTags();
+  const statusColors = useStatusColors();
+  const activeReasons = reasons.filter((r) => r.active);
+  const finalReason = reasonChoice && reasonChoice !== "outro" ? reasonChoice : reason.trim();
+  const tagColor = tags.find((t) => t.label === appointment.tag)?.color;
 
   const update = useMutation({
     mutationFn: async (patch: { status: Appointment["status"]; cancel_reason?: string }) => {
@@ -37,16 +44,10 @@ export function AppointmentCard({
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       setCancelOpen(false);
       setReason("");
+      setReasonChoice("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
-  const badgeVariant =
-    appointment.status === "concluido"
-      ? "default"
-      : appointment.status === "cancelado"
-        ? "destructive"
-        : "secondary";
 
   return (
     <li className="rounded-lg border bg-card p-3 backdrop-blur-xl">
@@ -58,7 +59,20 @@ export function AppointmentCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate font-medium">{appointment.customer_name}</p>
-            <Badge variant={badgeVariant}>{STATUS_LABEL[appointment.status]}</Badge>
+            <span
+              className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-black"
+              style={{ backgroundColor: statusColors[appointment.status] }}
+            >
+              {STATUS_LABEL[appointment.status]}
+            </span>
+            {appointment.tag && (
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-black"
+                style={{ backgroundColor: tagColor ?? "#94a3b8" }}
+              >
+                {appointment.tag}
+              </span>
+            )}
           </div>
           <p className="truncate text-sm text-muted-foreground">{appointment.device_model}</p>
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
@@ -121,6 +135,23 @@ export function AppointmentCard({
             <p className="text-sm text-muted-foreground">
               Informe o motivo do cancelamento — é obrigatório.
             </p>
+            {activeReasons.length > 0 && (
+              <select
+                aria-label="Motivo pré-definido"
+                value={reasonChoice}
+                onChange={(e) => setReasonChoice(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+              >
+                <option value="">Selecione um motivo…</option>
+                {activeReasons.map((r) => (
+                  <option key={r.id} value={r.label}>
+                    {r.label}
+                  </option>
+                ))}
+                <option value="outro">Outro (escrever)</option>
+              </select>
+            )}
+            {(activeReasons.length === 0 || reasonChoice === "outro" || !reasonChoice) && (
             <Textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
@@ -128,6 +159,7 @@ export function AppointmentCard({
               maxLength={500}
               placeholder="Ex.: cliente desistiu, achou mais barato..."
             />
+            )}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setCancelOpen(false)}>
@@ -135,8 +167,8 @@ export function AppointmentCard({
             </Button>
             <Button
               variant="destructive"
-              disabled={!reason.trim() || update.isPending}
-              onClick={() => update.mutate({ status: "cancelado", cancel_reason: reason.trim() })}
+              disabled={!finalReason || update.isPending}
+              onClick={() => update.mutate({ status: "cancelado", cancel_reason: finalReason })}
             >
               Confirmar cancelamento
             </Button>
