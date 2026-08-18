@@ -92,7 +92,11 @@ export function AppointmentCard({
               <span>
                 {PAYMENT_LABEL[appointment.payment_method] ?? appointment.payment_method}
                 {appointment.payment_method === "credito" && appointment.installments
-                  ? ` ${appointment.installments}x`
+                  ? ` ${appointment.installments}x${
+                      appointment.installment_value
+                        ? ` de ${formatBRL(Number(appointment.installment_value))}`
+                        : ""
+                    }`
                   : ""}
               </span>
             )}

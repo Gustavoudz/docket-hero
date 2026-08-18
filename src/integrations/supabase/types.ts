@@ -58,6 +58,7 @@ export type Database = {
           device_model: string
           device_serial_number: string | null
           id: string
+          installment_value: number | null
           installments: number | null
           inventory_device_id: string | null
           notes: string | null
@@ -83,6 +84,7 @@ export type Database = {
           device_model: string
           device_serial_number?: string | null
           id?: string
+          installment_value?: number | null
           installments?: number | null
           inventory_device_id?: string | null
           notes?: string | null
@@ -108,6 +110,7 @@ export type Database = {
           device_model?: string
           device_serial_number?: string | null
           id?: string
+          installment_value?: number | null
           installments?: number | null
           inventory_device_id?: string | null
           notes?: string | null
