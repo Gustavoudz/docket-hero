@@ -16,7 +16,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatTime, PAYMENT_METHODS, type Appointment } from "@/lib/agenda";
+import { Plus, Trash2 } from "lucide-react";
+import {
+  formatTime,
+  PAYMENT_METHODS,
+  type Appointment,
+  type PaymentEntry,
+} from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 
 const schema = z.object({
@@ -27,9 +33,6 @@ const schema = z.object({
   customer_phone: z.string().trim().max(30).optional(),
   customer_instagram: z.string().trim().max(60).optional(),
   deposit_amount: z.string().trim().max(20).optional(),
-  payment_method: z.string().trim().max(20).optional(),
-  installments: z.string().trim().max(3).optional(),
-  installment_value: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(1000).optional(),
   tag: z.string().trim().max(60).optional(),
 });
@@ -45,7 +48,20 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
   const { user, fullName } = useAuth();
   const queryClient = useQueryClient();
   const [deposit, setDeposit] = useState(appointment?.deposit_paid ?? false);
-  const [payment, setPayment] = useState(appointment?.payment_method ?? "");
+  const [payments, setPayments] = useState<PaymentEntry[]>(() => {
+    const existing = appointment?.payments;
+    if (existing && existing.length > 0) return existing;
+    return [
+      {
+        method: appointment?.payment_method ?? "",
+        installments: appointment?.installments ?? 1,
+        installment_value: appointment?.installment_value ?? null,
+      },
+    ];
+  });
+
+  const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
+    setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   const { data: models = [] } = useDeviceModels();
   const { data: tags = [] } = useAppointmentTags();
   const activeModels = models.filter((m) => m.active);
@@ -61,16 +77,21 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         customer_phone: form.get("customer_phone") ?? "",
         customer_instagram: form.get("customer_instagram") ?? "",
         deposit_amount: form.get("deposit_amount") ?? "",
-        payment_method: form.get("payment_method") ?? "",
-        installments: form.get("installments") ?? "",
-        installment_value: form.get("installment_value") ?? "",
         notes: form.get("notes") ?? "",
         tag: form.get("tag") ?? "",
       });
       if (!parsed.success) throw new Error(parsed.error.issues[0]!.message);
       const v = parsed.data;
       const amount = v.deposit_amount ? Number(v.deposit_amount.replace(",", ".")) : NaN;
-      const parcela = v.installment_value ? Number(v.installment_value.replace(",", ".")) : NaN;
+      const cleanPayments: PaymentEntry[] = payments
+        .filter((p) => p.method)
+        .map((p) => ({
+          method: p.method,
+          installments: p.method === "credito" ? (p.installments ?? 1) : null,
+          installment_value:
+            p.method === "credito" && p.installment_value ? Number(p.installment_value) : null,
+        }));
+      const first = cleanPayments[0];
       const payload = {
         customer_name: v.customer_name,
         device_model: v.device_model,
@@ -82,13 +103,10 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         tag: v.tag || null,
         deposit_paid: deposit,
         deposit_amount: deposit && Number.isFinite(amount) && amount > 0 ? amount : null,
-        payment_method: v.payment_method || null,
-        installments:
-          v.payment_method === "credito" && v.installments ? Number(v.installments) : null,
-        installment_value:
-          v.payment_method === "credito" && Number.isFinite(parcela) && parcela > 0
-            ? parcela
-            : null,
+        payments: cleanPayments,
+        payment_method: first?.method ?? null,
+        installments: first?.installments ?? null,
+        installment_value: first?.installment_value ?? null,
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
       };
