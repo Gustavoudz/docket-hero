@@ -94,6 +94,7 @@ export function AppointmentCard({
                 ? [
                     {
                       method: appointment.payment_method,
+                      amount: null,
                       installments: appointment.installments,
                       installment_value: appointment.installment_value,
                     },

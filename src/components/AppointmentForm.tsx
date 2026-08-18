@@ -22,6 +22,7 @@ import {
   PAYMENT_METHODS,
   type Appointment,
   type PaymentEntry,
+  formatBRL,
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 
