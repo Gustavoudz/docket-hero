@@ -16,7 +16,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatTime, PAYMENT_METHODS, type Appointment } from "@/lib/agenda";
+import { Plus, Trash2 } from "lucide-react";
+import {
+  formatTime,
+  PAYMENT_METHODS,
+  type Appointment,
+  type PaymentEntry,
+} from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 
 const schema = z.object({
@@ -27,9 +33,6 @@ const schema = z.object({
   customer_phone: z.string().trim().max(30).optional(),
   customer_instagram: z.string().trim().max(60).optional(),
   deposit_amount: z.string().trim().max(20).optional(),
-  payment_method: z.string().trim().max(20).optional(),
-  installments: z.string().trim().max(3).optional(),
-  installment_value: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(1000).optional(),
   tag: z.string().trim().max(60).optional(),
 });
@@ -45,7 +48,20 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
   const { user, fullName } = useAuth();
   const queryClient = useQueryClient();
   const [deposit, setDeposit] = useState(appointment?.deposit_paid ?? false);
-  const [payment, setPayment] = useState(appointment?.payment_method ?? "");
+  const [payments, setPayments] = useState<PaymentEntry[]>(() => {
+    const existing = appointment?.payments;
+    if (existing && existing.length > 0) return existing;
+    return [
+      {
+        method: appointment?.payment_method ?? "",
+        installments: appointment?.installments ?? 1,
+        installment_value: appointment?.installment_value ?? null,
+      },
+    ];
+  });
+
+  const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
+    setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   const { data: models = [] } = useDeviceModels();
   const { data: tags = [] } = useAppointmentTags();
   const activeModels = models.filter((m) => m.active);
@@ -61,16 +77,21 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         customer_phone: form.get("customer_phone") ?? "",
         customer_instagram: form.get("customer_instagram") ?? "",
         deposit_amount: form.get("deposit_amount") ?? "",
-        payment_method: form.get("payment_method") ?? "",
-        installments: form.get("installments") ?? "",
-        installment_value: form.get("installment_value") ?? "",
         notes: form.get("notes") ?? "",
         tag: form.get("tag") ?? "",
       });
       if (!parsed.success) throw new Error(parsed.error.issues[0]!.message);
       const v = parsed.data;
       const amount = v.deposit_amount ? Number(v.deposit_amount.replace(",", ".")) : NaN;
-      const parcela = v.installment_value ? Number(v.installment_value.replace(",", ".")) : NaN;
+      const cleanPayments: PaymentEntry[] = payments
+        .filter((p) => p.method)
+        .map((p) => ({
+          method: p.method,
+          installments: p.method === "credito" ? (p.installments ?? 1) : null,
+          installment_value:
+            p.method === "credito" && p.installment_value ? Number(p.installment_value) : null,
+        }));
+      const first = cleanPayments[0];
       const payload = {
         customer_name: v.customer_name,
         device_model: v.device_model,
@@ -82,13 +103,10 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         tag: v.tag || null,
         deposit_paid: deposit,
         deposit_amount: deposit && Number.isFinite(amount) && amount > 0 ? amount : null,
-        payment_method: v.payment_method || null,
-        installments:
-          v.payment_method === "credito" && v.installments ? Number(v.installments) : null,
-        installment_value:
-          v.payment_method === "credito" && Number.isFinite(parcela) && parcela > 0
-            ? parcela
-            : null,
+        payments: cleanPayments,
+        payment_method: first?.method ?? null,
+        installments: first?.installments ?? null,
+        installment_value: first?.installment_value ?? null,
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
       };
@@ -221,52 +239,79 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
               </div>
             )}
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="payment_method">Forma de pagamento</Label>
-            <select
-              id="payment_method"
-              name="payment_method"
-              value={payment}
-              onChange={(e) => setPayment(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+          <div className="space-y-3 rounded-md border px-3 py-3">
+            <p className="text-sm font-medium">Formas de pagamento</p>
+            {payments.map((p, i) => (
+              <div key={i} className="space-y-2 rounded-md bg-muted/30 p-2">
+                <div className="flex items-center gap-2">
+                  <select
+                    aria-label={`Forma de pagamento ${i + 1}`}
+                    value={p.method}
+                    onChange={(e) => updatePayment(i, { method: e.target.value })}
+                    className="h-9 flex-1 rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+                  >
+                    <option value="">Selecione…</option>
+                    {PAYMENT_METHODS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                  {payments.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Remover forma de pagamento"
+                      onClick={() => setPayments((rows) => rows.filter((_, idx) => idx !== i))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {p.method === "credito" && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      aria-label="Parcelas"
+                      value={String(p.installments ?? 1)}
+                      onChange={(e) => updatePayment(i, { installments: Number(e.target.value) })}
+                      className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+                    >
+                      {Array.from({ length: 18 }, (_, n) => n + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {n}x
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      aria-label="Valor da parcela"
+                      inputMode="decimal"
+                      placeholder="Valor da parcela"
+                      value={p.installment_value ?? ""}
+                      onChange={(e) =>
+                        updatePayment(i, {
+                          installment_value: e.target.value
+                            ? Number(e.target.value.replace(",", "."))
+                            : null,
+                        })
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() =>
+                setPayments((rows) => [...rows, { method: "", installments: 1, installment_value: null }])
+              }
             >
-              <option value="">Selecione…</option>
-              {PAYMENT_METHODS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
+              <Plus className="mr-1 h-4 w-4" /> Adicionar forma de pagamento
+            </Button>
           </div>
-          {payment === "credito" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="installments">Parcelas</Label>
-                <select
-                  id="installments"
-                  name="installments"
-                  defaultValue={String(appointment?.installments ?? 1)}
-                  className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
-                >
-                  {Array.from({ length: 18 }, (_, i) => i + 1).map((n) => (
-                    <option key={n} value={n}>
-                      {n}x
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="installment_value">Valor da parcela (R$)</Label>
-                <Input
-                  id="installment_value"
-                  name="installment_value"
-                  inputMode="decimal"
-                  placeholder="Ex.: 700"
-                  defaultValue={appointment?.installment_value ?? ""}
-                />
-              </div>
-            </div>
-          )}
           <div className="space-y-1.5">
             <Label htmlFor="notes">Observações</Label>
             <Textarea id="notes" name="notes" rows={3} defaultValue={appointment?.notes ?? ""} />
