@@ -5,7 +5,6 @@ import {
   LogOut,
   Menu,
   Calendar,
-  CalendarDays,
   CalendarRange,
   BarChart3,
   Settings,
@@ -142,8 +141,12 @@ function SideMenu() {
     maintenance?: boolean;
   }[] = [
     { title: "Agenda", url: "/agenda", icon: Calendar, active: currentPath === "/agenda" },
-    { title: "Painel semanal", url: "/semana", icon: CalendarRange, active: currentPath === "/semana" },
-    { title: "Painel mensal", url: "/mes", icon: CalendarDays, active: currentPath === "/mes" },
+    {
+      title: "Painel",
+      url: "/semana",
+      icon: CalendarRange,
+      active: currentPath === "/semana" || currentPath === "/mes",
+    },
     ...(role === "gerente"
       ? [
           {
@@ -167,16 +170,23 @@ function SideMenu() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Abrir menu">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Abrir menu"
+          className="transition-transform active:scale-90"
+        >
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="glass-strong w-4/5 border-r border-border/20 sm:max-w-xs">
-        <SheetHeader className="mb-6 text-left">
-          <SheetTitle className="font-script text-2xl text-primary">Legado Phones</SheetTitle>
-          <p className="text-xs text-muted-foreground">Sistema interno</p>
+        <SheetHeader className="mb-7 text-left">
+          <SheetTitle className="font-script text-3xl text-primary">Legado Phones</SheetTitle>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            Sistema interno
+          </p>
         </SheetHeader>
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-col gap-1.5">
           {menuItems.map((item) => {
             const Icon = item.icon;
             if (item.maintenance) {
@@ -189,10 +199,10 @@ function SideMenu() {
                     });
                     setOpen(false);
                   }}
-                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+                  className="group relative flex items-center justify-between gap-3 rounded-xl px-4 py-3.5 text-left text-sm text-muted-foreground transition-all duration-200 hover:bg-foreground/5 hover:text-foreground active:scale-[0.98]"
                 >
                   <span className="flex items-center gap-3">
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-5 w-5 shrink-0 stroke-[1.75]" />
                     {item.title}
                   </span>
                   <Badge variant="outline" className="text-[10px] font-normal">
@@ -206,13 +216,20 @@ function SideMenu() {
                 <Link
                   to={item.url}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
+                    "relative flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm transition-all duration-200 active:scale-[0.98]",
                     item.active
-                      ? "bg-primary/15 text-primary"
-                      : "text-foreground hover:bg-primary/10 hover:text-primary",
+                      ? "bg-primary/12 font-medium text-primary shadow-md shadow-primary/10"
+                      : "text-foreground/90 hover:bg-foreground/5 hover:text-primary",
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary transition-all duration-200",
+                      item.active ? "opacity-100" : "h-1 opacity-0",
+                    )}
+                  />
+                  <Icon className="h-5 w-5 shrink-0 stroke-[1.75]" />
                   {item.title}
                 </Link>
               </SheetClose>
