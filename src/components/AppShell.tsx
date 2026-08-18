@@ -204,6 +204,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen">
       <header className="glass-strong sticky top-0 z-20 border-x-0 border-t-0">
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4">
+          <SideMenu />
           <Link to="/agenda" className="text-base font-semibold tracking-tight">
             Agenda da Loja
           </Link>
