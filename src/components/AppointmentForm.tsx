@@ -315,6 +315,11 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
                     />
                   </div>
                 )}
+                {paymentEntryTotal(p) > 0 && (
+                  <p className="text-right text-xs text-muted-foreground">
+                    Subtotal: {formatBRL(paymentEntryTotal(p))}
+                  </p>
+                )}
               </div>
             ))}
             <Button
@@ -331,10 +336,18 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
             >
               <Plus className="mr-1 h-4 w-4" /> Adicionar forma de pagamento
             </Button>
-            {payments.some((p) => p.amount) && (
-              <p className="text-right text-sm text-muted-foreground">
-                Total: {formatBRL(payments.reduce((s, p) => s + (Number(p.amount) || 0), 0))}
-              </p>
+            {(paymentsTotal(payments) > 0 || depositNumber > 0) && (
+              <div className="space-y-0.5 border-t pt-2 text-right text-sm">
+                <p className="text-muted-foreground">
+                  Pagamentos: {formatBRL(paymentsTotal(payments))}
+                </p>
+                {deposit && depositNumber > 0 && (
+                  <p className="text-muted-foreground">Sinal: {formatBRL(depositNumber)}</p>
+                )}
+                <p className="text-base font-semibold text-foreground">
+                  Total da venda: {formatBRL(totalVenda)}
+                </p>
+              </div>
             )}
           </div>
           <div className="space-y-1.5">
