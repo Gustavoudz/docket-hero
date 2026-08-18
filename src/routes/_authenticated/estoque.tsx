@@ -148,7 +148,7 @@ function EstoquePage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por e-mail ou número de série"
+            placeholder="Buscar por série ou IMEI"
             className="pl-9"
           />
         </div>
