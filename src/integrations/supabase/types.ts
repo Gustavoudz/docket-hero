@@ -64,6 +64,7 @@ export type Database = {
           notes: string | null
           payment_method: string | null
           payments: Json
+          product_price: number | null
           sale_amount: number | null
           sale_id: string | null
           scheduled_at: string
@@ -91,6 +92,7 @@ export type Database = {
           notes?: string | null
           payment_method?: string | null
           payments?: Json
+          product_price?: number | null
           sale_amount?: number | null
           sale_id?: string | null
           scheduled_at: string
@@ -118,6 +120,7 @@ export type Database = {
           notes?: string | null
           payment_method?: string | null
           payments?: Json
+          product_price?: number | null
           sale_amount?: number | null
           sale_id?: string | null
           scheduled_at?: string
