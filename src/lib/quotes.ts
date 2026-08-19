@@ -103,15 +103,20 @@ export function buildQuoteMessage(quote: Quote, tone: MessageTone) {
     : "Oi!";
   const produto = [quote.product_model, quote.product_storage, quote.product_condition]
     .filter(Boolean)
-    .join(" ");
+    .join(" ") +
+    (quote.product_battery_health != null ? ` (bateria ${quote.product_battery_health}%)` : "");
   const valorFinal = money(Math.max(0, quote.product_price - quote.discount - (quote.kind === "upgrade" ? (quote.trade_value ?? 0) : 0)));
   const dataLimite = formatDeadline(quote.deadline_at);
 
   if (quote.kind === "upgrade") {
     const trocaBase = [quote.trade_model, quote.trade_storage].filter(Boolean).join(" ");
-    const troca = quote.trade_condition
+    const trocaEstado = quote.trade_condition
       ? `${trocaBase}, ${quote.trade_condition.toLowerCase()} estado`
       : trocaBase;
+    const troca =
+      quote.trade_battery_health != null
+        ? `${trocaEstado} (bateria ${quote.trade_battery_health}%)`
+        : trocaEstado;
     const avaliado = money(quote.trade_value ?? 0);
     if (tone === "suave") {
       return `${greeting} Fizemos a avaliação do seu ${troca} — consegui deixar ${avaliado} na troca, valendo direto pro seu upgrade do ${produto}, que fecha em ${valorFinal}. Prefere passar aqui hoje à tarde ou amanhã de manhã pra já deixarmos tudo certinho?`;
