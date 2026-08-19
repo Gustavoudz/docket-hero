@@ -18,6 +18,7 @@ export type Appointment = {
   customer_name: string;
   customer_phone: string | null;
   customer_instagram?: string | null;
+  battery_health?: number | null;
   device_model: string;
   scheduled_at: string;
   scheduled_date: string;
