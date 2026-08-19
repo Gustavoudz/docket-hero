@@ -17,6 +17,7 @@ export type Quote = {
   product_storage: string | null;
   product_condition: string | null;
   product_price: number;
+  product_battery_health: number | null;
   discount: number;
   notes: string | null;
   trade_model: string | null;
@@ -24,12 +25,13 @@ export type Quote = {
   trade_storage: string | null;
   trade_condition: string | null;
   trade_value: number | null;
+  trade_battery_health: number | null;
   deadline_at: string;
   created_at: string;
 };
 
 const COLUMNS =
-  "id, seller_id, kind, status, customer_name, customer_contact, inventory_item_id, product_model, product_color, product_storage, product_condition, product_price, discount, notes, trade_model, trade_color, trade_storage, trade_condition, trade_value, deadline_at, created_at";
+  "id, seller_id, kind, status, customer_name, customer_contact, inventory_item_id, product_model, product_color, product_storage, product_condition, product_price, product_battery_health, discount, notes, trade_model, trade_color, trade_storage, trade_condition, trade_value, trade_battery_health, deadline_at, created_at";
 
 export const QUOTE_STATUS_LABEL: Record<QuoteStatus, string> = {
   enviado: "Enviados",
