@@ -249,6 +249,12 @@ function SideMenu() {
             active: currentPath === "/financeiro",
           },
           {
+            title: "Extrato de pagamentos",
+            url: "/extrato",
+            icon: BadgeDollarSign,
+            active: currentPath === "/extrato",
+          },
+          {
             title: "Histórico / Auditoria",
             url: "/historico",
             icon: History,
