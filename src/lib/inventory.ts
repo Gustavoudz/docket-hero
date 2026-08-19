@@ -116,3 +116,59 @@ export async function logInventoryEvent(input: {
     actor_id: input.actorId ?? null,
   });
 }
+
+export type InventoryEvent = {
+  id: string;
+  item_id: string;
+  appointment_id: string | null;
+  actor_id: string | null;
+  kind: string;
+  reason: string | null;
+  created_at: string;
+};
+
+export function useInventoryEvents(itemId?: string | null) {
+  return useQuery({
+    queryKey: ["inventory_events", itemId],
+    enabled: !!itemId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_events")
+        .select("id, item_id, appointment_id, actor_id, kind, reason, created_at")
+        .eq("item_id", itemId!)
+        .order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as InventoryEvent[];
+    },
+  });
+}
+
+export const STALE_DAYS_DEFAULT = 30;
+
+/** Dias configurados pelo gerente para alertar item parado. */
+export function useStaleDays() {
+  const query = useQuery({
+    queryKey: ["app_settings", "stale_days"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "stale_days")
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data?.value ?? String(STALE_DAYS_DEFAULT);
+    },
+  });
+  const parsed = Number(query.data);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : STALE_DAYS_DEFAULT;
+}
+
+export function daysInStock(enteredAt: string) {
+  const start = new Date(`${enteredAt}T00:00:00`).getTime();
+  if (!Number.isFinite(start)) return 0;
+  return Math.max(0, Math.floor((Date.now() - start) / 86_400_000));
+}
+
+export function isStale(item: InventoryItem, staleDays: number) {
+  return item.status === "disponivel" && daysInStock(item.entered_at) > staleDays;
+}
