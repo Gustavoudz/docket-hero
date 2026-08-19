@@ -70,6 +70,7 @@ export type Database = {
           completed_at: string | null
           converted_from_appointment_id: string | null
           created_at: string
+          customer_email: string | null
           customer_id: string | null
           customer_instagram: string | null
           customer_name: string
@@ -104,6 +105,7 @@ export type Database = {
           completed_at?: string | null
           converted_from_appointment_id?: string | null
           created_at?: string
+          customer_email?: string | null
           customer_id?: string | null
           customer_instagram?: string | null
           customer_name: string
@@ -138,6 +140,7 @@ export type Database = {
           completed_at?: string | null
           converted_from_appointment_id?: string | null
           created_at?: string
+          customer_email?: string | null
           customer_id?: string | null
           customer_instagram?: string | null
           customer_name?: string
@@ -725,6 +728,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      receipts: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          id: string
+          public_token: string
+          receipt_number: number
+          sale_id: string
+          sent_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          id?: string
+          public_token?: string
+          receipt_number?: number
+          sale_id: string
+          sent_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          id?: string
+          public_token?: string
+          receipt_number?: number
+          sale_id?: string
+          sent_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: true
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales: {
         Row: {
