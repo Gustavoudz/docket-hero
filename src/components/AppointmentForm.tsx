@@ -10,6 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
@@ -35,7 +42,6 @@ import type { Customer } from "@/lib/customers";
 import type { RecordType } from "@/lib/permissions";
 
 const schema = z.object({
-  // eslint-disable-next-line
   customer_name: z.string().trim().min(1, "Informe o nome do cliente").max(120),
   device_model: z.string().trim().min(1, "Informe o modelo do aparelho").max(120),
   date: z.string().min(1, "Informe a data"),
