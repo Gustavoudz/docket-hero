@@ -8,10 +8,14 @@ export type ReceiptData = {
   saleDate: string;
   customerName: string;
   customerEmail: string | null;
+  customerDoc: string | null;
+  customerPhone: string | null;
+  customerAddress: string | null;
   device: { model: string; color: string | null; storage: string | null; serial: string | null; condition: string };
   total: number;
   paymentMethod: string;
   installments: number;
+  payments: { method: string; amount: number; installments: number }[];
   attendantName: string;
   store: { name: string; address: string; contact: string };
   warranty: string;
@@ -22,6 +26,12 @@ const METHOD_LABEL: Record<string, string> = {
   debito: "Cartão de débito",
   credito: "Cartão de crédito",
   dinheiro: "Dinheiro",
+};
+
+const fmtDoc = (v?: string | null) => {
+  const d = String(v ?? "").replace(/\D/g, "");
+  if (d.length !== 11) return v ?? null;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 };
 
 const brl = (v: number) =>
@@ -42,7 +52,7 @@ export async function loadReceiptData(
   const { data: sale } = await db
     .from("sales")
     .select(
-      "id, reference, total, created_at, appointment_id, inventory_item_id, customers(name, email), appointments(customer_name, customer_email, payment_method, installments, completed_at, attendant_id), inventory_items(device_model, color, storage, serial_number, condition)",
+      "id, reference, total, created_at, appointment_id, inventory_item_id, customers(name, email, cpf, phone, whatsapp, address), appointments(customer_name, customer_email, payment_method, installments, completed_at, attendant_id), inventory_items(device_model, color, storage, serial_number, condition)",
     )
     .eq("id", receipt.sale_id)
     .maybeSingle();
@@ -68,6 +78,18 @@ export async function loadReceiptData(
 
   const condition = item?.condition === "lacrado" ? "lacrado" : "seminovo";
 
+  const { data: paymentRows } = await db
+    .from("payments")
+    .select("method, gross_amount, installments, status")
+    .eq("sale_id", receipt.sale_id);
+  const payments = (paymentRows ?? [])
+    .filter((p: any) => p.status !== "cancelado" && p.status !== "estornado")
+    .map((p: any) => ({
+      method: METHOD_LABEL[p.method] ?? String(p.method),
+      amount: Number(p.gross_amount) || 0,
+      installments: Number(p.installments) || 1,
+    }));
+
   return {
     number: Number(receipt.receipt_number),
     token: receipt.public_token,
@@ -76,6 +98,9 @@ export async function loadReceiptData(
     saleDate: appt?.completed_at ?? sale.created_at,
     customerName: cust?.name || appt?.customer_name || "Cliente",
     customerEmail: receipt.customer_email || appt?.customer_email || cust?.email || null,
+    customerDoc: fmtDoc(cust?.cpf),
+    customerPhone: cust?.phone || cust?.whatsapp || null,
+    customerAddress: cust?.address ?? null,
     device: {
       model: item?.device_model ?? "—",
       color: item?.color ?? null,
@@ -86,6 +111,7 @@ export async function loadReceiptData(
     total: Number(sale.total) || 0,
     paymentMethod: METHOD_LABEL[appt?.payment_method ?? ""] ?? "Não informado",
     installments: Number(appt?.installments) || 1,
+    payments,
     attendantName,
     store: {
       name: settings["store_name"] || "Legado Phones",
@@ -99,7 +125,7 @@ export async function loadReceiptData(
   };
 }
 
-/** Recibo em PDF: fundo branco, texto preto, hierarquia simples para impressão. */
+/** Contrato / recibo de venda em PDF, no formato de comprovante para o cliente. */
 export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595.28, 841.89]); // A4
@@ -107,114 +133,134 @@ export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const black = rgb(0, 0, 0);
   const grey = rgb(0.35, 0.35, 0.35);
-  const M = 50;
+  const soft = rgb(0.82, 0.82, 0.82);
+  const M = 45;
   const W = 595.28 - M * 2;
-  let y = 790;
+  let y = 795;
 
-  const text = (s: string, opts: { size?: number; bold?: boolean; color?: any; x?: number } = {}) => {
-    page.drawText(s, {
-      x: opts.x ?? M,
-      y,
-      size: opts.size ?? 10,
-      font: opts.bold ? bold : font,
-      color: opts.color ?? black,
-    });
+  const at = (s: string, x: number, size = 9, b = false, color = black) =>
+    page.drawText(s, { x, y, size, font: b ? bold : font, color });
+  const right = (s: string, size = 9, b = false, color = black) => {
+    const f = b ? bold : font;
+    page.drawText(s, { x: M + W - f.widthOfTextAtSize(s, size), y, size, font: f, color });
   };
-  const line = () => {
+  const rule = (dy = 6) =>
     page.drawLine({
-      start: { x: M, y: y + 6 },
-      end: { x: M + W, y: y + 6 },
+      start: { x: M, y: y + dy },
+      end: { x: M + W, y: y + dy },
       thickness: 0.7,
-      color: rgb(0.8, 0.8, 0.8),
+      color: soft,
     });
-  };
   const wrap = (s: string, size: number, max: number) => {
-    const words = s.split(/\s+/);
-    const lines: string[] = [];
-    let cur = "";
-    for (const w of words) {
-      const t = cur ? `${cur} ${w}` : w;
-      if (font.widthOfTextAtSize(t, size) > max) {
-        if (cur) lines.push(cur);
-        cur = w;
-      } else cur = t;
+    const out: string[] = [];
+    for (const raw of s.split("\n")) {
+      let cur = "";
+      for (const w of raw.split(/\s+/)) {
+        const t = cur ? `${cur} ${w}` : w;
+        if (font.widthOfTextAtSize(t, size) > max) {
+          if (cur) out.push(cur);
+          cur = w;
+        } else cur = t;
+      }
+      out.push(cur);
     }
-    if (cur) lines.push(cur);
-    return lines;
-  };
-  const row = (label: string, value: string) => {
-    text(label, { size: 9, color: grey });
-    text(value, { size: 11, bold: true, x: M + 170 });
-    y -= 20;
+    return out;
   };
   const section = (title: string) => {
-    y -= 10;
-    line();
-    y -= 14;
-    text(title.toUpperCase(), { size: 9, bold: true, color: grey });
-    y -= 18;
+    y -= 12;
+    page.drawRectangle({ x: M, y: y - 4, width: W, height: 16, color: rgb(0.94, 0.94, 0.94) });
+    at(title.toUpperCase(), M + 6, 9, true, rgb(0.2, 0.2, 0.2));
+    y -= 22;
+  };
+  const pair = (label: string, value: string) => {
+    at(label, M, 7.5, false, grey);
+    at(value, M + 110, 9.5, true);
+    y -= 16;
   };
 
-  // Cabeçalho da loja
-  text(d.store.name, { size: 18, bold: true });
-  y -= 18;
+  // Cabeçalho
+  at(d.store.name, M, 17, true);
+  right(`Recibo Nº ${String(d.number).padStart(4, "0")}`, 13, true);
+  y -= 16;
   if (d.store.address) {
-    text(d.store.address, { size: 9, color: grey });
-    y -= 12;
+    at(d.store.address, M, 8.5, false, grey);
+    y -= 11;
   }
   if (d.store.contact) {
-    text(d.store.contact, { size: 9, color: grey });
-    y -= 12;
+    at(d.store.contact, M, 8.5, false, grey);
+    y -= 11;
   }
+  at(new Date(d.saleDate).toLocaleString("pt-BR"), M, 8.5, false, grey);
+  right(`Venda ${d.saleReference}`, 8.5, false, grey);
   y -= 8;
-  const numero = `Recibo Nº ${String(d.number).padStart(4, "0")}`;
-  text(numero, { size: 13, bold: true });
-  page.drawText(`Venda ${d.saleReference}`, {
-    x: M + W - font.widthOfTextAtSize(`Venda ${d.saleReference}`, 10),
-    y,
-    size: 10,
-    font,
-    color: grey,
-  });
-  y -= 12;
+  rule();
+  y -= 14;
+  at("CONTRATO / RECIBO DE COMPRA E VENDA", M, 12, true);
+  y -= 6;
 
-  section("Dados da venda");
-  row("Data e horário", new Date(d.saleDate).toLocaleString("pt-BR"));
-  row("Cliente", d.customerName);
-  if (d.customerEmail) row("E-mail do cliente", d.customerEmail);
-  row("Atendente", d.attendantName);
+  section("Dados do cliente");
+  pair("Nome", d.customerName);
+  if (d.customerDoc) pair("CPF", d.customerDoc);
+  if (d.customerPhone) pair("Telefone", d.customerPhone);
+  if (d.customerEmail) pair("E-mail", d.customerEmail);
+  if (d.customerAddress) pair("Endereço", d.customerAddress);
+  pair("Vendedor(a)", d.attendantName);
 
-  section("Aparelho");
-  row("Modelo", d.device.model);
-  if (d.device.color) row("Cor", d.device.color);
-  if (d.device.storage) row("Armazenamento", d.device.storage);
-  if (d.device.serial) row("Número de série", d.device.serial);
-  row("Condição", d.device.condition === "lacrado" ? "Lacrado" : "Seminovo");
+  section("Dados do produto");
+  pair("Modelo", d.device.model);
+  if (d.device.color) pair("Cor", d.device.color);
+  if (d.device.storage) pair("Armazenamento", d.device.storage);
+  if (d.device.serial) pair("Nº de série", d.device.serial);
+  pair("Condição", d.device.condition === "lacrado" ? "Lacrado" : "Seminovo");
+  y -= 4;
+  rule();
+  y -= 14;
+  at("Valor total", M, 10, true);
+  right(brl(d.total), 13, true);
+  y -= 10;
 
-  section("Valores");
-  row("Valor da venda", brl(d.total));
-  row("Forma de pagamento", d.paymentMethod);
-  row("Parcelas", `${d.installments}x`);
+  section("Pagamento");
+  const list = d.payments.length
+    ? d.payments
+    : [{ method: d.paymentMethod, amount: d.total, installments: d.installments }];
+  at("Forma de pagamento", M, 7.5, false, grey);
+  at("Parcelas", M + 260, 7.5, false, grey);
+  at("Valor", M + 340, 7.5, false, grey);
+  y -= 14;
+  for (const p of list) {
+    at(p.method, M, 9.5);
+    at(`${p.installments}x`, M + 260, 9.5);
+    at(brl(p.amount), M + 340, 9.5, true);
+    y -= 14;
+  }
 
   if (d.warranty) {
     section("Garantia");
-    for (const l of wrap(d.warranty, 10, W)) {
-      text(l, { size: 10 });
-      y -= 14;
+    for (const l of wrap(d.warranty, 9, W)) {
+      at(l, M, 9);
+      y -= 12;
     }
   }
 
-  y -= 20;
-  line();
-  y -= 16;
+  y -= 14;
   for (const l of wrap(
-    "Este documento é um recibo/comprovante de venda e não possui valor fiscal.",
-    9,
+    "O comprador declara ter conferido o aparelho, seus acessórios e o funcionamento no ato da entrega, aceitando as condições descritas neste documento. Este documento é um recibo/comprovante de compra e venda e não possui valor fiscal.",
+    8.5,
     W,
   )) {
-    text(l, { size: 9, color: grey });
-    y -= 12;
+    at(l, M, 8.5, false, grey);
+    y -= 11;
   }
+
+  y = Math.min(y, 130);
+  page.drawLine({ start: { x: M, y }, end: { x: M + 210, y }, thickness: 0.7, color: soft });
+  page.drawLine({ start: { x: M + W - 210, y }, end: { x: M + W, y }, thickness: 0.7, color: soft });
+  y -= 12;
+  at("Assinatura do cliente", M, 8.5, false, grey);
+  at("Assinatura da loja", M + W - 210, 8.5, false, grey);
+  y -= 12;
+  at(d.customerName, M, 9);
+  at(d.store.name, M + W - 210, 9);
 
   return pdf.save();
 }
