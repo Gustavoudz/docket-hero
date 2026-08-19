@@ -10,6 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
@@ -46,6 +53,21 @@ const schema = z.object({
   notes: z.string().trim().max(1000).optional(),
   tag: z.string().trim().max(60).optional(),
 });
+
+function applyDiscount(
+  price: number,
+  kind: "nenhum" | "5" | "10" | "15" | "valor",
+  value: string,
+) {
+  if (kind === "nenhum") return price;
+  if (kind === "valor") {
+    const v = Number(value.replace(",", "."));
+    if (!Number.isFinite(v) || v <= 0) return price;
+    return Math.max(0, Math.round((price - v) * 100) / 100);
+  }
+  const pct = Number(kind);
+  return Math.max(0, Math.round(price * (1 - pct / 100) * 100) / 100);
+}
 
 type Props = {
   open: boolean;
@@ -102,6 +124,13 @@ export function AppointmentForm({
     base?.customer_instagram ? `@${base.customer_instagram}` : "",
   );
   const [inventoryItemId, setInventoryItemId] = useState(base?.inventory_device_id ?? "");
+  const [listPrice, setListPrice] = useState<number | null>(
+    base?.product_price != null ? Number(base.product_price) : null,
+  );
+  const [discountKind, setDiscountKind] = useState<"nenhum" | "5" | "10" | "15" | "valor">(
+    "nenhum",
+  );
+  const [discountValue, setDiscountValue] = useState("");
   const [manualLink, setManualLink] = useState(false);
   const [showTechnical, setShowTechnical] = useState(false);
   const { data: availableItems = [] } = useAvailableItems(
@@ -121,8 +150,9 @@ export function AppointmentForm({
     const price = linkedItem.sale_price != null ? Number(linkedItem.sale_price) : null;
     lastLinkedId.current = linkedItem.id;
     if (price == null) return;
-    setProductPrice(String(price));
-  }, [linkedItem]);
+    setListPrice(price);
+    setProductPrice(String(applyDiscount(price, discountKind, discountValue)));
+  }, [linkedItem, discountKind, discountValue]);
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -432,6 +462,50 @@ export function AppointmentForm({
               value={productPrice}
               onChange={(e) => setProductPrice(e.target.value)}
             />
+            <div className="flex gap-2">
+              <Select
+                value={discountKind}
+                onValueChange={(v) => {
+                  const kind = v as typeof discountKind;
+                  setDiscountKind(kind);
+                  const b = listPrice ?? Number(productPrice.replace(",", "."));
+                  if (Number.isFinite(b)) {
+                    setListPrice(b);
+                    setProductPrice(String(applyDiscount(b, kind, discountValue)));
+                  }
+                }}
+              >
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue placeholder="Desconto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhum">Sem desconto</SelectItem>
+                  <SelectItem value="5">5% de desconto</SelectItem>
+                  <SelectItem value="10">10% de desconto</SelectItem>
+                  <SelectItem value="15">15% de desconto</SelectItem>
+                  <SelectItem value="valor">Valor em R$</SelectItem>
+                </SelectContent>
+              </Select>
+              {discountKind === "valor" && (
+                <Input
+                  inputMode="decimal"
+                  placeholder="Desconto R$"
+                  value={discountValue}
+                  onChange={(e) => {
+                    setDiscountValue(e.target.value);
+                    const b = listPrice ?? Number(productPrice.replace(",", "."));
+                    if (Number.isFinite(b)) {
+                      setProductPrice(String(applyDiscount(b, "valor", e.target.value)));
+                    }
+                  }}
+                />
+              )}
+            </div>
+            {discountKind !== "nenhum" && listPrice != null && (
+              <p className="text-xs text-muted-foreground">
+                Valor original: R$ {listPrice.toLocaleString("pt-BR")}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               Preenchido pelo valor de venda do aparelho vinculado. Editar aqui não altera o valor
               cadastrado no estoque.
