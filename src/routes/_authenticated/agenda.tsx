@@ -283,19 +283,19 @@ function AgendaPage() {
             <DialogTitle>Resumo do dia — {formatDateLabel(date)}</DialogTitle>
           </DialogHeader>
           <dl className="grid grid-cols-2 gap-3 text-sm">
-            <Stat label="Total" value={liveSummary?.total ?? mine.length} />
-            <Stat label="Vendas concluídas" value={liveSummary?.completedCount ?? completed.length} />
+            <Stat label="Total" value={(closedSummary ?? daySummary)?.total ?? mine.length} />
+            <Stat label="Vendas concluídas" value={(closedSummary ?? daySummary)?.completedCount ?? completed.length} />
             <Stat
               label="Total faturado"
-              value={formatCents(liveSummary?.totalCents ?? 0)}
+              value={formatCents((closedSummary ?? daySummary)?.totalCents ?? 0)}
             />
-            <Stat label="Cancelados" value={liveSummary?.cancelledCount ?? cancelled.length} />
+            <Stat label="Cancelados" value={(closedSummary ?? daySummary)?.cancelledCount ?? cancelled.length} />
             <Stat
               label="Conversão"
-              value={`${conversionRate(liveSummary?.completedCount ?? completed.length, liveSummary?.total ?? mine.length)}%`}
+              value={`${conversionRate((closedSummary ?? daySummary)?.completedCount ?? completed.length, (closedSummary ?? daySummary)?.total ?? mine.length)}%`}
             />
           </dl>
-          {(liveSummary?.cancelReasons.length ?? cancelled.length) > 0 && (
+          {((closedSummary ?? daySummary)?.cancelReasons.length ?? cancelled.length) > 0 && (
             <div>
               <p className="text-sm font-medium">Motivos de cancelamento</p>
               <ul className="mt-1 space-y-0.5 text-sm text-muted-foreground">
