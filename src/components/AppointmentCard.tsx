@@ -25,7 +25,6 @@ import {
 import { useAppointmentTags, useCancelReasons, useDeviceModels, useStatusColors } from "@/lib/settings";
 import { itemLabel, logInventoryEvent, todayForInventory, useAvailableItems } from "@/lib/inventory";
 import { useAuth } from "@/hooks/useAuth";
-import { MasterPasswordDialog } from "@/components/MasterPasswordDialog";
 
 export function AppointmentCard({
   appointment,
