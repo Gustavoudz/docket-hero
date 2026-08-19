@@ -370,7 +370,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
           <div className="ml-auto flex items-center gap-1">
             <IncompleteBadge />
-            <AssistantPanel />
             {role === "gerente" && <NotificationBell />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -392,6 +391,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-4 pb-24">{children}</main>
+      <AssistantPanel />
     </div>
   );
 }
