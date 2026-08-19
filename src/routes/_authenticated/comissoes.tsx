@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/comissoes")({
 
 function TotalCard({ label, value, big }: { label: string; value: number; big?: boolean }) {
   return (
-    <div className="rounded-xl border border-border/40 bg-card/60 p-3 backdrop-blur-xl">
+    <div className="rounded-xl border border-border/40 bg-card p-3">
       <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
       <p
         className={
@@ -83,7 +83,7 @@ function Detail({
         <h1 className="text-lg font-semibold">{name}</h1>
       </div>
 
-      <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card/60 px-2 py-1.5 backdrop-blur-xl">
+      <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card px-2 py-1.5">
         <Button
           variant="ghost"
           size="icon"
@@ -112,7 +112,7 @@ function Detail({
       </div>
 
       {groups.length === 0 && (
-        <p className="rounded-xl border border-border/40 bg-card/50 p-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-border/40 bg-card p-6 text-center text-sm text-muted-foreground">
           Nenhuma comissão registrada ainda.
         </p>
       )}
@@ -120,7 +120,7 @@ function Detail({
       {groups.map((g) => (
         <section
           key={g.day}
-          className="rounded-xl border border-border/40 bg-card/60 p-3 backdrop-blur-xl"
+          className="rounded-xl border border-border/40 bg-card p-3"
         >
           <header className="flex items-center justify-between">
             <h2 className="text-sm font-medium">
@@ -201,7 +201,7 @@ function Ranking({
   const top = rows[0]?.sales ?? 0;
 
   return (
-    <section className="rounded-xl border border-border/40 bg-card/60 p-4 backdrop-blur-xl">
+    <section className="rounded-xl border border-border/40 bg-card p-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Trophy className="h-4 w-4 text-primary" /> Ranking de vendedores
@@ -321,7 +321,7 @@ function CommissionsPage() {
       )}
 
       {!isLoading && sellers.length === 0 && (
-        <p className="mt-4 rounded-xl border border-border/40 bg-card/50 p-6 text-center text-sm text-muted-foreground">
+        <p className="mt-4 rounded-xl border border-border/40 bg-card p-6 text-center text-sm text-muted-foreground">
           Nenhuma comissão registrada ainda.
         </p>
       )}
@@ -336,7 +336,7 @@ function CommissionsPage() {
             <button
               key={id}
               onClick={() => setSelected(id)}
-              className="w-full rounded-xl border border-border/40 bg-card/60 p-4 text-left backdrop-blur-xl transition-all hover:border-primary/40 active:scale-[0.99]"
+              className="w-full rounded-xl border border-border/40 bg-card p-4 text-left transition-all hover:border-primary/40 active:scale-[0.99]"
             >
               <div className="flex items-center gap-2">
                 <BadgeDollarSign className="h-4 w-4 text-primary" />

@@ -169,7 +169,7 @@ function ConferenciaPage() {
   if (!isGerente) {
     return (
       <AppShell>
-        <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground backdrop-blur-xl">
+        <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
           A conferência diária do estoque é exclusiva do gerente.
         </p>
       </AppShell>
@@ -195,19 +195,19 @@ function ConferenciaPage() {
       <section className="mt-4">
         <h2 className="text-sm font-semibold">Estoque atual</h2>
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+          <div className="rounded-lg border bg-card p-3">
             <p className="text-xs text-muted-foreground">Disponíveis</p>
             <p className="text-xl font-semibold">{availableItems.length}</p>
           </div>
-          <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+          <div className="rounded-lg border bg-card p-3">
             <p className="text-xs text-muted-foreground">Custo do estoque disponível</p>
             <p className="text-xl font-semibold text-emerald-400">{formatBRL(availableCost)}</p>
           </div>
-          <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+          <div className="rounded-lg border bg-card p-3">
             <p className="text-xs text-muted-foreground">Reservados</p>
             <p className="text-xl font-semibold">{reservedCount}</p>
           </div>
-          <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+          <div className="rounded-lg border bg-card p-3">
             <p className="text-xs text-muted-foreground">Incompletos</p>
             <p className="text-xl font-semibold">{incompleteCount}</p>
           </div>
@@ -217,11 +217,11 @@ function ConferenciaPage() {
       <h2 className="mt-6 text-sm font-semibold">Saídas do dia</h2>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+        <div className="rounded-lg border bg-card p-3">
           <p className="text-xs text-muted-foreground">Itens que saíram</p>
           <p className="text-xl font-semibold">{sold.length}</p>
         </div>
-        <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+        <div className="rounded-lg border bg-card p-3">
           <p className="text-xs text-muted-foreground">Custo total que saiu</p>
           <p className="text-xl font-semibold text-destructive">{formatBRL(totalCost)}</p>
         </div>
@@ -235,7 +235,7 @@ function ConferenciaPage() {
           </li>
         )}
         {sold.map((i) => (
-          <li key={i.id} className="flex items-center gap-3 rounded-lg border bg-card p-3 backdrop-blur-xl">
+          <li key={i.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
             <span className="w-14 shrink-0 text-sm font-semibold">
               {i.sold_at ? formatTime(i.sold_at) : "--:--"}
             </span>
@@ -253,11 +253,11 @@ function ConferenciaPage() {
       <h2 className="mt-6 text-sm font-semibold">Entradas do dia</h2>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+        <div className="rounded-lg border bg-card p-3">
           <p className="text-xs text-muted-foreground">Itens que entraram</p>
           <p className="text-xl font-semibold">{entryList.length}</p>
         </div>
-        <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+        <div className="rounded-lg border bg-card p-3">
           <p className="text-xs text-muted-foreground">Custo total que entrou</p>
           <p className="text-xl font-semibold text-emerald-400">{formatBRL(entriesCost)}</p>
         </div>
@@ -273,7 +273,7 @@ function ConferenciaPage() {
         {entryList.map((i) => (
           <li
             key={i.id}
-            className="flex items-center gap-3 rounded-lg border bg-card p-3 backdrop-blur-xl"
+            className="flex items-center gap-3 rounded-lg border bg-card p-3"
           >
             <span className="w-14 shrink-0 text-sm font-semibold">{formatTime(i.created_at)}</span>
             <div className="min-w-0 flex-1">
@@ -297,7 +297,7 @@ function ConferenciaPage() {
         ))}
       </ul>
 
-      <section className="mt-6 rounded-lg border bg-card p-3 backdrop-blur-xl">
+      <section className="mt-6 rounded-lg border bg-card p-3">
         <h2 className="text-sm font-semibold">Saldo do dia</h2>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <div>
@@ -324,7 +324,7 @@ function ConferenciaPage() {
         </p>
       </section>
 
-      <div className="mt-6 rounded-lg border bg-card p-3 backdrop-blur-xl">
+      <div className="mt-6 rounded-lg border bg-card p-3">
         <p className="text-sm font-medium">Conferência do dia</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
           {audit

@@ -266,7 +266,7 @@ export function AppointmentCard({
   });
 
   return (
-    <li className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+    <li className="rounded-lg border bg-card p-3">
       <div className="flex items-start gap-3">
         <div className="flex w-14 shrink-0 flex-col items-center rounded-md bg-muted py-1.5">
           <Clock className="h-3.5 w-3.5 text-muted-foreground" />

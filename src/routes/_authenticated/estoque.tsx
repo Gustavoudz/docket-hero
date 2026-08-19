@@ -184,7 +184,7 @@ function EstoquePage() {
       )}
 
       {isGerente && (
-        <div className="mt-3 rounded-lg border bg-card p-4 backdrop-blur-xl">
+        <div className="mt-3 rounded-lg border bg-card p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Custo total do estoque disponível
           </p>
@@ -289,7 +289,7 @@ function EstoquePage() {
           return (
           <li
             key={i.id}
-            className={`rounded-lg border bg-card p-3 backdrop-blur-xl transition-transform active:scale-[0.99] ${
+            className={`rounded-lg border bg-card p-3 transition-transform active:scale-[0.99] ${
               stale ? "border-amber-500/70" : ""
             }`}
           >

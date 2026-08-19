@@ -90,7 +90,7 @@ function useTableMutation(
 
 function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <section className="mt-4 rounded-lg border bg-card p-3 backdrop-blur-xl">
+    <section className="mt-4 rounded-lg border bg-card p-3">
       <h2 className="text-sm font-medium">{title}</h2>
       <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
       <div className="mt-3 space-y-2">{children}</div>

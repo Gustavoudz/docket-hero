@@ -583,7 +583,7 @@ export function InventoryForm({
                 </span>
               </div>
               {payments.map((p, i) => (
-                <div key={i} className="space-y-2 rounded-md border bg-card/40 p-2">
+                <div key={i} className="space-y-2 rounded-md border bg-card p-2">
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       aria-label="Forma de pagamento"

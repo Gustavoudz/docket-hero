@@ -137,7 +137,7 @@ function PainelPage() {
       </dl>
       <p className="mt-2 text-xs text-muted-foreground">{pending} ainda pendente(s) no período.</p>
 
-      <section className="mt-5 rounded-lg border border-amber-500/60 bg-card p-3 backdrop-blur-xl">
+      <section className="mt-5 rounded-lg border border-amber-500/60 bg-card p-3">
         <h2 className="text-sm font-medium">Estoque parado</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
           Itens disponíveis há mais de {staleDays} dias.
@@ -151,7 +151,7 @@ function PainelPage() {
       <InventoryTurnover />
 
       {topReasons.length > 0 && (
-        <section className="mt-5 rounded-lg border bg-card p-3 backdrop-blur-xl">
+        <section className="mt-5 rounded-lg border bg-card p-3">
           <h2 className="text-sm font-medium">Motivos de cancelamento mais comuns</h2>
           <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
             {topReasons.map(([reason, count]) => (
@@ -181,7 +181,7 @@ function PainelPage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border bg-card p-3 backdrop-blur-xl">
+    <div className="rounded-md border bg-card p-3">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="text-xl font-semibold">{value}</dd>
     </div>

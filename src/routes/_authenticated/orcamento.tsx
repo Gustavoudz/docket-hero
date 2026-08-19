@@ -153,7 +153,7 @@ function FunnelPanel({ quotes }: { quotes: Quote[] }) {
       {cards.map((card) => (
         <div
           key={card.status}
-          className={cn("rounded-2xl p-4 ring-1 backdrop-blur-xl", card.className)}
+          className={cn("rounded-2xl p-4 ring-1", card.className)}
         >
           <p className="text-2xl font-semibold tabular-nums">
             {quotes.filter((q) => q.status === card.status).length}
@@ -190,7 +190,7 @@ function MessageBox({ quote }: { quote: Quote }) {
           </TabsTrigger>
         </TabsList>
       </Tabs>
-      <p className="whitespace-pre-wrap rounded-2xl border bg-card/60 p-4 text-sm leading-relaxed">
+      <p className="whitespace-pre-wrap rounded-2xl border bg-card p-4 text-sm leading-relaxed">
         {message}
       </p>
       <Button className="h-12 w-full rounded-xl text-base" onClick={copy}>
@@ -303,7 +303,7 @@ function ProductPicker({
       )}
 
       {(manual || draft.product_model) && (
-        <div className="grid grid-cols-2 gap-2 rounded-xl border bg-card/50 p-3">
+        <div className="grid grid-cols-2 gap-2 rounded-xl border bg-card p-3">
           <div className="col-span-2 space-y-1">
             <Label className="text-xs">Modelo</Label>
             <ComboboxInput
@@ -474,7 +474,7 @@ function QuoteForm({
       </div>
 
       {kind === "upgrade" && (
-        <div className="space-y-3 rounded-2xl border bg-card/50 p-3">
+        <div className="space-y-3 rounded-2xl border bg-card p-3">
           <p className="flex items-center gap-2 text-sm font-medium">
             <ArrowRightLeft className="h-4 w-4 text-primary" /> Aparelho na troca
           </p>
@@ -601,7 +601,7 @@ function QuoteCard({ quote, onSchedule }: { quote: Quote; onSchedule: (quote: Qu
   };
 
   return (
-    <div className="rounded-2xl border bg-card/60 p-4 backdrop-blur-xl">
+    <div className="rounded-2xl border bg-card p-4">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">
@@ -752,7 +752,7 @@ function OrcamentoPage() {
               <button
                 type="button"
                 onClick={() => setKind("simples")}
-                className="rounded-2xl border bg-card/60 p-5 text-left transition-colors hover:border-primary/60 hover:bg-primary/5"
+                className="rounded-2xl border bg-card p-5 text-left transition-colors hover:border-primary/60 hover:bg-primary/5"
               >
                 <Sparkles className="mb-2 h-6 w-6 text-primary" />
                 <p className="font-medium">Orçamento simples</p>
@@ -761,7 +761,7 @@ function OrcamentoPage() {
               <button
                 type="button"
                 onClick={() => setKind("upgrade")}
-                className="rounded-2xl border bg-card/60 p-5 text-left transition-colors hover:border-primary/60 hover:bg-primary/5"
+                className="rounded-2xl border bg-card p-5 text-left transition-colors hover:border-primary/60 hover:bg-primary/5"
               >
                 <ArrowRightLeft className="mb-2 h-6 w-6 text-primary" />
                 <p className="font-medium">Orçamento com Upgrade</p>

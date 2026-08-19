@@ -90,7 +90,7 @@ export function InventoryHistory({
         </DialogHeader>
 
         {item && (
-          <div className="rounded-md border bg-card/60 p-3">
+          <div className="rounded-md border bg-card p-3">
             <p className="text-sm font-medium">{itemLabel(item)}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {INVENTORY_STATUS_LABEL[item.status]} · entrada em{" "}

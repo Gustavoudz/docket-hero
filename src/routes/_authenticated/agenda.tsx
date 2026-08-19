@@ -271,7 +271,7 @@ function AgendaPage() {
         ))}
       </ul>
 
-      <div className="mt-6 rounded-lg border bg-card p-3 backdrop-blur-xl">
+      <div className="mt-6 rounded-lg border bg-card p-3">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium">Fechamento do dia</p>
