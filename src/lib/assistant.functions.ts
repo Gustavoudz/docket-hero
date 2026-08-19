@@ -3,9 +3,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type AssistantMessage = { role: "user" | "assistant"; content: string };
 
-export type PendingAction = { name: string; args: Record<string, unknown>; summary: string };
+export type ArgValue = string | number | boolean | null;
 
-export type AssistantReply = { reply: string; pending?: PendingAction | null };
+export type PendingAction = { name: string; args: Record<string, ArgValue>; summary: string };
+
+export type AssistantReply = { reply: string; pending: PendingAction | null };
 
 export const assistantChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

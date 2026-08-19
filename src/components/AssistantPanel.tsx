@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import {
   assistantChat,
   type AssistantMessage,
+  type AssistantReply,
   type PendingAction,
 } from "@/lib/assistant.functions";
 
@@ -37,8 +38,13 @@ export function AssistantPanel() {
   }, [messages, open]);
 
   const send = useMutation({
-    mutationFn: async (payload: { history: AssistantMessage[]; confirm?: PendingAction | null }) =>
-      chat({ data: { messages: payload.history, confirm: payload.confirm ?? null } }),
+    mutationFn: async (payload: {
+      history: AssistantMessage[];
+      confirm?: PendingAction | null;
+    }): Promise<AssistantReply> =>
+      (await chat({
+        data: { messages: payload.history, confirm: payload.confirm ?? null },
+      })) as AssistantReply,
     onSuccess: (res) => {
       setMessages((m) => [...m, { role: "assistant", content: res.reply }]);
       setPending(res.pending ?? null);

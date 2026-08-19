@@ -66,7 +66,7 @@ async function audit(ctx: ToolCtx, action: string, entity: string, id: string | 
     await ctx.supabase.rpc("write_audit_log", {
       _action: action,
       _entity_type: entity,
-      _entity_id: id,
+      _entity_id: id as string,
       _details: { ...details, via: "assistente" } as never,
     });
   } catch {

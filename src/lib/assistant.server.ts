@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { AppRole } from "@/hooks/useAuth";
 import { toolsForRole, todaySP, type ToolCtx } from "./assistant-tools.server";
-import type { AssistantMessage, AssistantReply, PendingAction } from "./assistant.functions";
+import type { ArgValue, AssistantMessage, AssistantReply, PendingAction } from "./assistant.functions";
 
 type ChatMessage = {
   role: "system" | "user" | "assistant" | "tool";
@@ -38,7 +38,7 @@ export async function runAssistant(input: {
   confirm: PendingAction | null;
 }): Promise<AssistantReply> {
   const role = await resolveRole(input.supabase, input.userId);
-  if (!role) return { reply: "Seu usuário ainda não tem um perfil de acesso definido." };
+  if (!role) return { reply: "Seu usuário ainda não tem um perfil de acesso definido.", pending: null };
 
   const tools = toolsForRole(role);
   const ctx: ToolCtx = { supabase: input.supabase, userId: input.userId, role };
@@ -46,16 +46,19 @@ export async function runAssistant(input: {
   // Execução após o "sim" do usuário.
   if (input.confirm) {
     const tool = tools.find((t) => t.name === input.confirm!.name && t.write);
-    if (!tool) return { reply: "Essa ação não está disponível para o seu perfil." };
+    if (!tool) return { reply: "Essa ação não está disponível para o seu perfil.", pending: null };
     try {
-      return { reply: await tool.run(input.confirm.args, ctx) };
+      return { reply: await tool.run(input.confirm.args, ctx), pending: null };
     } catch (e) {
-      return { reply: `Não consegui concluir: ${e instanceof Error ? e.message : "erro inesperado"}` };
+      return {
+        reply: `Não consegui concluir: ${e instanceof Error ? e.message : "erro inesperado"}`,
+        pending: null,
+      };
     }
   }
 
   const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) return { reply: "O assistente está indisponível no momento." };
+  if (!apiKey) return { reply: "O assistente está indisponível no momento.", pending: null };
 
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt(role) },
@@ -74,22 +77,22 @@ export async function runAssistant(input: {
       body: JSON.stringify({ model: "google/gemini-2.5-flash", messages, tools: toolSpec }),
     });
     if (res.status === 429)
-      return { reply: "Muitas mensagens seguidas. Tente novamente em instantes." };
-    if (res.status === 402) return { reply: "Os créditos de IA do workspace acabaram." };
-    if (!res.ok) return { reply: "Não consegui falar com a IA agora. Tente de novo." };
+      return { reply: "Muitas mensagens seguidas. Tente novamente em instantes.", pending: null };
+    if (res.status === 402) return { reply: "Os créditos de IA do workspace acabaram.", pending: null };
+    if (!res.ok) return { reply: "Não consegui falar com a IA agora. Tente de novo.", pending: null };
 
     const json = (await res.json()) as {
       choices?: { message?: { content?: string; tool_calls?: ChatMessage["tool_calls"] } }[];
     };
     const msg = json.choices?.[0]?.message;
     const calls = msg?.tool_calls ?? [];
-    if (calls.length === 0) return { reply: msg?.content?.trim() || "Não entendi, pode repetir?" };
+    if (calls.length === 0) return { reply: msg?.content?.trim() || "Não entendi, pode repetir?", pending: null };
 
     // Ação de escrita: monta o resumo e devolve para confirmação.
     const writeCall = calls.find((c) => tools.find((t) => t.name === c.function.name)?.write);
     if (writeCall) {
       const tool = tools.find((t) => t.name === writeCall.function.name)!;
-      let args: Record<string, unknown> = {};
+      let args: Record<string, ArgValue> = {};
       try {
         args = JSON.parse(writeCall.function.arguments || "{}");
       } catch {
@@ -102,10 +105,11 @@ export async function runAssistant(input: {
         const message = e instanceof Error ? e.message : "erro inesperado";
         if (message.startsWith("UPGRADE:"))
           return {
+            pending: null,
             reply:
               "Essa venda está marcada como Upgrade e precisa do cadastro do aparelho da troca com foto. Conclua ela na tela de Controle de Vendas — por aqui eu não consigo, porque não tenho acesso à câmera.",
           };
-        return { reply: message };
+        return { reply: message, pending: null };
       }
     }
 
@@ -123,5 +127,5 @@ export async function runAssistant(input: {
       messages.push({ role: "tool", tool_call_id: call.id, content: out });
     }
   }
-  return { reply: "Não consegui finalizar esse pedido. Tente reformular." };
+  return { reply: "Não consegui finalizar esse pedido. Tente reformular.", pending: null };
 }
