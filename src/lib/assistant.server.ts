@@ -149,11 +149,7 @@ export async function runAssistant(input: {
       } catch (e) {
         const message = e instanceof Error ? e.message : "erro inesperado";
         if (message.startsWith("UPGRADE:"))
-          return {
-            pending: null,
-            reply:
-              "Essa venda está marcada como Upgrade e precisa do cadastro do aparelho da troca com foto. Conclua ela na tela de Controle de Vendas — por aqui eu não consigo, porque não tenho acesso à câmera.",
-          };
+          return { pending: null, reply: message.replace("UPGRADE:", "").trim() };
         return { reply: message, pending: null };
       }
     }

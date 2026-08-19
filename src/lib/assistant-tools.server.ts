@@ -515,27 +515,83 @@ export const ASSISTANT_TOOLS: AssistantTool[] = [
   {
     name: "concluir_venda",
     description:
-      "Conclui uma venda pendente. Não funciona para vendas com tag de Upgrade (exige foto do aparelho da troca na tela normal).",
+      "Conclui uma venda pendente. Se a venda tiver tag de Upgrade, exige que o usuário tenha enviado no chat a foto do aparelho recebido na troca e informado valor de custo e valor de venda desse aparelho.",
     roles: ["gerente", "atendente"],
     write: true,
     parameters: {
       type: "object",
-      properties: { appointment_id: { type: "string" }, cliente: { type: "string" } },
+      properties: {
+        appointment_id: { type: "string" },
+        cliente: { type: "string" },
+        troca_valor_custo: {
+          type: "number",
+          description: "Valor de custo do aparelho recebido na troca (só em venda com Upgrade)",
+        },
+        troca_valor_venda: {
+          type: "number",
+          description: "Valor de venda do aparelho recebido na troca (só em venda com Upgrade)",
+        },
+      },
     },
     preview: async (args, ctx) => {
       const a = await findAppointment(ctx, args, "venda");
-      if ((a.tag ?? "").toLowerCase().includes("upgrade"))
-        throw new Error(
-          "UPGRADE: essa venda tem tag de Upgrade e exige cadastrar o aparelho da troca com foto — precisa ser concluída na tela de Controle de Vendas.",
+      if (isUpgrade(a.tag)) {
+        const t = tradeFromArgs(args);
+        return (
+          `Concluir venda Upgrade de ${a.customer_name} (${a.device_model}${a.product_price ? `, ${BRL(a.product_price)}` : ""})\n` +
+          `Aparelho recebido na troca (lido da foto): ${t.modelo}${t.cor ? ` ${t.cor}` : ""}${t.armazenamento ? ` ${t.armazenamento}` : ""}${t.serie ? ` · série ${t.serie}` : ""}\n` +
+          `Custo ${BRL(t.custo)} · venda ${BRL(t.venda)}`
         );
+      }
       return `Concluir venda de ${a.customer_name} (${a.device_model}${a.product_price ? `, ${BRL(a.product_price)}` : ""})`;
     },
     run: async (args, ctx) => {
       const a = await findAppointment(ctx, args, "venda");
-      if ((a.tag ?? "").toLowerCase().includes("upgrade"))
-        throw new Error(
-          "Venda com tag Upgrade precisa ser concluída na tela de Controle de Vendas (cadastro do aparelho da troca com foto).",
-        );
+      if (isUpgrade(a.tag)) {
+        const t = tradeFromArgs(args);
+        const status = t.serie ? "disponivel" : "incompleto";
+        const { data: created, error: createErr } = await ctx.supabase
+          .from("inventory_items")
+          .insert({
+            device_model: t.modelo,
+            color: t.cor,
+            storage: t.armazenamento,
+            serial_number: t.serie,
+            imei: t.imei,
+            sale_price: t.venda,
+            condition: "seminovo" as never,
+            status: status as never,
+            entered_at: todaySP(),
+            notes: `Recebido na venda de ${a.customer_name} ${ASSISTANT_TAG}`,
+            created_by: ctx.userId,
+          } as never)
+          .select("id")
+          .single();
+        if (createErr) throw new Error(createErr.message);
+        const { error: costErr } = await ctx.supabase
+          .from("inventory_costs")
+          .insert({ item_id: created!.id, cost_price: t.custo });
+        if (costErr) throw new Error(costErr.message);
+        await ctx.supabase.from("inventory_events").insert({
+          item_id: created!.id,
+          kind: "criado_via_troca",
+          reason: `Recebido na venda de ${a.customer_name} ${ASSISTANT_TAG}`,
+          appointment_id: a.id,
+          actor_id: ctx.userId,
+        });
+        const soldId = a.inventory_device_id ?? (await autoReserve(ctx, a.device_model));
+        if (!soldId)
+          throw new Error("Não é possível concluir sem um aparelho vinculado ao estoque.");
+        const { error: updErr } = await ctx.supabase
+          .from("appointments")
+          .update({ status: "concluido", inventory_device_id: soldId })
+          .eq("id", a.id);
+        if (updErr) throw new Error(updErr.message);
+        await audit(ctx, "assistente_concluir_venda_upgrade", "appointments", a.id, {
+          troca_item: created!.id,
+        });
+        return `Venda Upgrade de ${a.customer_name} concluída. ${t.modelo} entrou no estoque como ${status === "disponivel" ? "Disponível" : "Incompleto"}.`;
+      }
       const itemId = a.inventory_device_id ?? (await autoReserve(ctx, a.device_model));
       if (!itemId)
         throw new Error("Não é possível concluir sem um aparelho vinculado ao estoque.");
@@ -551,7 +607,7 @@ export const ASSISTANT_TOOLS: AssistantTool[] = [
   {
     name: "cadastrar_item_estoque",
     description:
-      "Cadastra um item de estoque a partir de texto (sem foto). Precisa de modelo, valor de custo e valor de venda.",
+      "Cadastra um item de estoque. Aceita os dados digitados pelo usuário ou os dados lidos de uma foto enviada no chat (caixa do lacrado ou tela de Ajustes do seminovo). Precisa de modelo, valor de custo e valor de venda.",
     roles: ["gerente", "vendedora", "atendente"],
     write: true,
     parameters: {
@@ -569,12 +625,14 @@ export const ASSISTANT_TOOLS: AssistantTool[] = [
       required: ["modelo", "valor_custo", "valor_venda"],
     },
     preview: async (args) => {
+      applyPhotoFallback(args);
       if (!str(args["modelo"])) throw new Error("Falta o modelo.");
       if (num(args["valor_custo"]) == null) throw new Error("Falta o valor de custo.");
       if (num(args["valor_venda"]) == null) throw new Error("Falta o valor de venda.");
       return `Cadastrar no estoque: ${str(args["modelo"])}${str(args["cor"]) ? ` ${str(args["cor"])}` : ""}${str(args["armazenamento"]) ? ` ${str(args["armazenamento"])}` : ""} · custo ${BRL(num(args["valor_custo"]))} · venda ${BRL(num(args["valor_venda"]))}${str(args["numero_serie"]) ? ` · série ${str(args["numero_serie"])}` : ""}${str(args["email"]) ? ` · ${str(args["email"])}` : ""}`;
     },
     run: async (args, ctx) => {
+      applyPhotoFallback(args);
       const modelo = str(args["modelo"]);
       const custo = num(args["valor_custo"]);
       const venda = num(args["valor_venda"]);
@@ -588,6 +646,7 @@ export const ASSISTANT_TOOLS: AssistantTool[] = [
           storage: str(args["armazenamento"]),
           apple_id: str(args["email"]),
           serial_number: str(args["numero_serie"]),
+          imei: str(args["foto_imei"]),
           sale_price: venda,
           condition: (str(args["estado"]) ?? "seminovo") as never,
           status: "disponivel",
@@ -642,6 +701,41 @@ export const ASSISTANT_TOOLS: AssistantTool[] = [
     },
   },
 ];
+
+const isUpgrade = (tag: unknown) => String(tag ?? "").toLowerCase().includes("upgrade");
+
+/** Quando o usuário mandou foto, os campos lidos entram como padrão nos dados do item. */
+function applyPhotoFallback(args: Json) {
+  args["modelo"] = str(args["modelo"]) ?? str(args["foto_modelo"]);
+  args["cor"] = str(args["cor"]) ?? str(args["foto_cor"]);
+  args["armazenamento"] = str(args["armazenamento"]) ?? str(args["foto_armazenamento"]);
+  args["numero_serie"] = str(args["numero_serie"]) ?? str(args["foto_serie"]);
+  args["estado"] = str(args["estado"]) ?? str(args["foto_estado"]);
+}
+
+/** Dados do aparelho recebido na troca, sempre vindos da leitura da foto enviada no chat. */
+function tradeFromArgs(args: Json) {
+  const modelo = str(args["foto_modelo"]);
+  if (!modelo)
+    throw new Error(
+      "UPGRADE: para concluir essa venda preciso da foto do aparelho recebido na troca — mande a foto aqui no chat (tela de Ajustes > Sobre).",
+    );
+  const custo = num(args["troca_valor_custo"]);
+  const venda = num(args["troca_valor_venda"]);
+  if (custo == null || venda == null)
+    throw new Error(
+      "UPGRADE: me diga o valor de custo e o valor de venda do aparelho recebido na troca.",
+    );
+  return {
+    modelo,
+    cor: str(args["foto_cor"]),
+    armazenamento: str(args["foto_armazenamento"]),
+    serie: str(args["foto_serie"]),
+    imei: str(args["foto_imei"]),
+    custo,
+    venda,
+  };
+}
 
 async function findItem(ctx: ToolCtx, args: Json) {
   let q = ctx.supabase
