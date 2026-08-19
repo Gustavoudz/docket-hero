@@ -28,6 +28,12 @@ const METHOD_LABEL: Record<string, string> = {
   dinheiro: "Dinheiro",
 };
 
+const fmtDoc = (v?: string | null) => {
+  const d = String(v ?? "").replace(/\D/g, "");
+  if (d.length !== 11) return v ?? null;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+};
+
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
@@ -92,7 +98,7 @@ export async function loadReceiptData(
     saleDate: appt?.completed_at ?? sale.created_at,
     customerName: cust?.name || appt?.customer_name || "Cliente",
     customerEmail: receipt.customer_email || appt?.customer_email || cust?.email || null,
-    customerDoc: cust?.cpf ?? null,
+    customerDoc: fmtDoc(cust?.cpf),
     customerPhone: cust?.phone || cust?.whatsapp || null,
     customerAddress: cust?.address ?? null,
     device: {

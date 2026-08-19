@@ -33,6 +33,12 @@ export type ServiceOrderData = {
 const brl = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
+const fmtDoc = (v?: string | null) => {
+  const d = String(v ?? "").replace(/\D/g, "");
+  if (d.length !== 11) return v ?? null;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+};
+
 const STATUS_LABEL: Record<string, string> = {
   aberta: "Aberta - Em análise",
   em_andamento: "Em andamento",
@@ -76,7 +82,7 @@ export async function loadServiceOrderData(
     openedAt: os.opened_at,
     finishedAt: os.finished_at ?? null,
     customerName: cust?.name || os.customer_name,
-    customerDoc: cust?.cpf ?? null,
+    customerDoc: fmtDoc(cust?.cpf),
     customerPhone: cust?.phone || cust?.whatsapp || null,
     customerAddress: cust?.address ?? null,
     responsible,
