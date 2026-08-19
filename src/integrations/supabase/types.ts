@@ -92,6 +92,7 @@ export type Database = {
           sale_id: string | null
           scheduled_at: string
           scheduled_date: string | null
+          seller_id: string | null
           status: Database["public"]["Enums"]["appointment_status"]
           tag: string | null
           updated_at: string
@@ -125,6 +126,7 @@ export type Database = {
           sale_id?: string | null
           scheduled_at: string
           scheduled_date?: string | null
+          seller_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           tag?: string | null
           updated_at?: string
@@ -158,6 +160,7 @@ export type Database = {
           sale_id?: string | null
           scheduled_at?: string
           scheduled_date?: string | null
+          seller_id?: string | null
           status?: Database["public"]["Enums"]["appointment_status"]
           tag?: string | null
           updated_at?: string
