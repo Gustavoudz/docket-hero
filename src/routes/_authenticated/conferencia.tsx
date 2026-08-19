@@ -282,9 +282,14 @@ function ConferenciaPage() {
                 {[i.color, i.storage].filter(Boolean).join(" · ")}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {i.origin === "troca"
-                  ? `Troca (upgrade)${i.saleReference ? ` · Venda ${i.saleReference}` : ""}`
-                  : "Cadastro manual"}
+                {i.origin === "troca" ? (
+                  <span className="text-amber-400">
+                    Troca (upgrade)
+                    {i.saleReference ? ` · Venda ${i.saleReference}` : ""}
+                  </span>
+                ) : (
+                  <span className="text-sky-400">Cadastro manual</span>
+                )}
               </p>
             </div>
             <span className="shrink-0 text-sm">{formatBRL(costs[i.id] ?? 0)}</span>
