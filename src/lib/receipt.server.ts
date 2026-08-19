@@ -8,10 +8,14 @@ export type ReceiptData = {
   saleDate: string;
   customerName: string;
   customerEmail: string | null;
+  customerDoc: string | null;
+  customerPhone: string | null;
+  customerAddress: string | null;
   device: { model: string; color: string | null; storage: string | null; serial: string | null; condition: string };
   total: number;
   paymentMethod: string;
   installments: number;
+  payments: { method: string; amount: number; installments: number }[];
   attendantName: string;
   store: { name: string; address: string; contact: string };
   warranty: string;
@@ -42,7 +46,7 @@ export async function loadReceiptData(
   const { data: sale } = await db
     .from("sales")
     .select(
-      "id, reference, total, created_at, appointment_id, inventory_item_id, customers(name, email), appointments(customer_name, customer_email, payment_method, installments, completed_at, attendant_id), inventory_items(device_model, color, storage, serial_number, condition)",
+      "id, reference, total, created_at, appointment_id, inventory_item_id, customers(name, email, cpf, phone, whatsapp, address), appointments(customer_name, customer_email, payment_method, installments, completed_at, attendant_id), inventory_items(device_model, color, storage, serial_number, condition)",
     )
     .eq("id", receipt.sale_id)
     .maybeSingle();
@@ -68,6 +72,18 @@ export async function loadReceiptData(
 
   const condition = item?.condition === "lacrado" ? "lacrado" : "seminovo";
 
+  const { data: paymentRows } = await db
+    .from("payments")
+    .select("method, gross_amount, installments, status")
+    .eq("sale_id", receipt.sale_id);
+  const payments = (paymentRows ?? [])
+    .filter((p: any) => p.status !== "cancelado" && p.status !== "estornado")
+    .map((p: any) => ({
+      method: METHOD_LABEL[p.method] ?? String(p.method),
+      amount: Number(p.gross_amount) || 0,
+      installments: Number(p.installments) || 1,
+    }));
+
   return {
     number: Number(receipt.receipt_number),
     token: receipt.public_token,
@@ -76,6 +92,9 @@ export async function loadReceiptData(
     saleDate: appt?.completed_at ?? sale.created_at,
     customerName: cust?.name || appt?.customer_name || "Cliente",
     customerEmail: receipt.customer_email || appt?.customer_email || cust?.email || null,
+    customerDoc: cust?.cpf ?? null,
+    customerPhone: cust?.phone || cust?.whatsapp || null,
+    customerAddress: cust?.address ?? null,
     device: {
       model: item?.device_model ?? "—",
       color: item?.color ?? null,
@@ -86,6 +105,7 @@ export async function loadReceiptData(
     total: Number(sale.total) || 0,
     paymentMethod: METHOD_LABEL[appt?.payment_method ?? ""] ?? "Não informado",
     installments: Number(appt?.installments) || 1,
+    payments,
     attendantName,
     store: {
       name: settings["store_name"] || "Legado Phones",
