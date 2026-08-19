@@ -398,6 +398,13 @@ function SaleDetail({ sale, sellerName }: { sale: SaleRow; sellerName: string })
         {sale.status !== "cancelado" && sale.status !== "estornado" && (
           <PixAutoPayment saleId={sale.id} />
         )}
+
+        {sale.status === "pago" && (
+          <div className="space-y-2 rounded-lg border border-border/60 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Recibo da venda</p>
+            <ReceiptActions saleId={sale.id} />
+          </div>
+        )}
       </div>
     </div>
   );
