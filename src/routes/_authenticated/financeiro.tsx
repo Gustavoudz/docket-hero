@@ -1,22 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { AlertTriangle, CalendarClock, CheckCircle2, Clock, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarClock, CalendarDays, CheckCircle2, Clock, Wallet } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AccessDenied } from "@/components/AccessDenied";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCents, toCents } from "@/lib/finance";
@@ -235,6 +227,7 @@ function FinanceiroPage() {
   const today = isoDay(new Date());
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState(today);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const range = useMemo(() => rangeFor(period, from, to), [period, from, to]);
 
@@ -273,7 +266,6 @@ function FinanceiroPage() {
               ["hoje", "Hoje"],
               ["semana", "Semana"],
               ["mes", "Mês"],
-              ["custom", "Personalizado"],
             ] as [PeriodKey, string][]
           ).map(([key, label]) => (
             <Button
@@ -285,23 +277,49 @@ function FinanceiroPage() {
               {label}
             </Button>
           ))}
-          {period === "custom" && (
-            <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="h-9 w-40"
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                size="sm"
+                variant={period === "custom" ? "default" : "outline"}
+                className="gap-1.5"
+                title="Escolher data específica"
+              >
+                <span aria-hidden className="text-base leading-none">
+                  🗓️
+                </span>
+                {period === "custom"
+                  ? from === to
+                    ? new Date(`${from}T12:00:00`).toLocaleDateString("pt-BR")
+                    : `${new Date(`${from}T12:00:00`).toLocaleDateString("pt-BR")} – ${new Date(`${to}T12:00:00`).toLocaleDateString("pt-BR")}`
+                  : "Escolher data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={new Date(`${from}T12:00:00`)}
+                selected={{
+                  from: new Date(`${from}T12:00:00`),
+                  to: new Date(`${to}T12:00:00`),
+                }}
+                onSelect={(r) => {
+                  if (!r?.from) return;
+                  const start = isoDay(r.from);
+                  const finish = isoDay(r.to ?? r.from);
+                  setFrom(start);
+                  setTo(finish);
+                  setPeriod("custom");
+                  if (r.to) setCalendarOpen(false);
+                }}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
               />
-              <span className="text-xs text-muted-foreground">até</span>
-              <Input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="h-9 w-40"
-              />
-            </div>
-          )}
+              <p className="border-t border-border/20 px-3 py-2 text-[11px] text-muted-foreground">
+                Clique em um dia para ver só ele, ou em dois dias para um intervalo.
+              </p>
+            </PopoverContent>
+          </Popover>
         </section>
 
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -345,42 +363,6 @@ function FinanceiroPage() {
             Comissões geradas no período (referência de custo operacional)
           </p>
           <p className="mt-1 text-lg font-semibold">{formatCents(data?.commissionsCents ?? 0)}</p>
-        </section>
-
-        <section className="glass rounded-xl border border-border/20 p-4">
-          <h2 className="mb-3 text-sm font-medium">Faturamento e lucro por dia</h2>
-          {(data?.chart.length ?? 0) === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {isLoading ? "Carregando…" : "Sem vendas concluídas no período."}
-            </p>
-          ) : (
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data!.chart}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.25} />
-                  <XAxis
-                    dataKey="day"
-                    tickFormatter={(d: string) => d.slice(8, 10) + "/" + d.slice(5, 7)}
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={11}
-                  />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} width={70} />
-                  <Tooltip
-                    formatter={(v: number) => formatCents(Math.round(v * 100))}
-                    labelFormatter={(d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("pt-BR")}
-                    contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: 8,
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="faturamento" name="Faturamento" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="lucro" name="Lucro" fill="hsl(142 70% 45%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
         </section>
 
         <section className="glass rounded-xl border border-border/20 p-4">
