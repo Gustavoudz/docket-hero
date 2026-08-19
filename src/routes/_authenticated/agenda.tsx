@@ -41,6 +41,48 @@ export const Route = createFileRoute("/_authenticated/agenda")({
   component: AgendaPage,
 });
 
+type DaySummary = {
+  total: number;
+  completedCount: number;
+  cancelledCount: number;
+  totalCents: number;
+  cancelReasons: string[];
+};
+
+const toCents = (v: unknown) =>
+  v == null || Number.isNaN(Number(v)) ? 0 : Math.round(Number(v) * 100);
+
+function formatCents(cents: number) {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+/** Recalcula o dia em tempo real, direto do banco (nunca cache/snapshot). */
+async function fetchDaySummary(date: string, attendantId: string): Promise<DaySummary> {
+  const start = `${date}T00:00:00-03:00`;
+  const end = `${date}T23:59:59.999-03:00`;
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("id, status, sale_amount, product_price, cancel_reason, scheduled_date, scheduled_at")
+    .eq("attendant_id", attendantId)
+    .or(
+      `scheduled_date.eq.${date},and(scheduled_date.is.null,scheduled_at.gte.${start},scheduled_at.lte.${end})`,
+    );
+  if (error) throw new Error(error.message);
+  const rows = data ?? [];
+  const completed = rows.filter((r) => r.status === "concluido");
+  const cancelled = rows.filter((r) => r.status === "cancelado");
+  return {
+    total: rows.length,
+    completedCount: completed.length,
+    cancelledCount: cancelled.length,
+    totalCents: completed.reduce(
+      (sum, r) => sum + toCents(r.sale_amount ?? r.product_price ?? 0),
+      0,
+    ),
+    cancelReasons: cancelled.map((c) => c.cancel_reason ?? ""),
+  };
+}
+
 function AgendaPage() {
   const { user, role } = useAuth();
   const { date: dateParam } = Route.useSearch();
