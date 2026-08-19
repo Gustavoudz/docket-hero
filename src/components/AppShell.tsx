@@ -170,6 +170,18 @@ function SideMenu() {
   }[] = [
     { title: "Agenda", url: "/agenda", icon: Calendar, active: currentPath === "/agenda" },
     {
+      title: "Controle de Vendas",
+      url: "/vendas",
+      icon: Receipt,
+      active: currentPath === "/vendas",
+    },
+    {
+      title: "Recibos",
+      url: "/recibos",
+      icon: FileText,
+      active: currentPath === "/recibos",
+    },
+    {
       title: "Painel",
       url: "/semana",
       icon: CalendarRange,
@@ -237,18 +249,6 @@ function SideMenu() {
           },
         ]
       : []),
-    {
-      title: "Controle de Vendas",
-      url: "/vendas",
-      icon: Receipt,
-      active: currentPath === "/vendas",
-    },
-    {
-      title: "Recibos",
-      url: "/recibos",
-      icon: FileText,
-      active: currentPath === "/recibos",
-    },
   ];
 
   return (
