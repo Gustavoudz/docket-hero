@@ -22,6 +22,7 @@ import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
 import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
 import { Route as AuthenticatedMesRouteImport } from './routes/_authenticated/mes'
+import { Route as AuthenticatedOrcamentoRouteImport } from './routes/_authenticated/orcamento'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedRecibosRouteImport } from './routes/_authenticated.recibos'
 import { Route as AuthenticatedSemanaRouteImport } from './routes/_authenticated/semana'
@@ -98,6 +99,11 @@ const AuthenticatedMesRoute = AuthenticatedMesRouteImport.update({
   path: '/mes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOrcamentoRoute = AuthenticatedOrcamentoRouteImport.update({
+  id: '/orcamento',
+  path: '/orcamento',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
   id: '/painel',
   path: '/painel',
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/historico': typeof AuthenticatedHistoricoRoute
   '/mes': typeof AuthenticatedMesRoute
+  '/orcamento': typeof AuthenticatedOrcamentoRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/recibos': typeof AuthenticatedRecibosRoute
   '/semana': typeof AuthenticatedSemanaRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/historico': typeof AuthenticatedHistoricoRoute
   '/mes': typeof AuthenticatedMesRoute
+  '/orcamento': typeof AuthenticatedOrcamentoRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/recibos': typeof AuthenticatedRecibosRoute
   '/semana': typeof AuthenticatedSemanaRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
   '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
   '/_authenticated/mes': typeof AuthenticatedMesRoute
+  '/_authenticated/orcamento': typeof AuthenticatedOrcamentoRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/recibos': typeof AuthenticatedRecibosRoute
   '/_authenticated/semana': typeof AuthenticatedSemanaRoute
@@ -222,6 +231,7 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/historico'
     | '/mes'
+    | '/orcamento'
     | '/painel'
     | '/recibos'
     | '/semana'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/historico'
     | '/mes'
+    | '/orcamento'
     | '/painel'
     | '/recibos'
     | '/semana'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/_authenticated/financeiro'
     | '/_authenticated/historico'
     | '/_authenticated/mes'
+    | '/_authenticated/orcamento'
     | '/_authenticated/painel'
     | '/_authenticated/recibos'
     | '/_authenticated/semana'
@@ -379,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/orcamento': {
+      id: '/_authenticated/orcamento'
+      path: '/orcamento'
+      fullPath: '/orcamento'
+      preLoaderRoute: typeof AuthenticatedOrcamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/painel': {
       id: '/_authenticated/painel'
       path: '/painel'
@@ -449,6 +468,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
   AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
   AuthenticatedMesRoute: typeof AuthenticatedMesRoute
+  AuthenticatedOrcamentoRoute: typeof AuthenticatedOrcamentoRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedRecibosRoute: typeof AuthenticatedRecibosRoute
   AuthenticatedSemanaRoute: typeof AuthenticatedSemanaRoute
@@ -467,6 +487,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
   AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
   AuthenticatedMesRoute: AuthenticatedMesRoute,
+  AuthenticatedOrcamentoRoute: AuthenticatedOrcamentoRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedRecibosRoute: AuthenticatedRecibosRoute,
   AuthenticatedSemanaRoute: AuthenticatedSemanaRoute,
