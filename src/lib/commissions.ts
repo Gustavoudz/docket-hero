@@ -149,22 +149,3 @@ export function ranking(list: Commission[], ref: Date, period: RankingPeriod): R
   }
   return [...rows.values()].sort((a, b) => b.sales - a.sales || b.total - a.total);
 }
-
-function unusedGroupByDay(list: Commission[]) {
-  const map = new Map<string, Commission[]>();
-  for (const c of list) {
-    const key = new Date(c.completed_at).toISOString().slice(0, 10);
-    const arr = map.get(key) ?? [];
-    arr.push(c);
-    map.set(key, arr);
-  }
-  return [...map.entries()]
-    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-    .map(([day, items]) => ({
-      day,
-      items: items.sort(
-        (a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime(),
-      ),
-      total: items.filter((i) => i.status === "ativa").reduce((acc, i) => acc + i.amount, 0),
-    }));
-}
