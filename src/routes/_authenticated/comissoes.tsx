@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, ArrowLeft, BadgeDollarSign, Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { CardListSkeleton } from "@/components/ListSkeleton";
 import { AccessDenied } from "@/components/AccessDenied";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
