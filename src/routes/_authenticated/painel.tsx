@@ -16,12 +16,12 @@ import { isStale, useInventoryCosts, useInventoryItems, useStaleDays } from "@/l
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => ({
     meta: [
-      { title: "Painel do gerente — Agenda da Loja" },
+      { title: "Painel de controle — Agenda da Loja" },
       {
         name: "description",
         content: "Visão consolidada de agendamentos por atendente e período.",
       },
-      { property: "og:title", content: "Painel do gerente — Agenda da Loja" },
+      { property: "og:title", content: "Painel de controle — Agenda da Loja" },
       {
         property: "og:description",
         content: "Visão consolidada de agendamentos por atendente e período.",
@@ -100,7 +100,7 @@ function PainelPage() {
 
   return (
     <AppShell>
-      <h1 className="text-lg font-semibold">Painel do gerente</h1>
+      <h1 className="text-lg font-semibold">Painel de controle</h1>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <div className="space-y-1.5">
