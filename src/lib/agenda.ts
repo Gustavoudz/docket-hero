@@ -1,4 +1,4 @@
-export type AppointmentStatus = "pendente" | "concluido" | "cancelado";
+export type AppointmentStatus = "pendente" | "concluido" | "cancelado" | "legado";
 
 export type PaymentEntry = {
   method: string;
@@ -37,7 +37,16 @@ export const STATUS_LABEL: Record<AppointmentStatus, string> = {
   pendente: "Pendente",
   concluido: "Concluído",
   cancelado: "Cancelado",
+  legado: "Legado",
 };
+
+/** Registro removido das listas ativas (soft delete), mas mantido no histórico. */
+export const isLegado = (a: { status: AppointmentStatus }) => a.status === "legado";
+
+/** Remove registros "Legado" de qualquer lista/relatório ativo. */
+export function activeRecords<T extends { status: AppointmentStatus }>(rows: T[]): T[] {
+  return rows.filter((r) => r.status !== "legado");
+}
 
 export const PAYMENT_METHODS = [
   { value: "pix", label: "Pix" },
