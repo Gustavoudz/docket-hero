@@ -52,10 +52,12 @@ export function InventoryForm({
   open,
   onOpenChange,
   item,
+  defaults,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item?: InventoryItem | null;
+  defaults?: { device_model?: string; cost_price?: number };
 }) {
   const { user, role } = useAuth();
   const isGerente = role === "gerente";
@@ -68,6 +70,8 @@ export function InventoryForm({
   const formRef = useRef<HTMLFormElement>(null);
   const extract = useServerFn(extractDeviceFromPhoto);
   const [reading, setReading] = useState(false);
+  const [batch, setBatch] = useState(false);
+  const [batchLines, setBatchLines] = useState("");
 
   function setField(name: string, value: string) {
     const el = formRef.current?.elements.namedItem(name) as
@@ -168,6 +172,36 @@ export function InventoryForm({
         return;
       }
 
+      if (batch) {
+        const units = batchLines
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => {
+            const [serial, appleId] = line.split(/[;,\t]/).map((p) => p.trim());
+            return { serial_number: serial || null, apple_id: appleId || null };
+          });
+        if (units.length === 0) throw new Error("Informe pelo menos uma unidade (uma por linha)");
+        const { data: rows, error: batchError } = await supabase
+          .from("inventory_items")
+          .insert(
+            units.map((u) => ({
+              ...payload,
+              serial_number: u.serial_number,
+              apple_id: u.apple_id,
+              imei: null,
+              created_by: user?.id ?? null,
+            })),
+          )
+          .select("id");
+        if (batchError) throw new Error(batchError.message);
+        const { error: costsError } = await supabase
+          .from("inventory_costs")
+          .insert((rows ?? []).map((r) => ({ item_id: r.id, cost_price: cost! })));
+        if (costsError) throw new Error(costsError.message);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("inventory_items")
         .insert({ ...payload, created_by: user?.id ?? null })
@@ -182,7 +216,9 @@ export function InventoryForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_costs"] });
-      toast.success(item ? "Item atualizado" : "Item cadastrado no estoque");
+      toast.success(
+        item ? "Item atualizado" : batch ? "Itens cadastrados em lote" : "Item cadastrado no estoque",
+      );
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -256,7 +292,7 @@ export function InventoryForm({
               id="device_model"
               name="device_model"
               required
-              defaultValue={item?.device_model ?? ""}
+              defaultValue={item?.device_model ?? defaults?.device_model ?? ""}
               className={selectClass}
             >
               <option value="">Selecione o modelo…</option>
@@ -268,8 +304,39 @@ export function InventoryForm({
               {item && !activeModels.some((m) => m.name === item.device_model) && (
                 <option value={item.device_model}>{item.device_model}</option>
               )}
+              {!item &&
+                defaults?.device_model &&
+                !activeModels.some((m) => m.name === defaults.device_model) && (
+                  <option value={defaults.device_model}>{defaults.device_model}</option>
+                )}
             </select>
           </div>
+          {!item && (
+            <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-3">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={batch}
+                  onChange={(e) => setBatch(e.target.checked)}
+                  className="h-4 w-4 accent-[hsl(var(--primary))]"
+                />
+                Cadastrar em lote
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Vários aparelhos iguais (mesmo modelo, cor, armazenamento e custo). Informe uma
+                unidade por linha: número de série e, se quiser, o e-mail (Apple ID) separado por
+                ponto e vírgula.
+              </p>
+              {batch && (
+                <Textarea
+                  rows={5}
+                  value={batchLines}
+                  onChange={(e) => setBatchLines(e.target.value)}
+                  placeholder={"F2LX...; email1@icloud.com\nF3MZ...; email2@icloud.com"}
+                />
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="color">Cor</Label>
@@ -280,24 +347,34 @@ export function InventoryForm({
               <Input id="storage" name="storage" placeholder="256GB" defaultValue={item?.storage ?? ""} />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="serial_number">Número de série</Label>
-            <Input
-              id="serial_number"
-              name="serial_number"
-              placeholder="Recomendado"
-              defaultValue={item?.serial_number ?? ""}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="imei">IMEI</Label>
-            <Input id="imei" name="imei" placeholder="Opcional" defaultValue={item?.imei ?? ""} />
-          </div>
+          {!batch && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="serial_number">Número de série</Label>
+                <Input
+                  id="serial_number"
+                  name="serial_number"
+                  placeholder="Recomendado"
+                  defaultValue={item?.serial_number ?? ""}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="imei">IMEI</Label>
+                <Input id="imei" name="imei" placeholder="Opcional" defaultValue={item?.imei ?? ""} />
+              </div>
+            </>
+          )}
           <div className="grid grid-cols-2 gap-3">
             {(isGerente || !item) && (
               <div className="space-y-1.5">
                 <Label htmlFor="cost_price">Valor de custo (R$){item ? "" : " *"}</Label>
-                <Input id="cost_price" name="cost_price" inputMode="decimal" placeholder="Ex.: 2800" />
+                <Input
+                  id="cost_price"
+                  name="cost_price"
+                  inputMode="decimal"
+                  placeholder="Ex.: 2800"
+                  defaultValue={defaults?.cost_price != null ? String(defaults.cost_price) : ""}
+                />
               </div>
             )}
             <div className="space-y-1.5">
@@ -350,7 +427,7 @@ export function InventoryForm({
         </form>
         <DialogFooter>
           <Button type="submit" form="inventory-form" disabled={mutation.isPending}>
-            {item ? "Salvar" : "Cadastrar item"}
+            {item ? "Salvar" : batch ? "Cadastrar lote" : "Cadastrar item"}
           </Button>
         </DialogFooter>
       </DialogContent>

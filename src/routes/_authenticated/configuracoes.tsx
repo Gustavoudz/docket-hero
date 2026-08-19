@@ -21,6 +21,7 @@ import {
   useStatusColors,
 } from "@/lib/settings";
 import { useStaleDays } from "@/lib/inventory";
+import { useTradeInDefects, useTradeInModels } from "@/lib/trade-in";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
@@ -37,7 +38,10 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: ConfigPage,
 });
 
-function useTableMutation(table: "device_models" | "cancel_reasons" | "appointment_tags", key: string) {
+function useTableMutation(
+  table: "device_models" | "cancel_reasons" | "appointment_tags" | "trade_in_models" | "trade_in_defects",
+  key: string,
+) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (
@@ -80,6 +84,14 @@ function ConfigPage() {
   const statusColors = useStatusColors();
   const attendantColors = useAttendantColors();
   const staleDays = useStaleDays();
+  const { data: tradeModels = [] } = useTradeInModels();
+  const { data: tradeDefects = [] } = useTradeInDefects();
+  const tradeModelMut = useTableMutation("trade_in_models", "trade_in_models");
+  const tradeDefectMut = useTableMutation("trade_in_defects", "trade_in_defects");
+  const [newTradeModel, setNewTradeModel] = useState("");
+  const [newTradeValue, setNewTradeValue] = useState("");
+  const [newDefect, setNewDefect] = useState("");
+  const [newDefectValue, setNewDefectValue] = useState("");
 
   const staleDaysMut = useMutation({
     mutationFn: async (days: number) => {
@@ -312,6 +324,134 @@ function ConfigPage() {
             }}
           />
         </div>
+      </Section>
+
+      <Section
+        title="Avaliação de troca — modelos"
+        description="Valor de referência de cada modelo aceito em troca."
+      >
+        {tradeModels.map((m) => (
+          <div key={m.id} className="flex items-center gap-2">
+            <Input
+              defaultValue={m.name}
+              onBlur={(e) =>
+                e.target.value.trim() &&
+                e.target.value !== m.name &&
+                tradeModelMut.mutate({ type: "update", id: m.id, values: { name: e.target.value.trim() } })
+              }
+            />
+            <Input
+              type="number"
+              min={0}
+              className="w-28"
+              defaultValue={m.base_value}
+              aria-label={`Valor de referência de ${m.name}`}
+              onBlur={(e) => {
+                const n = Number(e.target.value);
+                if (Number.isFinite(n) && n >= 0 && n !== m.base_value)
+                  tradeModelMut.mutate({ type: "update", id: m.id, values: { base_value: n } });
+              }}
+            />
+            <Switch
+              checked={m.active}
+              aria-label="Ativo"
+              onCheckedChange={(v) => tradeModelMut.mutate({ type: "update", id: m.id, values: { active: v } })}
+            />
+            <Button variant="ghost" size="icon" aria-label="Remover" onClick={() => tradeModelMut.mutate({ type: "delete", id: m.id })}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = Number(newTradeValue);
+            if (!newTradeModel.trim() || !Number.isFinite(value) || value < 0) return;
+            tradeModelMut.mutate({
+              type: "insert",
+              values: { name: newTradeModel.trim(), base_value: value, sort_order: tradeModels.length + 1 },
+            });
+            setNewTradeModel("");
+            setNewTradeValue("");
+          }}
+        >
+          <Input value={newTradeModel} onChange={(e) => setNewTradeModel(e.target.value)} placeholder="iPhone 13 128GB" />
+          <Input
+            type="number"
+            min={0}
+            className="w-28"
+            value={newTradeValue}
+            onChange={(e) => setNewTradeValue(e.target.value)}
+            placeholder="2500"
+            aria-label="Valor de referência"
+          />
+          <Button type="submit">Adicionar</Button>
+        </form>
+      </Section>
+
+      <Section
+        title="Avaliação de troca — defeitos"
+        description="Descontos aplicados no checklist da avaliação."
+      >
+        {tradeDefects.map((d) => (
+          <div key={d.id} className="flex items-center gap-2">
+            <Input
+              defaultValue={d.label}
+              onBlur={(e) =>
+                e.target.value.trim() &&
+                e.target.value !== d.label &&
+                tradeDefectMut.mutate({ type: "update", id: d.id, values: { label: e.target.value.trim() } })
+              }
+            />
+            <Input
+              type="number"
+              min={0}
+              className="w-28"
+              defaultValue={d.discount}
+              aria-label={`Desconto de ${d.label}`}
+              onBlur={(e) => {
+                const n = Number(e.target.value);
+                if (Number.isFinite(n) && n >= 0 && n !== d.discount)
+                  tradeDefectMut.mutate({ type: "update", id: d.id, values: { discount: n } });
+              }}
+            />
+            <Switch
+              checked={d.active}
+              aria-label="Ativo"
+              onCheckedChange={(v) => tradeDefectMut.mutate({ type: "update", id: d.id, values: { active: v } })}
+            />
+            <Button variant="ghost" size="icon" aria-label="Remover" onClick={() => tradeDefectMut.mutate({ type: "delete", id: d.id })}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = Number(newDefectValue);
+            if (!newDefect.trim() || !Number.isFinite(value) || value < 0) return;
+            tradeDefectMut.mutate({
+              type: "insert",
+              values: { label: newDefect.trim(), discount: value, sort_order: tradeDefects.length + 1 },
+            });
+            setNewDefect("");
+            setNewDefectValue("");
+          }}
+        >
+          <Input value={newDefect} onChange={(e) => setNewDefect(e.target.value)} placeholder="Tela trincada" />
+          <Input
+            type="number"
+            min={0}
+            className="w-28"
+            value={newDefectValue}
+            onChange={(e) => setNewDefectValue(e.target.value)}
+            placeholder="400"
+            aria-label="Desconto"
+          />
+          <Button type="submit">Adicionar</Button>
+        </form>
       </Section>
     </AppShell>
   );

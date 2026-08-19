@@ -19,6 +19,7 @@ import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedMesRouteImport } from './routes/_authenticated/mes'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedSemanaRouteImport } from './routes/_authenticated/semana'
+import { Route as AuthenticatedTrocaRouteImport } from './routes/_authenticated/troca'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -71,6 +72,11 @@ const AuthenticatedSemanaRoute = AuthenticatedSemanaRouteImport.update({
   path: '/semana',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTrocaRoute = AuthenticatedTrocaRouteImport.update({
+  id: '/troca',
+  path: '/troca',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/mes': typeof AuthenticatedMesRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/semana': typeof AuthenticatedSemanaRoute
+  '/troca': typeof AuthenticatedTrocaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/mes': typeof AuthenticatedMesRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/semana': typeof AuthenticatedSemanaRoute
+  '/troca': typeof AuthenticatedTrocaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/_authenticated/mes': typeof AuthenticatedMesRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/semana': typeof AuthenticatedSemanaRoute
+  '/_authenticated/troca': typeof AuthenticatedTrocaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/mes'
     | '/painel'
     | '/semana'
+    | '/troca'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/mes'
     | '/painel'
     | '/semana'
+    | '/troca'
   id:
     | '__root__'
     | '/'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/_authenticated/mes'
     | '/_authenticated/painel'
     | '/_authenticated/semana'
+    | '/_authenticated/troca'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -222,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSemanaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/troca': {
+      id: '/_authenticated/troca'
+      path: '/troca'
+      fullPath: '/troca'
+      preLoaderRoute: typeof AuthenticatedTrocaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -233,6 +252,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMesRoute: typeof AuthenticatedMesRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedSemanaRoute: typeof AuthenticatedSemanaRoute
+  AuthenticatedTrocaRoute: typeof AuthenticatedTrocaRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -243,6 +263,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMesRoute: AuthenticatedMesRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedSemanaRoute: AuthenticatedSemanaRoute,
+  AuthenticatedTrocaRoute: AuthenticatedTrocaRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
