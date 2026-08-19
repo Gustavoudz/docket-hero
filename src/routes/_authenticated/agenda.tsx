@@ -49,6 +49,7 @@ function AgendaPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [liveSummary, setLiveSummary] = useState<DaySummary | null>(null);
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments", "day", date],
@@ -91,22 +92,27 @@ function AgendaPage() {
       if (pending.length > 0) {
         throw new Error(`${pending.length} agendamento(s) ainda estão pendentes`);
       }
+      // Sempre recalcula em tempo real, direto do banco (sem cache/snapshot)
+      const summary = await fetchDaySummary(date, user!.id);
       const payload = {
         attendant_id: user!.id,
         closure_date: date,
-        total_appointments: mine.length,
-        completed_count: completed.length,
-        cancelled_count: cancelled.length,
-        conversion_rate: conversionRate(completed.length, mine.length),
-        cancel_reasons: cancelled.map((c) => c.cancel_reason ?? ""),
+        total_appointments: summary.total,
+        completed_count: summary.completedCount,
+        cancelled_count: summary.cancelledCount,
+        conversion_rate: conversionRate(summary.completedCount, summary.total),
+        cancel_reasons: summary.cancelReasons,
       };
       const { error } = await supabase
         .from("day_closures")
         .upsert(payload, { onConflict: "attendant_id,closure_date" });
       if (error) throw new Error(error.message);
+      return summary;
     },
-    onSuccess: () => {
+    onSuccess: (summary) => {
+      setLiveSummary(summary);
       queryClient.invalidateQueries({ queryKey: ["closure"] });
+      queryClient.invalidateQueries({ queryKey: ["appointments", "day", date] });
       setSummaryOpen(true);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -227,12 +233,19 @@ function AgendaPage() {
             <DialogTitle>Resumo do dia — {formatDateLabel(date)}</DialogTitle>
           </DialogHeader>
           <dl className="grid grid-cols-2 gap-3 text-sm">
-            <Stat label="Total" value={mine.length} />
-            <Stat label="Concluídos" value={completed.length} />
-            <Stat label="Cancelados" value={cancelled.length} />
-            <Stat label="Conversão" value={`${conversionRate(completed.length, mine.length)}%`} />
+            <Stat label="Total" value={liveSummary?.total ?? mine.length} />
+            <Stat label="Vendas concluídas" value={liveSummary?.completedCount ?? completed.length} />
+            <Stat
+              label="Total faturado"
+              value={formatCents(liveSummary?.totalCents ?? 0)}
+            />
+            <Stat label="Cancelados" value={liveSummary?.cancelledCount ?? cancelled.length} />
+            <Stat
+              label="Conversão"
+              value={`${conversionRate(liveSummary?.completedCount ?? completed.length, liveSummary?.total ?? mine.length)}%`}
+            />
           </dl>
-          {cancelled.length > 0 && (
+          {(liveSummary?.cancelReasons.length ?? cancelled.length) > 0 && (
             <div>
               <p className="text-sm font-medium">Motivos de cancelamento</p>
               <ul className="mt-1 space-y-0.5 text-sm text-muted-foreground">
