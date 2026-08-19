@@ -53,6 +53,8 @@ type Props = {
   defaultDate: string;
   appointment?: Appointment | null;
   recordType?: RecordType | undefined;
+  /** Agendamento de origem quando esta venda é gerada por "Transformar em venda". */
+  convertFrom?: Appointment | null;
 };
 
 export function AppointmentForm({
@@ -61,8 +63,11 @@ export function AppointmentForm({
   defaultDate,
   appointment,
   recordType,
+  convertFrom,
 }: Props) {
   const { user, fullName } = useAuth();
+  /** Registro usado só para pré-preencher os campos (edição ou conversão). */
+  const base: Appointment | null | undefined = appointment ?? convertFrom;
   const type: RecordType =
     recordType ?? (appointment?.record_type as RecordType | undefined) ?? "agendamento";
   const isVenda = type === "venda";
@@ -72,38 +77,38 @@ export function AppointmentForm({
     appointment?.deposit_amount != null ? String(appointment.deposit_amount) : "",
   );
   const [payments, setPayments] = useState<PaymentEntry[]>(() => {
-    const existing = appointment?.payments;
+    const existing = base?.payments;
     if (existing && existing.length > 0) return existing;
     return [
       {
-        method: appointment?.payment_method ?? "",
-        installments: appointment?.installments ?? 1,
-        installment_value: appointment?.installment_value ?? null,
+        method: base?.payment_method ?? "",
+        installments: base?.installments ?? 1,
+        installment_value: base?.installment_value ?? null,
       },
     ];
   });
   const [productPrice, setProductPrice] = useState<string>(
-    appointment?.product_price != null ? String(appointment.product_price) : "",
+    base?.product_price != null ? String(base.product_price) : "",
   );
-  const [model, setModel] = useState(appointment?.device_model ?? "");
-  const [customerName, setCustomerName] = useState(appointment?.customer_name ?? "");
+  const [model, setModel] = useState(base?.device_model ?? "");
+  const [customerName, setCustomerName] = useState(base?.customer_name ?? "");
   const [customerId, setCustomerId] = useState<string | null>(
-    appointment?.customer_id ?? null,
+    base?.customer_id ?? null,
   );
   const [customerPhone, setCustomerPhone] = useState<string | null>(
-    appointment?.customer_phone ?? null,
+    base?.customer_phone ?? null,
   );
   const [customerInstagram, setCustomerInstagram] = useState<string>(
-    appointment?.customer_instagram ? `@${appointment.customer_instagram}` : "",
+    base?.customer_instagram ? `@${base.customer_instagram}` : "",
   );
-  const [inventoryItemId, setInventoryItemId] = useState(appointment?.inventory_device_id ?? "");
+  const [inventoryItemId, setInventoryItemId] = useState(base?.inventory_device_id ?? "");
   const [manualLink, setManualLink] = useState(false);
   const [showTechnical, setShowTechnical] = useState(false);
   const [priceTouched, setPriceTouched] = useState(false);
   const [swapAsk, setSwapAsk] = useState<{ price: number } | null>(null);
   const { data: availableItems = [] } = useAvailableItems(
     model,
-    appointment?.inventory_device_id ?? null,
+    base?.inventory_device_id ?? null,
   );
 
   /** Item que será efetivamente vinculado: escolhido manualmente ou o mais antigo (reserva automática). */
@@ -111,7 +116,7 @@ export function AppointmentForm({
     ? availableItems.find((i) => i.id === inventoryItemId)
     : availableItems[0];
 
-  const lastLinkedId = useRef<string | null>(appointment?.inventory_device_id ?? null);
+  const lastLinkedId = useRef<string | null>(base?.inventory_device_id ?? null);
   useEffect(() => {
     if (!linkedItem) return;
     if (lastLinkedId.current === linkedItem.id) return;
