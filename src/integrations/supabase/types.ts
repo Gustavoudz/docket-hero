@@ -65,6 +65,7 @@ export type Database = {
       appointments: {
         Row: {
           attendant_id: string
+          battery_health: number | null
           cancel_reason: string | null
           completed_at: string | null
           converted_from_appointment_id: string | null
@@ -97,6 +98,7 @@ export type Database = {
         }
         Insert: {
           attendant_id: string
+          battery_health?: number | null
           cancel_reason?: string | null
           completed_at?: string | null
           converted_from_appointment_id?: string | null
@@ -129,6 +131,7 @@ export type Database = {
         }
         Update: {
           attendant_id?: string
+          battery_health?: number | null
           cancel_reason?: string | null
           completed_at?: string | null
           converted_from_appointment_id?: string | null
@@ -457,6 +460,7 @@ export type Database = {
         Row: {
           apple_id: string | null
           appointment_id: string | null
+          battery_health: number | null
           color: string | null
           condition: string
           created_at: string
@@ -476,6 +480,7 @@ export type Database = {
         Insert: {
           apple_id?: string | null
           appointment_id?: string | null
+          battery_health?: number | null
           color?: string | null
           condition?: string
           created_at?: string
@@ -495,6 +500,7 @@ export type Database = {
         Update: {
           apple_id?: string | null
           appointment_id?: string | null
+          battery_health?: number | null
           color?: string | null
           condition?: string
           created_at?: string
