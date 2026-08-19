@@ -30,10 +30,12 @@ export function AppointmentCard({
   appointment,
   attendantName,
   onEdit,
+  onConvert,
 }: {
   appointment: Appointment;
   attendantName?: string;
   onEdit?: ((a: Appointment) => void) | undefined;
+  onConvert?: ((a: Appointment) => void) | undefined;
 }) {
   const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -46,7 +48,28 @@ export function AppointmentCard({
   const [isTrade, setIsTrade] = useState<boolean | null>(null);
   const [tradeModel, setTradeModel] = useState("");
   const [tradeCost, setTradeCost] = useState("");
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isAgendamento = (appointment.record_type ?? "agendamento") === "agendamento";
+  const canConvert =
+    !!onConvert &&
+    isAgendamento &&
+    appointment.status === "pendente" &&
+    (role === "atendente" || role === "gerente");
+
+  /** Agendamento de origem, quando esta venda foi gerada por conversão. */
+  const { data: sourceAppointment } = useQuery({
+    queryKey: ["appointment", "source", appointment.converted_from_appointment_id],
+    enabled: !!appointment.converted_from_appointment_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, scheduled_at, customer_name, device_model, status")
+        .eq("id", appointment.converted_from_appointment_id!)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
   const { data: availableItems = [] } = useAvailableItems(
     linkOpen || completeOpen ? appointment.device_model : "",
   );
