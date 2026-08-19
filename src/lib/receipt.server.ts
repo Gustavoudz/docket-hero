@@ -22,6 +22,9 @@ export type ReceiptData = {
   customerDoc: string | null;
   customerPhone: string | null;
   customerAddress: string | null;
+  customerCep: string | null;
+  customerCity: string | null;
+  customerState: string | null;
   device: { model: string; color: string | null; storage: string | null; serial: string | null; condition: string };
   total: number;
   paymentMethod: string;
@@ -112,6 +115,9 @@ export async function loadReceiptData(
     customerDoc: fmtDoc(cust?.cpf),
     customerPhone: cust?.phone || cust?.whatsapp || null,
     customerAddress: cust?.address ?? null,
+    customerCep: null,
+    customerCity: null,
+    customerState: null,
     device: {
       model: item?.device_model ?? "—",
       color: item?.color ?? null,
