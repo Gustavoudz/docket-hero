@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/select";
 import type { AppRole } from "@/hooks/useAuth";
 import { useStaleDays } from "@/lib/inventory";
+import { createCollaborator, deleteCollaborator } from "@/lib/collaborators.functions";
 import { useCommissionAmount } from "@/lib/commissions";
 import { useTradeInDefects, useTradeInModels } from "@/lib/trade-in";
 
@@ -96,7 +97,7 @@ function Section({ title, description, children }: { title: string; description:
 }
 
 function ConfigPage() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const queryClient = useQueryClient();
   const { data: models = [] } = useDeviceModels();
   const { data: reasons = [] } = useCancelReasons();
@@ -115,6 +116,34 @@ function ConfigPage() {
   const [newTradeValue, setNewTradeValue] = useState("");
   const [newDefect, setNewDefect] = useState("");
   const [newDefectValue, setNewDefectValue] = useState("");
+  const [newCollab, setNewCollab] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    role: "vendedora" as AppRole,
+  });
+
+  const createCollabMut = useMutation({
+    mutationFn: async (values: typeof newCollab) =>
+      createCollaborator({ data: values }),
+    onSuccess: () => {
+      setNewCollab({ fullName: "", email: "", password: "", role: "vendedora" });
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["user_roles"] });
+      toast.success("Colaborador adicionado");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteCollabMut = useMutation({
+    mutationFn: async (userId: string) => deleteCollaborator({ data: { userId } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["user_roles"] });
+      toast.success("Colaborador removido");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const staleDaysMut = useMutation({
     mutationFn: async (days: number) => {
