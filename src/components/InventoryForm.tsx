@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { useDeviceModels } from "@/lib/settings";
 import { extractDeviceFromPhoto } from "@/lib/inventory-vision.functions";
+import { PAYMENT_METHODS, formatBRL, paymentsTotal, type PaymentEntry } from "@/lib/agenda";
 import {
   INVENTORY_STATUS_LABEL,
   INVENTORY_STATUSES,
@@ -63,8 +64,10 @@ export function InventoryForm({
   item?: InventoryItem | null;
   defaults?: { device_model?: string; cost_price?: number };
   /** Fluxo de troca/upgrade: o modal fica travado até o cadastro ser salvo. */
-  tradeIn?: { appointmentId: string; customerName: string } | undefined;
-  onSaved?: ((itemId: string) => void) | undefined;
+  tradeIn?:
+    | { appointmentId: string; customerName: string; payments?: PaymentEntry[] | null }
+    | undefined;
+  onSaved?: ((itemId: string, payments: PaymentEntry[]) => void) | undefined;
   onCancelFlow?: (() => void) | undefined;
 }) {
   const locked = !!tradeIn;
@@ -81,6 +84,27 @@ export function InventoryForm({
   const [reading, setReading] = useState(false);
   const [batch, setBatch] = useState(false);
   const [batchLines, setBatchLines] = useState("");
+  /** Formas de pagamento do cliente nesta venda de upgrade. */
+  const [payments, setPayments] = useState<PaymentEntry[]>(() =>
+    tradeIn?.payments && tradeIn.payments.length > 0
+      ? tradeIn.payments
+      : [{ method: "pix", amount: null, installments: null, installment_value: null }],
+  );
+
+  function updatePayment(index: number, patch: Partial<PaymentEntry>) {
+    setPayments((prev) => prev.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+  }
+
+  /** Formas de pagamento válidas (com valor informado). */
+  const cleanPayments: PaymentEntry[] = payments
+    .filter((p) => p.method)
+    .map((p) => ({
+      method: p.method,
+      amount: p.amount != null && Number(p.amount) > 0 ? Number(p.amount) : null,
+      installments: p.method === "credito" ? (p.installments ?? null) : null,
+      installment_value: p.method === "credito" ? (p.installment_value ?? null) : null,
+    }))
+    .filter((p) => (p.amount ?? 0) > 0 || ((p.installments ?? 0) > 0 && (p.installment_value ?? 0) > 0));
 
   function setField(name: string, value: string) {
     const el = formRef.current?.elements.namedItem(name) as
@@ -155,6 +179,10 @@ export function InventoryForm({
       const v = parsed.data;
       const cost = toNumber(v.cost_price);
       if (!item && !cost) throw new Error("Informe o valor de custo do aparelho");
+
+      if (locked && cleanPayments.length === 0) {
+        throw new Error("Informe como o cliente pagou (Pix, débito, crédito ou dinheiro)");
+      }
 
       const completingIncomplete =
         item?.status === "incompleto" && status === "incompleto" && !!v.serial_number;
@@ -258,7 +286,7 @@ export function InventoryForm({
         item ? "Item atualizado" : batch ? "Itens cadastrados em lote" : "Item cadastrado no estoque",
       );
       onOpenChange(false);
-      if (createdId && onSaved) onSaved(createdId);
+      if (createdId && onSaved) onSaved(createdId, cleanPayments);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -487,6 +515,102 @@ export function InventoryForm({
               defaultValue={item?.notes ?? ""}
             />
           </div>
+          {locked && (
+            <div className="space-y-3 rounded-md border border-primary/40 bg-primary/5 p-3">
+              <div className="flex items-center justify-between">
+                <Label>Como o cliente pagou a diferença *</Label>
+                <span className="text-xs text-muted-foreground">
+                  Total: {formatBRL(paymentsTotal(cleanPayments))}
+                </span>
+              </div>
+              {payments.map((p, i) => (
+                <div key={i} className="space-y-2 rounded-md border bg-card/40 p-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      aria-label="Forma de pagamento"
+                      value={p.method}
+                      onChange={(e) => updatePayment(i, { method: e.target.value })}
+                      className={selectClass}
+                    >
+                      {PAYMENT_METHODS.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      aria-label="Valor pago"
+                      inputMode="decimal"
+                      placeholder="Valor (R$)"
+                      value={p.amount ?? ""}
+                      onChange={(e) =>
+                        updatePayment(i, {
+                          amount: e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  {p.method === "credito" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        aria-label="Parcelas"
+                        value={p.installments ?? ""}
+                        onChange={(e) =>
+                          updatePayment(i, {
+                            installments: e.target.value === "" ? null : Number(e.target.value),
+                          })
+                        }
+                        className={selectClass}
+                      >
+                        <option value="">Parcelas…</option>
+                        {Array.from({ length: 18 }, (_, n) => n + 1).map((n) => (
+                          <option key={n} value={n}>
+                            {n}x
+                          </option>
+                        ))}
+                      </select>
+                      <Input
+                        aria-label="Valor da parcela"
+                        inputMode="decimal"
+                        placeholder="Valor da parcela (R$)"
+                        value={p.installment_value ?? ""}
+                        onChange={(e) =>
+                          updatePayment(i, {
+                            installment_value:
+                              e.target.value === "" ? null : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                  )}
+                  {payments.length > 1 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={() => setPayments((prev) => prev.filter((_, idx) => idx !== i))}
+                    >
+                      Remover forma de pagamento
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  setPayments((prev) => [
+                    ...prev,
+                    { method: "pix", amount: null, installments: null, installment_value: null },
+                  ])
+                }
+              >
+                Adicionar outra forma de pagamento
+              </Button>
+            </div>
+          )}
         </form>
         <DialogFooter>
           {locked && (
