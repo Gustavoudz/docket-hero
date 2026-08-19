@@ -205,8 +205,21 @@ function ProductPicker({
   setDraft: (updater: (prev: Draft) => Draft) => void;
 }) {
   const { data: items = [] } = useInventoryItems();
+  const { data: deviceModels = [] } = useDeviceModels();
   const [term, setTerm] = useState("");
   const [manual, setManual] = useState(false);
+
+  const modelOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const m of deviceModels) if (m.active) names.add(m.name);
+    for (const i of items) names.add(i.device_model);
+    return [...names].sort();
+  }, [deviceModels, items]);
+  const storageOptions = useMemo(() => {
+    const set = new Set(STORAGE_SUGGESTIONS);
+    for (const i of items) if (i.storage) set.add(i.storage);
+    return [...set];
+  }, [items]);
 
   const results = useMemo(() => {
     const q = term.trim().toLowerCase();
@@ -249,6 +262,8 @@ function ProductPicker({
                       product_condition:
                         item.condition === "lacrado" ? "Lacrado" : "Seminovo",
                       product_price: item.sale_price ? String(item.sale_price) : "",
+                      product_battery:
+                        item.battery_health != null ? String(item.battery_health) : "",
                     }));
                     setTerm("");
                   }}
@@ -281,21 +296,27 @@ function ProductPicker({
         <div className="grid grid-cols-2 gap-2 rounded-xl border bg-card/50 p-3">
           <div className="col-span-2 space-y-1">
             <Label className="text-xs">Modelo</Label>
-            <Input
-              className="rounded-lg"
+            <ComboboxInput
+              ariaLabel="Modelo do produto"
+              options={modelOptions}
               value={draft.product_model}
-              onChange={(e) =>
-                setDraft((prev) => ({ ...prev, product_model: e.target.value, inventory_item_id: manual ? null : prev.inventory_item_id }))
+              onChange={(value) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  product_model: value,
+                  inventory_item_id: manual ? null : prev.inventory_item_id,
+                }))
               }
             />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Armazenamento</Label>
-            <Input
-              className="rounded-lg"
+            <ComboboxInput
+              ariaLabel="Armazenamento do produto"
+              options={storageOptions}
               placeholder="128GB"
               value={draft.product_storage}
-              onChange={(e) => setDraft((prev) => ({ ...prev, product_storage: e.target.value }))}
+              onChange={(value) => setDraft((prev) => ({ ...prev, product_storage: value }))}
             />
           </div>
           <div className="space-y-1">
@@ -322,6 +343,16 @@ function ProductPicker({
               inputMode="decimal"
               value={draft.product_price}
               onChange={(e) => setDraft((prev) => ({ ...prev, product_price: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Saúde da bateria (%)</Label>
+            <Input
+              className="rounded-lg"
+              inputMode="numeric"
+              placeholder="Ex.: 89"
+              value={draft.product_battery}
+              onChange={(e) => setDraft((prev) => ({ ...prev, product_battery: e.target.value }))}
             />
           </div>
           {manual && (
