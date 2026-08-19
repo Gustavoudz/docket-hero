@@ -17,6 +17,7 @@ export type Quote = {
   product_storage: string | null;
   product_condition: string | null;
   product_price: number;
+  product_battery_health: number | null;
   discount: number;
   notes: string | null;
   trade_model: string | null;
@@ -24,12 +25,13 @@ export type Quote = {
   trade_storage: string | null;
   trade_condition: string | null;
   trade_value: number | null;
+  trade_battery_health: number | null;
   deadline_at: string;
   created_at: string;
 };
 
 const COLUMNS =
-  "id, seller_id, kind, status, customer_name, customer_contact, inventory_item_id, product_model, product_color, product_storage, product_condition, product_price, discount, notes, trade_model, trade_color, trade_storage, trade_condition, trade_value, deadline_at, created_at";
+  "id, seller_id, kind, status, customer_name, customer_contact, inventory_item_id, product_model, product_color, product_storage, product_condition, product_price, product_battery_health, discount, notes, trade_model, trade_color, trade_storage, trade_condition, trade_value, trade_battery_health, deadline_at, created_at";
 
 export const QUOTE_STATUS_LABEL: Record<QuoteStatus, string> = {
   enviado: "Enviados",
@@ -95,21 +97,57 @@ function money(value: number) {
 
 export type MessageTone = "suave" | "agressiva";
 
+/** Sugestões de armazenamento para os campos manuais. */
+export const STORAGE_SUGGESTIONS = ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
+
+/** Resumo do orçamento para virar observação do agendamento. */
+export function buildQuoteAppointmentNotes(quote: Quote) {
+  const lines = [`Origem: orçamento rápido (${quote.kind === "upgrade" ? "upgrade" : "simples"}).`];
+  if (quote.discount > 0) lines.push(`Desconto combinado: R$ ${quote.discount}.`);
+  if (quote.kind === "upgrade") {
+    const troca = [quote.trade_model, quote.trade_storage, quote.trade_color]
+      .filter(Boolean)
+      .join(" ");
+    lines.push(
+      `Troca: ${troca || "aparelho do cliente"}${
+        quote.trade_condition ? ` — ${quote.trade_condition}` : ""
+      }${quote.trade_battery_health != null ? ` — bateria ${quote.trade_battery_health}%` : ""}${
+        quote.trade_value != null ? ` — avaliado em R$ ${quote.trade_value}` : ""
+      }.`,
+    );
+  }
+  if (quote.notes?.trim()) lines.push(quote.notes.trim());
+  return lines.join("\n");
+}
+
+/** Valor final do orçamento (produto - desconto - troca). */
+export function quoteFinalPrice(quote: Quote) {
+  return Math.max(
+    0,
+    quote.product_price - quote.discount - (quote.kind === "upgrade" ? (quote.trade_value ?? 0) : 0),
+  );
+}
+
 export function buildQuoteMessage(quote: Quote, tone: MessageTone) {
   const greeting = quote.customer_name?.trim()
     ? `Oi, ${quote.customer_name.trim()}!`
     : "Oi!";
   const produto = [quote.product_model, quote.product_storage, quote.product_condition]
     .filter(Boolean)
-    .join(" ");
+    .join(" ") +
+    (quote.product_battery_health != null ? ` (bateria ${quote.product_battery_health}%)` : "");
   const valorFinal = money(Math.max(0, quote.product_price - quote.discount - (quote.kind === "upgrade" ? (quote.trade_value ?? 0) : 0)));
   const dataLimite = formatDeadline(quote.deadline_at);
 
   if (quote.kind === "upgrade") {
     const trocaBase = [quote.trade_model, quote.trade_storage].filter(Boolean).join(" ");
-    const troca = quote.trade_condition
+    const trocaEstado = quote.trade_condition
       ? `${trocaBase}, ${quote.trade_condition.toLowerCase()} estado`
       : trocaBase;
+    const troca =
+      quote.trade_battery_health != null
+        ? `${trocaEstado} (bateria ${quote.trade_battery_health}%)`
+        : trocaEstado;
     const avaliado = money(quote.trade_value ?? 0);
     if (tone === "suave") {
       return `${greeting} Fizemos a avaliação do seu ${troca} — consegui deixar ${avaliado} na troca, valendo direto pro seu upgrade do ${produto}, que fecha em ${valorFinal}. Prefere passar aqui hoje à tarde ou amanhã de manhã pra já deixarmos tudo certinho?`;

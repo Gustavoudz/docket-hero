@@ -88,6 +88,7 @@ export type Database = {
           payments: Json
           product_price: number | null
           profit_cents: number | null
+          quote_id: string | null
           record_type: Database["public"]["Enums"]["record_type"]
           sale_amount: number | null
           sale_id: string | null
@@ -123,6 +124,7 @@ export type Database = {
           payments?: Json
           product_price?: number | null
           profit_cents?: number | null
+          quote_id?: string | null
           record_type?: Database["public"]["Enums"]["record_type"]
           sale_amount?: number | null
           sale_id?: string | null
@@ -158,6 +160,7 @@ export type Database = {
           payments?: Json
           product_price?: number | null
           profit_cents?: number | null
+          quote_id?: string | null
           record_type?: Database["public"]["Enums"]["record_type"]
           sale_amount?: number | null
           sale_id?: string | null
@@ -181,6 +184,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]
@@ -764,6 +774,7 @@ export type Database = {
           inventory_item_id: string | null
           kind: Database["public"]["Enums"]["quote_kind"]
           notes: string | null
+          product_battery_health: number | null
           product_color: string | null
           product_condition: string | null
           product_model: string
@@ -771,6 +782,7 @@ export type Database = {
           product_storage: string | null
           seller_id: string
           status: Database["public"]["Enums"]["quote_status"]
+          trade_battery_health: number | null
           trade_color: string | null
           trade_condition: string | null
           trade_model: string | null
@@ -788,6 +800,7 @@ export type Database = {
           inventory_item_id?: string | null
           kind?: Database["public"]["Enums"]["quote_kind"]
           notes?: string | null
+          product_battery_health?: number | null
           product_color?: string | null
           product_condition?: string | null
           product_model: string
@@ -795,6 +808,7 @@ export type Database = {
           product_storage?: string | null
           seller_id: string
           status?: Database["public"]["Enums"]["quote_status"]
+          trade_battery_health?: number | null
           trade_color?: string | null
           trade_condition?: string | null
           trade_model?: string | null
@@ -812,6 +826,7 @@ export type Database = {
           inventory_item_id?: string | null
           kind?: Database["public"]["Enums"]["quote_kind"]
           notes?: string | null
+          product_battery_health?: number | null
           product_color?: string | null
           product_condition?: string | null
           product_model?: string
@@ -819,6 +834,7 @@ export type Database = {
           product_storage?: string | null
           seller_id?: string
           status?: Database["public"]["Enums"]["quote_status"]
+          trade_battery_health?: number | null
           trade_color?: string | null
           trade_condition?: string | null
           trade_model?: string | null

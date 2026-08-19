@@ -33,13 +33,18 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInventoryItems } from "@/lib/inventory";
-import { formatBRL } from "@/lib/agenda";
+import { formatBRL, todayISO } from "@/lib/agenda";
+import { useDeviceModels } from "@/lib/settings";
+import { ComboboxInput } from "@/components/ComboboxInput";
+import { AppointmentForm } from "@/components/AppointmentForm";
 import { cn } from "@/lib/utils";
 import {
   buildQuoteMessage,
   businessDeadline,
   formatDeadline,
   normalizeContact,
+  quoteFinalPrice,
+  STORAGE_SUGGESTIONS,
   useQuotes,
   type MessageTone,
   type Quote,
@@ -80,6 +85,7 @@ type Draft = {
   product_storage: string;
   product_condition: string;
   product_price: string;
+  product_battery: string;
   discount: string;
   notes: string;
   trade_model: string;
@@ -87,6 +93,7 @@ type Draft = {
   trade_storage: string;
   trade_condition: string;
   trade_value: string;
+  trade_battery: string;
 };
 
 const emptyDraft: Draft = {
@@ -98,6 +105,7 @@ const emptyDraft: Draft = {
   product_storage: "",
   product_condition: "",
   product_price: "",
+  product_battery: "",
   discount: "",
   notes: "",
   trade_model: "",
@@ -105,11 +113,18 @@ const emptyDraft: Draft = {
   trade_storage: "",
   trade_condition: "Bom",
   trade_value: "",
+  trade_battery: "",
 };
 
 function num(value: string) {
   const parsed = Number(String(value).replace(",", "."));
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/** Converte um campo de bateria em inteiro 0-100 ou null. */
+function batteryValue(raw: string) {
+  const n = Math.round(Number(String(raw).replace("%", "").trim()));
+  return raw.trim() !== "" && Number.isFinite(n) && n >= 0 && n <= 100 ? n : null;
 }
 
 function FunnelPanel({ quotes }: { quotes: Quote[] }) {
@@ -182,6 +197,24 @@ function MessageBox({ quote }: { quote: Quote }) {
   );
 }
 
+/** Sugestões de modelo e armazenamento vindas do cadastro e do estoque. */
+function useSuggestions() {
+  const { data: items = [] } = useInventoryItems();
+  const { data: deviceModels = [] } = useDeviceModels();
+  const modelOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const m of deviceModels) if (m.active) names.add(m.name);
+    for (const i of items) names.add(i.device_model);
+    return [...names].sort();
+  }, [deviceModels, items]);
+  const storageOptions = useMemo(() => {
+    const set = new Set(STORAGE_SUGGESTIONS);
+    for (const i of items) if (i.storage) set.add(i.storage);
+    return [...set];
+  }, [items]);
+  return { modelOptions, storageOptions };
+}
+
 function ProductPicker({
   draft,
   setDraft,
@@ -190,6 +223,7 @@ function ProductPicker({
   setDraft: (updater: (prev: Draft) => Draft) => void;
 }) {
   const { data: items = [] } = useInventoryItems();
+  const { modelOptions, storageOptions } = useSuggestions();
   const [term, setTerm] = useState("");
   const [manual, setManual] = useState(false);
 
@@ -234,6 +268,8 @@ function ProductPicker({
                       product_condition:
                         item.condition === "lacrado" ? "Lacrado" : "Seminovo",
                       product_price: item.sale_price ? String(item.sale_price) : "",
+                      product_battery:
+                        item.battery_health != null ? String(item.battery_health) : "",
                     }));
                     setTerm("");
                   }}
@@ -266,21 +302,27 @@ function ProductPicker({
         <div className="grid grid-cols-2 gap-2 rounded-xl border bg-card/50 p-3">
           <div className="col-span-2 space-y-1">
             <Label className="text-xs">Modelo</Label>
-            <Input
-              className="rounded-lg"
+            <ComboboxInput
+              ariaLabel="Modelo do produto"
+              options={modelOptions}
               value={draft.product_model}
-              onChange={(e) =>
-                setDraft((prev) => ({ ...prev, product_model: e.target.value, inventory_item_id: manual ? null : prev.inventory_item_id }))
+              onChange={(value) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  product_model: value,
+                  inventory_item_id: manual ? null : prev.inventory_item_id,
+                }))
               }
             />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Armazenamento</Label>
-            <Input
-              className="rounded-lg"
+            <ComboboxInput
+              ariaLabel="Armazenamento do produto"
+              options={storageOptions}
               placeholder="128GB"
               value={draft.product_storage}
-              onChange={(e) => setDraft((prev) => ({ ...prev, product_storage: e.target.value }))}
+              onChange={(value) => setDraft((prev) => ({ ...prev, product_storage: value }))}
             />
           </div>
           <div className="space-y-1">
@@ -309,6 +351,16 @@ function ProductPicker({
               onChange={(e) => setDraft((prev) => ({ ...prev, product_price: e.target.value }))}
             />
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Saúde da bateria (%)</Label>
+            <Input
+              className="rounded-lg"
+              inputMode="numeric"
+              placeholder="Ex.: 89"
+              value={draft.product_battery}
+              onChange={(e) => setDraft((prev) => ({ ...prev, product_battery: e.target.value }))}
+            />
+          </div>
           {manual && (
             <button
               type="button"
@@ -334,6 +386,7 @@ function QuoteForm({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const { modelOptions, storageOptions } = useSuggestions();
 
   const price = num(draft.product_price);
   const discount = num(draft.discount);
@@ -358,6 +411,7 @@ function QuoteForm({
         product_storage: draft.product_storage.trim() || null,
         product_condition: draft.product_condition.trim() || null,
         product_price: price,
+        product_battery_health: batteryValue(draft.product_battery),
         discount,
         notes: draft.notes.trim() || null,
         trade_model: kind === "upgrade" ? draft.trade_model.trim() || null : null,
@@ -365,6 +419,7 @@ function QuoteForm({
         trade_storage: kind === "upgrade" ? draft.trade_storage.trim() || null : null,
         trade_condition: kind === "upgrade" ? draft.trade_condition || null : null,
         trade_value: kind === "upgrade" ? tradeValue : null,
+        trade_battery_health: kind === "upgrade" ? batteryValue(draft.trade_battery) : null,
         deadline_at: businessDeadline(),
       };
       const { data, error } = await supabase.from("quotes").insert(payload).select().single();
@@ -422,19 +477,21 @@ function QuoteForm({
           <div className="grid grid-cols-2 gap-2">
             <div className="col-span-2 space-y-1">
               <Label className="text-xs">Modelo</Label>
-              <Input
-                className="rounded-lg"
+              <ComboboxInput
+                ariaLabel="Modelo do aparelho na troca"
+                options={modelOptions}
                 value={draft.trade_model}
-                onChange={(e) => setDraft((prev) => ({ ...prev, trade_model: e.target.value }))}
+                onChange={(value) => setDraft((prev) => ({ ...prev, trade_model: value }))}
               />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Armazenamento</Label>
-              <Input
-                className="rounded-lg"
+              <ComboboxInput
+                ariaLabel="Armazenamento do aparelho na troca"
+                options={storageOptions}
                 placeholder="128GB"
                 value={draft.trade_storage}
-                onChange={(e) => setDraft((prev) => ({ ...prev, trade_storage: e.target.value }))}
+                onChange={(value) => setDraft((prev) => ({ ...prev, trade_storage: value }))}
               />
             </div>
             <div className="space-y-1">
@@ -474,6 +531,16 @@ function QuoteForm({
                 onChange={(e) => setDraft((prev) => ({ ...prev, trade_value: e.target.value }))}
               />
             </div>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs">Saúde da bateria da troca (%)</Label>
+              <Input
+                className="rounded-lg"
+                inputMode="numeric"
+                placeholder="Ex.: 82"
+                value={draft.trade_battery}
+                onChange={(e) => setDraft((prev) => ({ ...prev, trade_battery: e.target.value }))}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -507,7 +574,7 @@ function QuoteForm({
   );
 }
 
-function QuoteCard({ quote }: { quote: Quote }) {
+function QuoteCard({ quote, onSchedule }: { quote: Quote; onSchedule: (quote: Quote) => void }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
@@ -521,10 +588,7 @@ function QuoteCard({ quote }: { quote: Quote }) {
     toast.success("Status atualizado");
   }
 
-  const final = Math.max(
-    0,
-    quote.product_price - quote.discount - (quote.kind === "upgrade" ? (quote.trade_value ?? 0) : 0),
-  );
+  const final = quoteFinalPrice(quote);
 
   const statusStyle: Record<QuoteStatus, string> = {
     enviado: "bg-sky-500/15 text-sky-400",
@@ -559,6 +623,9 @@ function QuoteCard({ quote }: { quote: Quote }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onSchedule(quote)}>
+              Transformar em agendamento
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatus("convertido")}>
               Marcar como convertido
             </DropdownMenuItem>
@@ -603,6 +670,7 @@ function OrcamentoPage() {
   const [picking, setPicking] = useState(false);
   const [kind, setKind] = useState<QuoteKind | null>(null);
   const [created, setCreated] = useState<Quote | null>(null);
+  const [scheduling, setScheduling] = useState<Quote | null>(null);
 
   return (
     <AppShell>
@@ -635,9 +703,20 @@ function OrcamentoPage() {
           </p>
         )}
         {quotes.map((q) => (
-          <QuoteCard key={q.id} quote={q} />
+          <QuoteCard key={q.id} quote={q} onSchedule={setScheduling} />
         ))}
       </div>
+
+      {scheduling && (
+        <AppointmentForm
+          key={scheduling.id}
+          open={!!scheduling}
+          onOpenChange={(o) => !o && setScheduling(null)}
+          defaultDate={todayISO()}
+          recordType="agendamento"
+          fromQuote={scheduling}
+        />
+      )}
 
       <Dialog open={picking} onOpenChange={setPicking}>
         <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto rounded-2xl">

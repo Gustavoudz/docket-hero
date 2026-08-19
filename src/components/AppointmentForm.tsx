@@ -40,6 +40,7 @@ import {
 import { CustomerPicker } from "@/components/CustomerPicker";
 import type { Customer } from "@/lib/customers";
 import type { RecordType } from "@/lib/permissions";
+import { buildQuoteAppointmentNotes, quoteFinalPrice, type Quote } from "@/lib/quotes";
 
 const schema = z.object({
   customer_name: z.string().trim().min(1, "Informe o nome do cliente").max(120),
@@ -79,6 +80,8 @@ type Props = {
   recordType?: RecordType | undefined;
   /** Agendamento de origem quando esta venda é gerada por "Transformar em venda". */
   convertFrom?: Appointment | null;
+  /** Orçamento rápido de origem quando o registro vem de "Transformar em agendamento". */
+  fromQuote?: Quote | null;
 };
 
 export function AppointmentForm({
@@ -88,10 +91,18 @@ export function AppointmentForm({
   appointment,
   recordType,
   convertFrom,
+  fromQuote,
 }: Props) {
   const { user, fullName } = useAuth();
   /** Registro usado só para pré-preencher os campos (edição ou conversão). */
   const base: Appointment | null | undefined = appointment ?? convertFrom;
+  /** Dados vindos do orçamento (só quando é um registro novo). */
+  const quote = appointment ? null : (fromQuote ?? null);
+  const initialModel = base?.device_model ?? quote?.product_model ?? "";
+  const quoteContact = quote?.customer_contact?.trim() ?? "";
+  const quoteIsInstagram = !!quoteContact && !/^\d[\d\s()+-]*$/.test(quoteContact);
+  const initialNotes =
+    base?.notes ?? (quote ? buildQuoteAppointmentNotes(quote) : "");
   const type: RecordType =
     recordType ?? (appointment?.record_type as RecordType | undefined) ?? "agendamento";
   const isVenda = type === "venda";
@@ -112,25 +123,39 @@ export function AppointmentForm({
     ];
   });
   const [productPrice, setProductPrice] = useState<string>(
-    base?.product_price != null ? String(base.product_price) : "",
+    base?.product_price != null
+      ? String(base.product_price)
+      : quote
+        ? String(quoteFinalPrice(quote))
+        : "",
   );
-  const [model, setModel] = useState(base?.device_model ?? "");
-  const [customerName, setCustomerName] = useState(base?.customer_name ?? "");
+  const [model, setModel] = useState(initialModel);
+  const [customerName, setCustomerName] = useState(
+    base?.customer_name ?? quote?.customer_name ?? "",
+  );
   const [customerId, setCustomerId] = useState<string | null>(
     base?.customer_id ?? null,
   );
   const [customerPhone, setCustomerPhone] = useState<string | null>(
-    base?.customer_phone ?? null,
+    base?.customer_phone ?? (quoteContact && !quoteIsInstagram ? quoteContact : null),
   );
   const [customerInstagram, setCustomerInstagram] = useState<string>(
-    base?.customer_instagram ? `@${base.customer_instagram}` : "",
+    base?.customer_instagram
+      ? `@${base.customer_instagram}`
+      : quoteIsInstagram
+        ? `@${quoteContact.replace(/^@+/, "")}`
+        : "",
   );
   const [customerEmail, setCustomerEmail] = useState<string>(
     (base as { customer_email?: string | null } | undefined)?.customer_email ?? "",
   );
   const [inventoryItemId, setInventoryItemId] = useState(base?.inventory_device_id ?? "");
   const [listPrice, setListPrice] = useState<number | null>(
-    base?.product_price != null ? Number(base.product_price) : null,
+    base?.product_price != null
+      ? Number(base.product_price)
+      : quote
+        ? quoteFinalPrice(quote)
+        : null,
   );
   const [discountKind, setDiscountKind] = useState<"nenhum" | "5" | "10" | "15" | "valor">(
     "nenhum",
@@ -155,10 +180,12 @@ export function AppointmentForm({
     if (lastLinkedId.current === linkedItem.id) return;
     const price = linkedItem.sale_price != null ? Number(linkedItem.sale_price) : null;
     lastLinkedId.current = linkedItem.id;
+    // Orçamento manda no preço: já vem com desconto e troca aplicados.
+    if (quote) return;
     if (price == null) return;
     setListPrice(price);
     setProductPrice(String(applyDiscount(price, discountKind, discountValue)));
-  }, [linkedItem, discountKind, discountValue]);
+  }, [linkedItem, discountKind, discountValue, quote]);
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -243,6 +270,7 @@ export function AppointmentForm({
         inventory_device_id: linkedId,
         converted_from_appointment_id:
           convertFrom?.id ?? appointment?.converted_from_appointment_id ?? null,
+        quote_id: quote?.id ?? appointment?.quote_id ?? null,
       };
       const query = appointment
         ? supabase.from("appointments").update(payload).eq("id", appointment.id)
@@ -256,11 +284,19 @@ export function AppointmentForm({
           .eq("id", convertFrom.id);
         if (convertError) throw new Error(convertError.message);
       }
+      if (!appointment && quote) {
+        const { error: quoteError } = await supabase
+          .from("quotes")
+          .update({ status: "convertido" })
+          .eq("id", quote.id);
+        if (quoteError) throw new Error(quoteError.message);
+      }
       return notFound;
     },
     onSuccess: (notFound) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
       const noun = isVenda ? "Venda" : "Agendamento";
       toast.success(appointment ? `${noun} atualizado` : `${noun} criado`);
       if (notFound) {
@@ -295,6 +331,12 @@ export function AppointmentForm({
             Gerado a partir do agendamento de{" "}
             {new Date(convertFrom.scheduled_at).toLocaleDateString("pt-BR")} — revise os dados antes
             de salvar.
+          </p>
+        )}
+        {quote && (
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Vindo do orçamento rápido{quote.kind === "upgrade" ? " com upgrade" : ""} — o orçamento
+            será marcado como convertido ao salvar.
           </p>
         )}
         <form
@@ -344,7 +386,7 @@ export function AppointmentForm({
               <select
                 id="device_model"
                 name="device_model"
-                defaultValue={base?.device_model ?? ""}
+                defaultValue={initialModel}
                 required
                 className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
                 onChange={(e) => {
@@ -358,9 +400,9 @@ export function AppointmentForm({
                     {m.name}
                   </option>
                 ))}
-                {base?.device_model &&
-                  !activeModels.some((m) => m.name === base.device_model) && (
-                    <option value={base.device_model}>{base.device_model}</option>
+                {initialModel &&
+                  !activeModels.some((m) => m.name === initialModel) && (
+                    <option value={initialModel}>{initialModel}</option>
                   )}
               </select>
             ) : (
@@ -368,7 +410,7 @@ export function AppointmentForm({
                 id="device_model"
                 name="device_model"
                 placeholder="iPhone 13 128GB"
-                defaultValue={base?.device_model ?? ""}
+                defaultValue={initialModel}
                 required
                 onChange={(e) => {
                   setModel(e.target.value);
@@ -518,7 +560,7 @@ export function AppointmentForm({
               max={100}
               inputMode="numeric"
               placeholder="Ex.: 89"
-              defaultValue={appointment?.battery_health ?? ""}
+              defaultValue={appointment?.battery_health ?? quote?.product_battery_health ?? ""}
             />
           </div>
           <div className="space-y-1.5">
@@ -690,7 +732,7 @@ export function AppointmentForm({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Observações</Label>
-            <Textarea id="notes" name="notes" rows={3} defaultValue={base?.notes ?? ""} />
+            <Textarea id="notes" name="notes" rows={3} defaultValue={initialNotes} />
           </div>
           <p className="text-xs text-muted-foreground">
             Atendente responsável: <span className="font-medium text-foreground">{fullName}</span>

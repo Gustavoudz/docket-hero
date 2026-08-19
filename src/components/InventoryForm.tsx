@@ -70,7 +70,16 @@ export function InventoryForm({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item?: InventoryItem | null;
-  defaults?: { device_model?: string; cost_price?: number };
+  defaults?: {
+    device_model?: string;
+    cost_price?: number;
+    sale_price?: number;
+    color?: string;
+    storage?: string;
+    battery_health?: number | null;
+    condition?: "lacrado" | "seminovo";
+    notes?: string;
+  };
   /** Fluxo de troca/upgrade: o modal fica travado até o cadastro ser salvo. */
   tradeIn?:
     | { appointmentId: string; customerName: string; payments?: PaymentEntry[] | null }
@@ -85,7 +94,19 @@ export function InventoryForm({
   const { data: models = [] } = useDeviceModels();
   const activeModels = models.filter((m) => m.active);
   const [status, setStatus] = useState<InventoryStatus>(item?.status ?? "disponivel");
-  const [condition, setCondition] = useState<"lacrado" | "seminovo">(item?.condition ?? "seminovo");
+  const [condition, setCondition] = useState<"lacrado" | "seminovo">(
+    item?.condition ?? defaults?.condition ?? "seminovo",
+  );
+  const [costPrice, setCostPrice] = useState(
+    defaults?.cost_price != null ? String(defaults.cost_price) : "",
+  );
+  const [salePrice, setSalePrice] = useState(
+    item?.sale_price != null
+      ? String(item.sale_price)
+      : defaults?.sale_price != null
+        ? String(defaults.sale_price)
+        : "",
+  );
   const fileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const extract = useServerFn(extractDeviceFromPhoto);
@@ -191,6 +212,9 @@ export function InventoryForm({
 
       if (locked && cleanPayments.length === 0) {
         throw new Error("Informe como o cliente pagou (Pix, débito, crédito ou dinheiro)");
+      }
+      if (locked && !toNumber(v.sale_price)) {
+        throw new Error("Informe o valor de venda do aparelho recebido na troca");
       }
 
       const completingIncomplete =
@@ -439,11 +463,21 @@ export function InventoryForm({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="color">Cor</Label>
-              <Input id="color" name="color" placeholder="Meia-noite" defaultValue={item?.color ?? ""} />
+              <Input
+                id="color"
+                name="color"
+                placeholder="Meia-noite"
+                defaultValue={item?.color ?? defaults?.color ?? ""}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="storage">Armazenamento</Label>
-              <Input id="storage" name="storage" placeholder="256GB" defaultValue={item?.storage ?? ""} />
+              <Input
+                id="storage"
+                name="storage"
+                placeholder="256GB"
+                defaultValue={item?.storage ?? defaults?.storage ?? ""}
+              />
             </div>
           </div>
           {!batch && (
@@ -471,7 +505,7 @@ export function InventoryForm({
                   max={100}
                   inputMode="numeric"
                   placeholder="Ex.: 89"
-                  defaultValue={item?.battery_health ?? ""}
+                  defaultValue={item?.battery_health ?? defaults?.battery_health ?? ""}
                 />
               </div>
             </>
@@ -485,21 +519,31 @@ export function InventoryForm({
                   name="cost_price"
                   inputMode="decimal"
                   placeholder="Ex.: 2800"
-                  defaultValue={defaults?.cost_price != null ? String(defaults.cost_price) : ""}
+                  value={costPrice}
+                  onChange={(e) => setCostPrice(e.target.value)}
                 />
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="sale_price">Venda sugerida (R$)</Label>
+              <Label htmlFor="sale_price">
+                {locked ? "Valor de venda (R$) *" : "Venda sugerida (R$)"}
+              </Label>
               <Input
                 id="sale_price"
                 name="sale_price"
                 inputMode="decimal"
                 placeholder="Ex.: 3500"
-                defaultValue={item?.sale_price != null ? String(item.sale_price) : ""}
+                value={salePrice}
+                onChange={(e) => setSalePrice(e.target.value)}
               />
             </div>
           </div>
+          {locked && (
+            <p className="text-xs text-muted-foreground">
+              Para concluir a venda com troca é obrigatório informar o valor de custo (quanto foi
+              dado ao cliente) e o valor de venda do aparelho recebido.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             {!locked && (
             <div className="space-y-1.5">
@@ -535,7 +579,7 @@ export function InventoryForm({
               name="notes"
               rows={3}
               placeholder="Ex.: tela com risco, bateria a trocar…"
-              defaultValue={item?.notes ?? ""}
+              defaultValue={item?.notes ?? defaults?.notes ?? ""}
             />
           </div>
           {locked && (
@@ -646,7 +690,14 @@ export function InventoryForm({
               Cancelar conclusão da venda
             </Button>
           )}
-          <Button type="submit" form="inventory-form" disabled={mutation.isPending}>
+          <Button
+            type="submit"
+            form="inventory-form"
+            disabled={
+              mutation.isPending ||
+              (locked && (!toNumber(costPrice) || !toNumber(salePrice)))
+            }
+          >
             {item ? "Salvar" : batch && !locked ? "Cadastrar lote" : "Cadastrar item"}
           </Button>
         </DialogFooter>
