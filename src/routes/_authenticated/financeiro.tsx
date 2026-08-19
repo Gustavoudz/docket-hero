@@ -278,23 +278,49 @@ function FinanceiroPage() {
               {label}
             </Button>
           ))}
-          {period === "custom" && (
-            <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="h-9 w-40"
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                size="sm"
+                variant={period === "custom" ? "default" : "outline"}
+                className="gap-1.5"
+                title="Escolher data específica"
+              >
+                <span aria-hidden className="text-base leading-none">
+                  🗓️
+                </span>
+                {period === "custom"
+                  ? from === to
+                    ? new Date(`${from}T12:00:00`).toLocaleDateString("pt-BR")
+                    : `${new Date(`${from}T12:00:00`).toLocaleDateString("pt-BR")} – ${new Date(`${to}T12:00:00`).toLocaleDateString("pt-BR")}`
+                  : "Escolher data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={new Date(`${from}T12:00:00`)}
+                selected={{
+                  from: new Date(`${from}T12:00:00`),
+                  to: new Date(`${to}T12:00:00`),
+                }}
+                onSelect={(r) => {
+                  if (!r?.from) return;
+                  const start = isoDay(r.from);
+                  const finish = isoDay(r.to ?? r.from);
+                  setFrom(start);
+                  setTo(finish);
+                  setPeriod("custom");
+                  if (r.to) setCalendarOpen(false);
+                }}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
               />
-              <span className="text-xs text-muted-foreground">até</span>
-              <Input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="h-9 w-40"
-              />
-            </div>
-          )}
+              <p className="border-t border-border/20 px-3 py-2 text-[11px] text-muted-foreground">
+                Clique em um dia para ver só ele, ou em dois dias para um intervalo.
+              </p>
+            </PopoverContent>
+          </Popover>
         </section>
 
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
