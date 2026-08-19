@@ -231,7 +231,7 @@ function AgendaPage() {
             <p className="text-sm font-medium">Fechamento do dia</p>
             <p className="text-xs text-muted-foreground">
               {closure
-                ? `Dia fechado · ${closure.completed_count} concluídos · ${closure.conversion_rate}% de conversão`
+                ? `Dia fechado · ${daySummary?.completedCount ?? 0} venda(s) concluída(s) · ${formatCents(daySummary?.totalCents ?? 0)} faturado`
                 : pending.length > 0
                   ? `Faltam ${pending.length} agendamento(s) sem status definido`
                   : "Tudo definido, pode fechar o dia"}
