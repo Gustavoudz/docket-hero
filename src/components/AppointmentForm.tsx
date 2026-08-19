@@ -455,6 +455,50 @@ export function AppointmentForm({
               value={productPrice}
               onChange={(e) => setProductPrice(e.target.value)}
             />
+            <div className="flex gap-2">
+              <Select
+                value={discountKind}
+                onValueChange={(v) => {
+                  const kind = v as typeof discountKind;
+                  setDiscountKind(kind);
+                  const b = listPrice ?? Number(productPrice.replace(",", "."));
+                  if (Number.isFinite(b)) {
+                    setListPrice(b);
+                    setProductPrice(String(applyDiscount(b, kind, discountValue)));
+                  }
+                }}
+              >
+                <SelectTrigger className="w-[170px]">
+                  <SelectValue placeholder="Desconto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhum">Sem desconto</SelectItem>
+                  <SelectItem value="5">5% de desconto</SelectItem>
+                  <SelectItem value="10">10% de desconto</SelectItem>
+                  <SelectItem value="15">15% de desconto</SelectItem>
+                  <SelectItem value="valor">Valor em R$</SelectItem>
+                </SelectContent>
+              </Select>
+              {discountKind === "valor" && (
+                <Input
+                  inputMode="decimal"
+                  placeholder="Desconto R$"
+                  value={discountValue}
+                  onChange={(e) => {
+                    setDiscountValue(e.target.value);
+                    const b = listPrice ?? Number(productPrice.replace(",", "."));
+                    if (Number.isFinite(b)) {
+                      setProductPrice(String(applyDiscount(b, "valor", e.target.value)));
+                    }
+                  }}
+                />
+              )}
+            </div>
+            {discountKind !== "nenhum" && listPrice != null && (
+              <p className="text-xs text-muted-foreground">
+                Valor original: R$ {listPrice.toLocaleString("pt-BR")}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               Preenchido pelo valor de venda do aparelho vinculado. Editar aqui não altera o valor
               cadastrado no estoque.
