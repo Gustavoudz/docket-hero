@@ -310,6 +310,7 @@ function EstoquePage() {
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                   {i.serial_number && <span>Série: {i.serial_number}</span>}
                   {i.imei && <span>IMEI: {i.imei}</span>}
+                  {i.battery_health != null && <span>Bateria: {i.battery_health}%</span>}
                   {isGerente && costs[i.id] != null && <span>Custo: {formatBRL(costs[i.id]!)}</span>}
                   {i.sale_price != null && <span>Venda: {formatBRL(Number(i.sale_price))}</span>}
                 </div>

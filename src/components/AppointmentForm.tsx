@@ -48,6 +48,7 @@ const schema = z.object({
   time: z.string().min(1, "Informe o horário"),
   customer_phone: z.string().trim().max(30).optional(),
   customer_instagram: z.string().trim().max(60).optional(),
+  battery_health: z.string().trim().max(4).optional(),
   deposit_amount: z.string().trim().max(20).optional(),
   product_price: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(1000).optional(),
@@ -170,6 +171,7 @@ export function AppointmentForm({
         time: form.get("time"),
         customer_phone: form.get("customer_phone") ?? "",
         customer_instagram: form.get("customer_instagram") ?? "",
+        battery_health: form.get("battery_health") ?? "",
         deposit_amount: form.get("deposit_amount") ?? "",
         product_price: form.get("product_price") ?? "",
         notes: form.get("notes") ?? "",
@@ -206,6 +208,12 @@ export function AppointmentForm({
         customer_instagram: v.customer_instagram
           ? v.customer_instagram.replace(/^@+/, "")
           : null,
+        battery_health: (() => {
+          const n = Math.round(Number((v.battery_health ?? "").replace("%", "").trim()));
+          return Number.isFinite(n) && n >= 0 && n <= 100 && (v.battery_health ?? "") !== ""
+            ? n
+            : null;
+        })(),
         notes: v.notes || null,
         tag: v.tag || null,
         record_type: type,
@@ -450,6 +458,19 @@ export function AppointmentForm({
               placeholder="@cliente"
               value={customerInstagram}
               onChange={(e) => setCustomerInstagram(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="battery_health">Saúde da bateria (%)</Label>
+            <Input
+              id="battery_health"
+              name="battery_health"
+              type="number"
+              min={0}
+              max={100}
+              inputMode="numeric"
+              placeholder="Ex.: 89"
+              defaultValue={appointment?.battery_health ?? ""}
             />
           </div>
           <div className="space-y-1.5">
