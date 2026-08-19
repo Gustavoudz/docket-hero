@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { PdfCanvasViewer } from "@/components/PdfCanvasViewer";
 import { getSaleReceipt, sendSaleReceiptEmail } from "@/lib/receipts.functions";
 
 function openPdf(base64: string, fileName: string, download: boolean) {
@@ -74,11 +75,7 @@ export function ReceiptQuickView({ saleId }: { saleId: string }) {
           </DialogHeader>
           {pdf && (
             <div className="space-y-3">
-              <iframe
-                src={pdf.viewUrl}
-                title="Recibo em PDF"
-                className="h-[70vh] w-full rounded-lg border border-border/60 bg-white"
-              />
+              <PdfCanvasViewer src={pdf.url} />
               <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
