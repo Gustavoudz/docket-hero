@@ -372,7 +372,7 @@ export function InventoryForm({
                 )}
             </select>
           </div>
-          {!item && (
+          {!item && !locked && (
             <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-3">
               <label className="flex items-center gap-2 text-sm font-medium">
                 <input
@@ -450,6 +450,7 @@ export function InventoryForm({
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
+            {!locked && (
             <div className="space-y-1.5">
               <Label htmlFor="status">Situação</Label>
               <select
@@ -465,6 +466,7 @@ export function InventoryForm({
                 ))}
               </select>
             </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="entered_at">Entrada no estoque</Label>
               <Input
@@ -487,8 +489,18 @@ export function InventoryForm({
           </div>
         </form>
         <DialogFooter>
+          {locked && (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={mutation.isPending}
+              onClick={() => onCancelFlow?.()}
+            >
+              Cancelar conclusão da venda
+            </Button>
+          )}
           <Button type="submit" form="inventory-form" disabled={mutation.isPending}>
-            {item ? "Salvar" : batch ? "Cadastrar lote" : "Cadastrar item"}
+            {item ? "Salvar" : batch && !locked ? "Cadastrar lote" : "Cadastrar item"}
           </Button>
         </DialogFooter>
       </DialogContent>
