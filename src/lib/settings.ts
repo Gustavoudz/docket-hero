@@ -102,3 +102,16 @@ export function useProfiles() {
     },
   });
 }
+
+export type UserRoleRow = { user_id: string; role: "gerente" | "atendente" | "vendedora" };
+
+export function useUserRoles() {
+  return useQuery({
+    queryKey: ["user_roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id, role");
+      if (error) throw error;
+      return (data ?? []) as UserRoleRow[];
+    },
+  });
+}
