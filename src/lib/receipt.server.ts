@@ -3,6 +3,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 export type ReceiptData = {
   number: number;
   token: string;
+  sentAt: string | null;
   saleReference: string;
   saleDate: string;
   customerName: string;
@@ -33,7 +34,7 @@ export async function loadReceiptData(
 ): Promise<ReceiptData | null> {
   let q = db
     .from("receipts")
-    .select("id, receipt_number, public_token, customer_email, sale_id");
+    .select("id, receipt_number, public_token, customer_email, sale_id, sent_at");
   q = where.token ? q.eq("public_token", where.token) : q.eq("sale_id", where.saleId);
   const { data: receipt } = await q.maybeSingle();
   if (!receipt) return null;
@@ -70,6 +71,7 @@ export async function loadReceiptData(
   return {
     number: Number(receipt.receipt_number),
     token: receipt.public_token,
+    sentAt: receipt.sent_at ?? null,
     saleReference: sale.reference,
     saleDate: appt?.completed_at ?? sale.created_at,
     customerName: cust?.name || appt?.customer_name || "Cliente",

@@ -21,6 +21,7 @@ import {
 } from "@/components/PaymentForm";
 import { PixAutoPayment } from "@/components/PixAutoPayment";
 import { ReceiptActions } from "@/components/ReceiptActions";
+import { sendSaleReceiptEmail } from "@/lib/receipts.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, toISODate } from "@/lib/agenda";
 
@@ -296,6 +297,12 @@ function VendasPage() {
 
 function SaleDetail({ sale, sellerName }: { sale: SaleRow; sellerName: string }) {
   const { role } = useAuth();
+  const autoSendReceipt = useServerFn(sendSaleReceiptEmail);
+  // Envio automático do recibo assim que a venda está paga (uma única vez).
+  useEffect(() => {
+    if (sale.status !== "pago") return;
+    void autoSendReceipt({ data: { saleId: sale.id, auto: true } }).catch(() => {});
+  }, [sale.status, sale.id, autoSendReceipt]);
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const product = sale.inventory_items?.device_model ?? sale.appointments?.device_model ?? "—";

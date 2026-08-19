@@ -26,7 +26,7 @@ export const getSaleReceipt = createServerFn({ method: "POST" })
 /** Envia (ou reenvia) o recibo por e-mail para o cliente. */
 export const sendSaleReceiptEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { saleId: string }) => {
+  .inputValidator((input: { saleId: string; auto?: boolean }) => {
     if (!input?.saleId) throw new Error("Venda inválida");
     return input;
   })
@@ -35,6 +35,8 @@ export const sendSaleReceiptEmail = createServerFn({ method: "POST" })
     const receipt = await loadReceiptData(context.supabase, { saleId: data.saleId });
     if (!receipt) throw new Error("Recibo não disponível para esta venda");
     if (!receipt.customerEmail) return { sent: false, reason: "sem_email" as const };
+    // Envio automático não repete o que já foi enviado; o reenvio manual sim.
+    if (data.auto && receipt.sentAt) return { sent: false, reason: "ja_enviado" as const };
 
     const origin = new URL(getRequest().url).origin;
     const link = `${origin}/api/public/recibo/${receipt.token}`;
