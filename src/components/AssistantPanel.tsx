@@ -179,8 +179,13 @@ export function AssistantPanel() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Abrir assistente">
-          <Sparkles className="h-5 w-5" />
+        <Button
+          variant="default"
+          size="icon"
+          aria-label="Abrir assistente"
+          className="fixed bottom-24 right-4 z-50 h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95 sm:bottom-6 sm:right-6"
+        >
+          <Sparkles className="h-7 w-7" />
         </Button>
       </SheetTrigger>
       <SheetContent
