@@ -670,6 +670,7 @@ function OrcamentoPage() {
   const [picking, setPicking] = useState(false);
   const [kind, setKind] = useState<QuoteKind | null>(null);
   const [created, setCreated] = useState<Quote | null>(null);
+  const [scheduling, setScheduling] = useState<Quote | null>(null);
 
   return (
     <AppShell>
@@ -702,9 +703,20 @@ function OrcamentoPage() {
           </p>
         )}
         {quotes.map((q) => (
-          <QuoteCard key={q.id} quote={q} />
+          <QuoteCard key={q.id} quote={q} onSchedule={setScheduling} />
         ))}
       </div>
+
+      {scheduling && (
+        <AppointmentForm
+          key={scheduling.id}
+          open={!!scheduling}
+          onOpenChange={(o) => !o && setScheduling(null)}
+          defaultDate={todayISO()}
+          recordType="agendamento"
+          fromQuote={scheduling}
+        />
+      )}
 
       <Dialog open={picking} onOpenChange={setPicking}>
         <DialogContent className="max-h-[88vh] max-w-lg overflow-y-auto rounded-2xl">
