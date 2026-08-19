@@ -322,7 +322,7 @@ export function AppointmentCard({
               size="sm"
               variant="secondary"
               className="flex-1"
-              onClick={() => onConvert!(appointment)}
+              onClick={() => setConvertOpen(true)}
             >
               <ShoppingCart className="mr-1 h-4 w-4" /> Transformar em venda
             </Button>
