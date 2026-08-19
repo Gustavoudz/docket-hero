@@ -333,6 +333,12 @@ export function AppointmentForm({
             de salvar.
           </p>
         )}
+        {quote && (
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Vindo do orçamento rápido{quote.kind === "upgrade" ? " com upgrade" : ""} — o orçamento
+            será marcado como convertido ao salvar.
+          </p>
+        )}
         <form
           id="appointment-form"
           className="space-y-4"

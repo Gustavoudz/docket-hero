@@ -33,13 +33,18 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useInventoryItems } from "@/lib/inventory";
-import { formatBRL } from "@/lib/agenda";
+import { formatBRL, todayISO } from "@/lib/agenda";
+import { useDeviceModels } from "@/lib/settings";
+import { ComboboxInput } from "@/components/ComboboxInput";
+import { AppointmentForm } from "@/components/AppointmentForm";
 import { cn } from "@/lib/utils";
 import {
   buildQuoteMessage,
   businessDeadline,
   formatDeadline,
   normalizeContact,
+  quoteFinalPrice,
+  STORAGE_SUGGESTIONS,
   useQuotes,
   type MessageTone,
   type Quote,
@@ -80,6 +85,7 @@ type Draft = {
   product_storage: string;
   product_condition: string;
   product_price: string;
+  product_battery: string;
   discount: string;
   notes: string;
   trade_model: string;
@@ -87,6 +93,7 @@ type Draft = {
   trade_storage: string;
   trade_condition: string;
   trade_value: string;
+  trade_battery: string;
 };
 
 const emptyDraft: Draft = {
@@ -98,6 +105,7 @@ const emptyDraft: Draft = {
   product_storage: "",
   product_condition: "",
   product_price: "",
+  product_battery: "",
   discount: "",
   notes: "",
   trade_model: "",
@@ -105,11 +113,18 @@ const emptyDraft: Draft = {
   trade_storage: "",
   trade_condition: "Bom",
   trade_value: "",
+  trade_battery: "",
 };
 
 function num(value: string) {
   const parsed = Number(String(value).replace(",", "."));
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/** Converte um campo de bateria em inteiro 0-100 ou null. */
+function batteryValue(raw: string) {
+  const n = Math.round(Number(String(raw).replace("%", "").trim()));
+  return raw.trim() !== "" && Number.isFinite(n) && n >= 0 && n <= 100 ? n : null;
 }
 
 function FunnelPanel({ quotes }: { quotes: Quote[] }) {
