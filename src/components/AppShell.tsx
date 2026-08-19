@@ -16,6 +16,7 @@ import {
   PackagePlus,
   Users,
   History,
+  BadgeDollarSign,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -190,6 +191,16 @@ function SideMenu() {
       : []),
     { title: "Estoque", url: "/estoque", icon: Package, active: currentPath === "/estoque" },
     { title: "Clientes", url: "/clientes", icon: Users, active: currentPath === "/clientes" },
+    ...(role === "gerente" || role === "vendedora"
+      ? [
+          {
+            title: "Comissões",
+            url: "/comissoes",
+            icon: BadgeDollarSign,
+            active: currentPath === "/comissoes",
+          },
+        ]
+      : []),
     {
       title: "Avaliação de troca",
       url: "/troca",

@@ -32,6 +32,7 @@ import {
   useStatusColors,
 } from "@/lib/settings";
 import { useStaleDays } from "@/lib/inventory";
+import { useCommissionAmount } from "@/lib/commissions";
 import { useTradeInDefects, useTradeInModels } from "@/lib/trade-in";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
@@ -95,6 +96,7 @@ function ConfigPage() {
   const statusColors = useStatusColors();
   const attendantColors = useAttendantColors();
   const staleDays = useStaleDays();
+  const commissionAmount = useCommissionAmount();
   const { data: tradeModels = [] } = useTradeInModels();
   const { data: tradeDefects = [] } = useTradeInDefects();
   const tradeModelMut = useTableMutation("trade_in_models", "trade_in_models");
@@ -119,6 +121,20 @@ function ConfigPage() {
   });
 
   const modelMut = useTableMutation("device_models", "device_models");
+
+  const commissionMut = useMutation({
+    mutationFn: async (value: number) => {
+      const { error } = await supabase
+        .from("app_settings")
+        .upsert({ key: "commission_amount", value: String(value) }, { onConflict: "key" });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["app_settings", "commission_amount"] });
+      toast.success("Valor de comissão atualizado");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const reasonMut = useTableMutation("cancel_reasons", "cancel_reasons");
   const tagMut = useTableMutation("appointment_tags", "appointment_tags");
 
@@ -344,6 +360,30 @@ function ConfigPage() {
             onBlur={(e) => {
               const n = Math.round(Number(e.target.value));
               if (Number.isFinite(n) && n > 0 && n !== staleDays) staleDaysMut.mutate(n);
+            }}
+          />
+        </div>
+      </Section>
+
+      <Section
+        title="Comissões"
+        description="Valor pago à vendedora por venda concluída que veio de um agendamento."
+      >
+        <div className="flex items-center gap-3">
+          <Label htmlFor="commission-amount" className="flex-1">
+            Valor de comissão por venda (R$)
+          </Label>
+          <Input
+            id="commission-amount"
+            type="number"
+            min={0}
+            step="0.01"
+            className="w-28"
+            key={commissionAmount}
+            defaultValue={commissionAmount}
+            onBlur={(e) => {
+              const n = Number(e.target.value);
+              if (Number.isFinite(n) && n >= 0 && n !== commissionAmount) commissionMut.mutate(n);
             }}
           />
         </div>

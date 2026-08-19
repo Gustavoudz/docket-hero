@@ -254,6 +254,60 @@ export type Database = {
         }
         Relationships: []
       }
+      commissions: {
+        Row: {
+          amount: number
+          completed_at: string
+          created_at: string
+          device_model: string | null
+          id: string
+          sale_appointment_id: string
+          seller_id: string
+          source_appointment_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          completed_at?: string
+          created_at?: string
+          device_model?: string | null
+          id?: string
+          sale_appointment_id: string
+          seller_id: string
+          source_appointment_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          completed_at?: string
+          created_at?: string
+          device_model?: string | null
+          id?: string
+          sale_appointment_id?: string
+          seller_id?: string
+          source_appointment_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_sale_appointment_id_fkey"
+            columns: ["sale_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_source_appointment_id_fkey"
+            columns: ["source_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
