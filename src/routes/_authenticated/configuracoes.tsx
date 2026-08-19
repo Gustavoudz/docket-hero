@@ -20,6 +20,7 @@ import {
   useProfiles,
   useStatusColors,
 } from "@/lib/settings";
+import { useStaleDays } from "@/lib/inventory";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
@@ -78,6 +79,21 @@ function ConfigPage() {
   const { data: profiles = [] } = useProfiles();
   const statusColors = useStatusColors();
   const attendantColors = useAttendantColors();
+  const staleDays = useStaleDays();
+
+  const staleDaysMut = useMutation({
+    mutationFn: async (days: number) => {
+      const { error } = await supabase
+        .from("app_settings")
+        .upsert({ key: "stale_days", value: String(days) }, { onConflict: "key" });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["app_settings", "stale_days"] });
+      toast.success("Limite de estoque parado atualizado");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const modelMut = useTableMutation("device_models", "device_models");
   const reasonMut = useTableMutation("cancel_reasons", "cancel_reasons");
@@ -272,6 +288,30 @@ function ConfigPage() {
             />
           </div>
         ))}
+      </Section>
+
+      <Section
+        title="Alerta de estoque parado"
+        description="Itens disponíveis há mais dias que o limite ganham destaque na lista de estoque."
+      >
+        <div className="flex items-center gap-3">
+          <Label htmlFor="stale-days" className="flex-1">
+            Alertar item parado após (dias)
+          </Label>
+          <Input
+            id="stale-days"
+            type="number"
+            min={1}
+            max={365}
+            className="w-24"
+            key={staleDays}
+            defaultValue={staleDays}
+            onBlur={(e) => {
+              const n = Math.round(Number(e.target.value));
+              if (Number.isFinite(n) && n > 0 && n !== staleDays) staleDaysMut.mutate(n);
+            }}
+          />
+        </div>
       </Section>
     </AppShell>
   );

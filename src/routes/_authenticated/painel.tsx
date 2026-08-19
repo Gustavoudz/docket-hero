@@ -8,6 +8,8 @@ import { AppointmentCard } from "@/components/AppointmentCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { conversionRate, shiftDate, todayISO, type Appointment } from "@/lib/agenda";
+import { formatBRL } from "@/lib/agenda";
+import { isStale, useInventoryCosts, useInventoryItems, useStaleDays } from "@/lib/inventory";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => ({
@@ -32,6 +34,12 @@ function PainelPage() {
   const [from, setFrom] = useState(shiftDate(todayISO(), -30));
   const [to, setTo] = useState(todayISO());
   const [attendant, setAttendant] = useState("todas");
+  const isGerente = role === "gerente";
+  const { data: inventory = [] } = useInventoryItems();
+  const inventoryCosts = useInventoryCosts(isGerente);
+  const staleDays = useStaleDays();
+  const staleItems = inventory.filter((i) => isStale(i, staleDays));
+  const staleCost = staleItems.reduce((sum, i) => sum + (inventoryCosts[i.id] ?? 0), 0);
 
   const { data: profiles = [] } = useQuery({
     queryKey: ["profiles"],
@@ -128,6 +136,17 @@ function PainelPage() {
         <Stat label="Conversão" value={`${conversionRate(completed, filtered.length)}%`} />
       </dl>
       <p className="mt-2 text-xs text-muted-foreground">{pending} ainda pendente(s) no período.</p>
+
+      <section className="mt-5 rounded-lg border border-amber-500/60 bg-card p-3 backdrop-blur-xl">
+        <h2 className="text-sm font-medium">Estoque parado</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Itens disponíveis há mais de {staleDays} dias.
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <Stat label="Itens parados" value={staleItems.length} />
+          <Stat label="Custo parado" value={formatBRL(staleCost)} />
+        </div>
+      </section>
 
       {topReasons.length > 0 && (
         <section className="mt-5 rounded-lg border bg-card p-3 backdrop-blur-xl">

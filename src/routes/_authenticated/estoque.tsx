@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Pencil, RotateCcw } from "lucide-react";
+import { Plus, Search, Pencil, RotateCcw, History, AlarmClock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { InventoryForm } from "@/components/InventoryForm";
+import { InventoryHistory } from "@/components/InventoryHistory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +26,9 @@ import {
   logInventoryEvent,
   useInventoryCosts,
   useInventoryItems,
+  useStaleDays,
+  daysInStock,
+  isStale,
   type InventoryItem,
 } from "@/lib/inventory";
 
@@ -57,13 +61,16 @@ function EstoquePage() {
   const queryClient = useQueryClient();
   const { data: items = [], isLoading } = useInventoryItems();
   const costs = useInventoryCosts(isGerente);
+  const staleDays = useStaleDays();
 
   const [statusFilter, setStatusFilter] = useState("");
   const [modelFilter, setModelFilter] = useState("");
   const [colorFilter, setColorFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [onlyStale, setOnlyStale] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<InventoryItem | null>(null);
+  const [historyItem, setHistoryItem] = useState<InventoryItem | null>(null);
   const [reverting, setReverting] = useState<InventoryItem | null>(null);
   const [reason, setReason] = useState("");
 
@@ -80,6 +87,7 @@ function EstoquePage() {
     if (statusFilter && i.status !== statusFilter) return false;
     if (modelFilter && i.device_model !== modelFilter) return false;
     if (colorFilter && i.color !== colorFilter) return false;
+    if (onlyStale && !isStale(i, staleDays)) return false;
     const term = search.trim().toLowerCase();
     if (!term) return true;
     return (
@@ -91,6 +99,7 @@ function EstoquePage() {
 
   const available = items.filter((i) => i.status === "disponivel");
   const totalAvailableCost = available.reduce((sum, i) => sum + (costs[i.id] ?? 0), 0);
+  const staleItems = items.filter((i) => isStale(i, staleDays));
 
   const revert = useMutation({
     mutationFn: async ({ item, why }: { item: InventoryItem; why: string }) => {
@@ -193,6 +202,16 @@ function EstoquePage() {
             ))}
           </select>
         </div>
+        <Button
+          type="button"
+          variant={onlyStale ? "default" : "outline"}
+          size="sm"
+          className="w-full transition-transform active:scale-[0.98]"
+          onClick={() => setOnlyStale((v) => !v)}
+        >
+          <AlarmClock className="mr-1 h-4 w-4" />
+          {onlyStale ? "Mostrando só parados" : `Mostrar só parados (${staleItems.length})`}
+        </Button>
       </div>
 
       <ul className="mt-3 space-y-2">
@@ -202,10 +221,14 @@ function EstoquePage() {
             Nenhum item encontrado.
           </li>
         )}
-        {filtered.map((i) => (
+        {filtered.map((i) => {
+          const stale = isStale(i, staleDays);
+          return (
           <li
             key={i.id}
-            className="rounded-lg border bg-card p-3 backdrop-blur-xl transition-transform active:scale-[0.99]"
+            className={`rounded-lg border bg-card p-3 backdrop-blur-xl transition-transform active:scale-[0.99] ${
+              stale ? "border-amber-500/70" : ""
+            }`}
           >
             <div className="flex items-start gap-3">
               <span
@@ -222,6 +245,11 @@ function EstoquePage() {
                   >
                     {INVENTORY_STATUS_LABEL[i.status]}
                   </span>
+                  {stale && (
+                    <span className="shrink-0 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-black">
+                      Parado há {daysInStock(i.entered_at)} dias
+                    </span>
+                  )}
                 </div>
                 <p className="truncate text-sm text-muted-foreground">
                   {[i.color, i.storage].filter(Boolean).join(" · ") || "Sem cor/configuração"}
@@ -235,6 +263,14 @@ function EstoquePage() {
                 {i.notes && <p className="mt-1 text-sm">{i.notes}</p>}
               </div>
               <div className="flex shrink-0 flex-col gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Ver histórico"
+                  onClick={() => setHistoryItem(i)}
+                >
+                  <History className="h-4 w-4" />
+                </Button>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -259,7 +295,8 @@ function EstoquePage() {
               </div>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <Button
@@ -281,6 +318,8 @@ function EstoquePage() {
           item={editing}
         />
       )}
+
+      <InventoryHistory item={historyItem} onOpenChange={(open) => !open && setHistoryItem(null)} />
 
       <Dialog open={!!reverting} onOpenChange={(open) => !open && setReverting(null)}>
         <DialogContent className="sm:max-w-md">
