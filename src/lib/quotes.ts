@@ -106,10 +106,10 @@ export function buildQuoteMessage(quote: Quote, tone: MessageTone) {
   const dataLimite = formatDeadline(quote.deadline_at);
 
   if (quote.kind === "upgrade") {
-    const troca = [quote.trade_model, quote.trade_storage, quote.trade_condition ? `${quote.trade_condition.toLowerCase()} estado` : null]
-      .filter(Boolean)
-      .join(" ")
-      .replace(/ (excelente|bom|regular) estado$/, ", $1 estado");
+    const trocaBase = [quote.trade_model, quote.trade_storage].filter(Boolean).join(" ");
+    const troca = quote.trade_condition
+      ? `${trocaBase}, ${quote.trade_condition.toLowerCase()} estado`
+      : trocaBase;
     const avaliado = money(quote.trade_value ?? 0);
     if (tone === "suave") {
       return `${greeting} Fizemos a avaliação do seu ${troca} — consegui deixar ${avaliado} na troca, valendo direto pro seu upgrade do ${produto}, que fecha em ${valorFinal}. Prefere passar aqui hoje à tarde ou amanhã de manhã pra já deixarmos tudo certinho?`;
