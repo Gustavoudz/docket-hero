@@ -229,10 +229,10 @@ export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
     { fill: true },
   );
   y = drawRow(ctx, X, y, [
-    { w: c4[0], text: d.customerName.toUpperCase() },
+    { w: c4[0], lines: wrapText(ctx.font, d.customerName.toUpperCase(), 9.5, c4[0] - 12) },
     { w: c4[1], text: d.customerPhone ?? "" },
     { w: c4[2], text: d.customerDoc ?? "" },
-    { w: c4[3], text: d.customerEmail ?? "", size: 8 },
+    { w: c4[3], lines: wrapText(ctx.font, d.customerEmail ?? "", 8, c4[3] - 12), size: 8 },
   ]);
   y = drawRow(
     ctx,
