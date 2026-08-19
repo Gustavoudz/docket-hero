@@ -23,10 +23,10 @@ export function MasterPasswordDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  title?: string;
-  description?: string;
-  confirmLabel?: string;
-  pending?: boolean;
+  title?: string | undefined;
+  description?: string | undefined;
+  confirmLabel?: string | undefined;
+  pending?: boolean | undefined;
   onConfirm: () => void;
 }) {
   const [password, setPassword] = useState("");
