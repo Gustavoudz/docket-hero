@@ -174,7 +174,7 @@ export function AppointmentCard({
       toast.error(e instanceof Error ? e.message : "Falha ao verificar a troca");
       return;
     }
-    complete.mutate();
+    complete.mutate(undefined);
   }
 
   /**
