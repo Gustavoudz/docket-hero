@@ -1,10 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Receipt, Search, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  PaymentForm,
+  PAYMENT_METHOD_LABEL,
+  PAYMENT_STATUS_LABEL,
+} from "@/components/PaymentForm";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, toISODate } from "@/lib/agenda";
 
@@ -46,6 +60,27 @@ const STATUS_CLASS: Record<string, string> = {
   estornado: "bg-sky-500/15 text-sky-300 border-sky-500/40",
 };
 
+type PaymentRow = {
+  id: string;
+  method: string;
+  status: string;
+  gross_amount: number;
+  fee_amount: number;
+  net_amount: number;
+  installments: number;
+  installment_value: number | null;
+  card_brand: string | null;
+  card_last4: string | null;
+  nsu: string | null;
+  authorization_code: string | null;
+  transaction_code: string | null;
+  terminal: string | null;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
 type SaleRow = {
   id: string;
   sale_number: number;
@@ -58,6 +93,7 @@ type SaleRow = {
   customers: { name: string } | null;
   inventory_items: { device_model: string | null; imei: string | null; serial_number: string | null } | null;
   appointments: { customer_name: string | null; device_model: string | null; scheduled_date: string | null } | null;
+  payments: PaymentRow[];
 };
 
 function useSales() {
@@ -67,7 +103,7 @@ function useSales() {
       const { data, error } = await supabase
         .from("sales")
         .select(
-          "id, sale_number, reference, status, total, created_at, seller_id, appointment_id, customers(name), inventory_items(device_model, imei, serial_number), appointments(customer_name, device_model, scheduled_date)",
+          "id, sale_number, reference, status, total, created_at, seller_id, appointment_id, customers(name), inventory_items(device_model, imei, serial_number), appointments(customer_name, device_model, scheduled_date), payments(*)",
         )
         .order("sale_number", { ascending: false });
       if (error) throw error;
@@ -92,6 +128,7 @@ function useSellers() {
 
 function VendasPage() {
   const [term, setTerm] = useState("");
+  const [detail, setDetail] = useState<SaleRow | null>(null);
   const { data: sales = [], isLoading } = useSales();
   const { data: sellers = {} } = useSellers();
 
@@ -110,6 +147,8 @@ function VendasPage() {
       );
     });
   }, [sales, term]);
+
+  const current = detail ? (sales.find((s) => s.id === detail.id) ?? detail) : null;
 
   return (
     <AppShell>
@@ -140,6 +179,7 @@ function VendasPage() {
                 <th className="px-3 py-2.5">Produto</th>
                 <th className="px-3 py-2.5">Vendedor</th>
                 <th className="px-3 py-2.5">Valor</th>
+                <th className="px-3 py-2.5">Pagamento</th>
                 <th className="px-3 py-2.5">Status</th>
                 <th className="px-3 py-2.5">Origem</th>
               </tr>
@@ -147,14 +187,14 @@ function VendasPage() {
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
                     Carregando…
                   </td>
                 </tr>
               )}
               {!isLoading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
                     Nenhuma venda registrada ainda. As vendas são criadas quando um agendamento é concluído.
                   </td>
                 </tr>
@@ -169,7 +209,13 @@ function VendasPage() {
                       {new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR")}
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      <span className="font-medium">#{s.sale_number}</span>
+                      <button
+                        type="button"
+                        onClick={() => setDetail(s)}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        #{s.sale_number}
+                      </button>
                       <span className="ml-1 text-xs text-muted-foreground">{s.reference}</span>
                     </td>
                     <td className="px-3 py-2.5">{s.customers?.name ?? s.appointments?.customer_name ?? "—"}</td>
@@ -179,6 +225,25 @@ function VendasPage() {
                     </td>
                     <td className="px-3 py-2.5">{sellers[s.seller_id] ?? "—"}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap font-medium">{formatBRL(Number(s.total))}</td>
+                    <td className="px-3 py-2.5">
+                      {s.payments.length === 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <div className="space-y-0.5 text-xs">
+                          {s.payments.map((p) => (
+                            <div key={p.id}>
+                              {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
+                              {p.method === "credito" ? ` ${p.installments}x` : ""} ·{" "}
+                              {formatBRL(Number(p.gross_amount))}
+                              <span className="text-muted-foreground">
+                                {" "}(líq. {formatBRL(Number(p.net_amount))}) ·{" "}
+                                {PAYMENT_STATUS_LABEL[p.status] ?? p.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-3 py-2.5">
                       <Badge variant="outline" className={STATUS_CLASS[s.status] ?? ""}>
                         {STATUS_LABEL[s.status] ?? s.status}
@@ -204,6 +269,132 @@ function VendasPage() {
           </table>
         </div>
       </div>
+
+      <Dialog open={!!current} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Venda #{current?.sale_number} · {current?.reference}
+            </DialogTitle>
+          </DialogHeader>
+          {current && <SaleDetail sale={current} sellerName={sellers[current.seller_id] ?? "—"} />}
+        </DialogContent>
+      </Dialog>
     </AppShell>
+  );
+}
+
+function SaleDetail({ sale, sellerName }: { sale: SaleRow; sellerName: string }) {
+  const { role } = useAuth();
+  const qc = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const product = sale.inventory_items?.device_model ?? sale.appointments?.device_model ?? "—";
+  const idcode = sale.inventory_items?.imei || sale.inventory_items?.serial_number;
+
+  const cancelPayment = useMutation({
+    mutationFn: async (paymentId: string) => {
+      const { error } = await supabase
+        .from("payments")
+        .update({ status: "cancelado" })
+        .eq("id", paymentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Pagamento cancelado");
+      qc.invalidateQueries({ queryKey: ["sales"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-4 text-sm">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Info label="Cliente" value={sale.customers?.name ?? sale.appointments?.customer_name ?? "—"} />
+        <Info label="Vendedor" value={sellerName} />
+        <Info label="Produto" value={idcode ? `${product} · ${idcode}` : product} />
+        <Info label="Valor" value={formatBRL(Number(sale.total))} />
+        <Info label="Status" value={STATUS_LABEL[sale.status] ?? sale.status} />
+        <Info
+          label="Criada em"
+          value={new Date(sale.created_at).toLocaleString("pt-BR")}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Pagamentos</h3>
+          {!showForm && (
+            <Button size="sm" onClick={() => setShowForm(true)}>
+              Registrar pagamento
+            </Button>
+          )}
+        </div>
+        {sale.payments.length === 0 && !showForm && (
+          <p className="text-xs text-muted-foreground">Nenhum pagamento registrado.</p>
+        )}
+        {sale.payments.map((p) => (
+          <div key={p.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-medium">
+                {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
+                {p.method === "credito" ? ` · ${p.installments}x de ${formatBRL(Number(p.installment_value ?? 0))}` : ""}
+              </span>
+              <Badge variant="outline">{PAYMENT_STATUS_LABEL[p.status] ?? p.status}</Badge>
+            </div>
+            <div className="mt-2 grid gap-1 text-xs sm:grid-cols-2">
+              <Info label="Bruto" value={formatBRL(Number(p.gross_amount))} />
+              <Info label="Taxa" value={formatBRL(Number(p.fee_amount))} />
+              <Info label="Líquido" value={formatBRL(Number(p.net_amount))} />
+              <Info label="Bandeira" value={p.card_brand ?? "—"} />
+              <Info label="Últimos 4" value={p.card_last4 ? `•••• ${p.card_last4}` : "—"} />
+              <Info label="NSU" value={p.nsu ?? "—"} />
+              <Info label="Autorização" value={p.authorization_code ?? "—"} />
+              <Info label="Transação" value={p.transaction_code ?? "—"} />
+              <Info label="Terminal" value={p.terminal ?? "—"} />
+              <Info
+                label="Confirmado em"
+                value={p.confirmed_at ? new Date(p.confirmed_at).toLocaleString("pt-BR") : "—"}
+              />
+            </div>
+            {p.notes && <p className="mt-2 text-xs text-muted-foreground">{p.notes}</p>}
+            {p.status === "aprovado" && (
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Pagamento aprovado não pode ser editado.
+                </span>
+                {role === "gerente" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={cancelPayment.isPending}
+                    onClick={() => cancelPayment.mutate(p.id)}
+                  >
+                    Cancelar pagamento
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        {showForm && (
+          <div className="rounded-lg border border-border/60 p-3">
+            <PaymentForm
+              saleId={sale.id}
+              defaultAmount={Number(sale.total)}
+              onDone={() => setShowForm(false)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <span className="text-muted-foreground">{label}: </span>
+      <span>{value}</span>
+    </div>
   );
 }

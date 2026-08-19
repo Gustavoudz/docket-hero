@@ -513,6 +513,86 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          authorization_code: string | null
+          card_brand: string | null
+          card_last4: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          fee_amount: number
+          gross_amount: number
+          id: string
+          installment_value: number | null
+          installments: number
+          method: Database["public"]["Enums"]["payment_method"]
+          net_amount: number
+          notes: string | null
+          nsu: string | null
+          reference: string
+          sale_id: string
+          status: Database["public"]["Enums"]["payment_status"]
+          terminal: string | null
+          transaction_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          authorization_code?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          fee_amount?: number
+          gross_amount?: number
+          id?: string
+          installment_value?: number | null
+          installments?: number
+          method: Database["public"]["Enums"]["payment_method"]
+          net_amount?: number
+          notes?: string | null
+          nsu?: string | null
+          reference?: string
+          sale_id: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          terminal?: string | null
+          transaction_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          authorization_code?: string | null
+          card_brand?: string | null
+          card_last4?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          fee_amount?: number
+          gross_amount?: number
+          id?: string
+          installment_value?: number | null
+          installments?: number
+          method?: Database["public"]["Enums"]["payment_method"]
+          net_amount?: number
+          notes?: string | null
+          nsu?: string | null
+          reference?: string
+          sale_id?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          terminal?: string | null
+          transaction_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -738,6 +818,13 @@ export type Database = {
         | "vendido"
         | "manutencao"
         | "incompleto"
+      payment_method: "pix" | "debito" | "credito"
+      payment_status:
+        | "aguardando"
+        | "aprovado"
+        | "recusado"
+        | "cancelado"
+        | "estornado"
       sale_status:
         | "rascunho"
         | "aguardando_pagamento"
@@ -879,6 +966,14 @@ export const Constants = {
         "vendido",
         "manutencao",
         "incompleto",
+      ],
+      payment_method: ["pix", "debito", "credito"],
+      payment_status: [
+        "aguardando",
+        "aprovado",
+        "recusado",
+        "cancelado",
+        "estornado",
       ],
       sale_status: [
         "rascunho",
