@@ -13,6 +13,7 @@ const KEYS = [
   "store_contact",
   "warranty_lacrado",
   "warranty_seminovo",
+  "warranty_service_order",
 ] as const;
 type Key = (typeof KEYS)[number];
 
@@ -42,6 +43,7 @@ export function ReceiptSettings() {
     store_contact: "",
     warranty_lacrado: "",
     warranty_seminovo: "",
+    warranty_service_order: "",
   });
 
   useEffect(() => {
@@ -97,6 +99,10 @@ export function ReceiptSettings() {
           <Label>Texto de garantia — Seminovo</Label>
           <Textarea rows={4} {...field("warranty_seminovo")} />
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Texto da Ordem de Serviço</Label>
+        <Textarea rows={4} {...field("warranty_service_order")} />
       </div>
       <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
         {save.isPending ? "Salvando…" : "Salvar dados do recibo"}
