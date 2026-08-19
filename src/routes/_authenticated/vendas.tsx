@@ -21,7 +21,7 @@ import {
   PAYMENT_STATUS_LABEL,
 } from "@/components/PaymentForm";
 import { PixAutoPayment } from "@/components/PixAutoPayment";
-import { ReceiptActions } from "@/components/ReceiptActions";
+import { ReceiptActions, ReceiptQuickView } from "@/components/ReceiptActions";
 import { sendSaleReceiptEmail } from "@/lib/receipts.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, toISODate } from "@/lib/agenda";
@@ -194,19 +194,20 @@ function VendasPage() {
                 <th className="px-3 py-2.5">Pagamento</th>
                 <th className="px-3 py-2.5">Status</th>
                 <th className="px-3 py-2.5">Origem</th>
+                <th className="px-3 py-2.5">Recibo</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
+                  <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                     Carregando…
                   </td>
                 </tr>
               )}
               {!isLoading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
+                  <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                     Nenhuma venda registrada ainda. As vendas são criadas quando um agendamento é concluído.
                   </td>
                 </tr>
@@ -270,6 +271,13 @@ function VendasPage() {
                         >
                           Agendamento <ExternalLink className="h-3.5 w-3.5" />
                         </Link>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      {s.status === "pago" ? (
+                        <ReceiptQuickView saleId={s.id} />
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
