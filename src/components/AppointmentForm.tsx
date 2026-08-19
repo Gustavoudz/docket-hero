@@ -160,6 +160,11 @@ export function AppointmentForm({
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   const { data: models = [] } = useDeviceModels();
   const { data: tags = [] } = useAppointmentTags();
+  const { data: profiles = [] } = useProfiles();
+  const { data: roles = [] } = useUserRoles();
+  const sellerOptions = profiles
+    .filter((p) => roles.some((r) => r.user_id === p.id))
+    .sort((a, b) => (a.full_name ?? "").localeCompare(b.full_name ?? ""));
   const activeModels = models.filter((m) => m.active);
   const activeTags = tags.filter((t) => t.active);
 
@@ -228,6 +233,7 @@ export function AppointmentForm({
         installment_value: first?.installment_value ?? null,
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
+        seller_id: sellerId || user!.id,
         inventory_device_id: linkedId,
         converted_from_appointment_id:
           convertFrom?.id ?? appointment?.converted_from_appointment_id ?? null,
