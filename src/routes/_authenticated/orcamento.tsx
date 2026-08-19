@@ -574,7 +574,7 @@ function QuoteForm({
   );
 }
 
-function QuoteCard({ quote }: { quote: Quote }) {
+function QuoteCard({ quote, onSchedule }: { quote: Quote; onSchedule: (quote: Quote) => void }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
@@ -588,10 +588,7 @@ function QuoteCard({ quote }: { quote: Quote }) {
     toast.success("Status atualizado");
   }
 
-  const final = Math.max(
-    0,
-    quote.product_price - quote.discount - (quote.kind === "upgrade" ? (quote.trade_value ?? 0) : 0),
-  );
+  const final = quoteFinalPrice(quote);
 
   const statusStyle: Record<QuoteStatus, string> = {
     enviado: "bg-sky-500/15 text-sky-400",
@@ -626,6 +623,9 @@ function QuoteCard({ quote }: { quote: Quote }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onSchedule(quote)}>
+              Transformar em agendamento
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatus("convertido")}>
               Marcar como convertido
             </DropdownMenuItem>
