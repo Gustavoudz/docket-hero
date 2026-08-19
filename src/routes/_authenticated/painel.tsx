@@ -62,7 +62,7 @@ function PainelPage() {
         .lte("scheduled_date", to)
         .order("scheduled_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as Appointment[];
+      return activeRecords((data ?? []) as unknown as Appointment[]);
     },
   });
 
