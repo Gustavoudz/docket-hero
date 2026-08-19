@@ -28,6 +28,7 @@ import { Route as AuthenticatedSemanaRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedTrocaRouteImport } from './routes/_authenticated/troca'
 import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
 import { Route as ApiPublicPagbankWebhookRouteImport } from './routes/api/public/pagbank-webhook'
+import { Route as ApiPublicOsTokenRouteImport } from './routes/api/public/os.$token'
 import { Route as ApiPublicReciboTokenRouteImport } from './routes/api/public/recibo.$token'
 
 const IndexRoute = IndexRouteImport.update({
@@ -127,6 +128,11 @@ const ApiPublicPagbankWebhookRoute = ApiPublicPagbankWebhookRouteImport.update({
   path: '/api/public/pagbank-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicOsTokenRoute = ApiPublicOsTokenRouteImport.update({
+  id: '/api/public/os/$token',
+  path: '/api/public/os/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicReciboTokenRoute = ApiPublicReciboTokenRouteImport.update({
   id: '/api/public/recibo/$token',
   path: '/api/public/recibo/$token',
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/troca': typeof AuthenticatedTrocaRoute
   '/vendas': typeof AuthenticatedVendasRoute
   '/api/public/pagbank-webhook': typeof ApiPublicPagbankWebhookRoute
+  '/api/public/os/$token': typeof ApiPublicOsTokenRoute
   '/api/public/recibo/$token': typeof ApiPublicReciboTokenRoute
 }
 export interface FileRoutesByTo {
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/troca': typeof AuthenticatedTrocaRoute
   '/vendas': typeof AuthenticatedVendasRoute
   '/api/public/pagbank-webhook': typeof ApiPublicPagbankWebhookRoute
+  '/api/public/os/$token': typeof ApiPublicOsTokenRoute
   '/api/public/recibo/$token': typeof ApiPublicReciboTokenRoute
 }
 export interface FileRoutesById {
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/_authenticated/troca': typeof AuthenticatedTrocaRoute
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
   '/api/public/pagbank-webhook': typeof ApiPublicPagbankWebhookRoute
+  '/api/public/os/$token': typeof ApiPublicOsTokenRoute
   '/api/public/recibo/$token': typeof ApiPublicReciboTokenRoute
 }
 export interface FileRouteTypes {
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/troca'
     | '/vendas'
     | '/api/public/pagbank-webhook'
+    | '/api/public/os/$token'
     | '/api/public/recibo/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/troca'
     | '/vendas'
     | '/api/public/pagbank-webhook'
+    | '/api/public/os/$token'
     | '/api/public/recibo/$token'
   id:
     | '__root__'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/_authenticated/troca'
     | '/_authenticated/vendas'
     | '/api/public/pagbank-webhook'
+    | '/api/public/os/$token'
     | '/api/public/recibo/$token'
   fileRoutesById: FileRoutesById
 }
@@ -270,6 +282,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicPagbankWebhookRoute: typeof ApiPublicPagbankWebhookRoute
+  ApiPublicOsTokenRoute: typeof ApiPublicOsTokenRoute
   ApiPublicReciboTokenRoute: typeof ApiPublicReciboTokenRoute
 }
 
@@ -408,6 +421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPagbankWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/os/$token': {
+      id: '/api/public/os/$token'
+      path: '/api/public/os/$token'
+      fullPath: '/api/public/os/$token'
+      preLoaderRoute: typeof ApiPublicOsTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/recibo/$token': {
       id: '/api/public/recibo/$token'
       path: '/api/public/recibo/$token'
@@ -462,6 +482,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicPagbankWebhookRoute: ApiPublicPagbankWebhookRoute,
+  ApiPublicOsTokenRoute: ApiPublicOsTokenRoute,
   ApiPublicReciboTokenRoute: ApiPublicReciboTokenRoute,
 }
 export const routeTree = rootRouteImport
