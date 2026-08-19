@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { useDeviceModels } from "@/lib/settings";
 import { extractDeviceFromPhoto } from "@/lib/inventory-vision.functions";
+import { PAYMENT_METHODS, formatBRL, paymentsTotal, type PaymentEntry } from "@/lib/agenda";
 import {
   INVENTORY_STATUS_LABEL,
   INVENTORY_STATUSES,
@@ -63,8 +64,10 @@ export function InventoryForm({
   item?: InventoryItem | null;
   defaults?: { device_model?: string; cost_price?: number };
   /** Fluxo de troca/upgrade: o modal fica travado até o cadastro ser salvo. */
-  tradeIn?: { appointmentId: string; customerName: string } | undefined;
-  onSaved?: ((itemId: string) => void) | undefined;
+  tradeIn?:
+    | { appointmentId: string; customerName: string; payments?: PaymentEntry[] | null }
+    | undefined;
+  onSaved?: ((itemId: string, payments: PaymentEntry[]) => void) | undefined;
   onCancelFlow?: (() => void) | undefined;
 }) {
   const locked = !!tradeIn;
@@ -81,6 +84,16 @@ export function InventoryForm({
   const [reading, setReading] = useState(false);
   const [batch, setBatch] = useState(false);
   const [batchLines, setBatchLines] = useState("");
+  /** Formas de pagamento do cliente nesta venda de upgrade. */
+  const [payments, setPayments] = useState<PaymentEntry[]>(() =>
+    tradeIn?.payments && tradeIn.payments.length > 0
+      ? tradeIn.payments
+      : [{ method: "pix", amount: null, installments: null, installment_value: null }],
+  );
+
+  function updatePayment(index: number, patch: Partial<PaymentEntry>) {
+    setPayments((prev) => prev.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+  }
 
   function setField(name: string, value: string) {
     const el = formRef.current?.elements.namedItem(name) as
