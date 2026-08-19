@@ -102,6 +102,13 @@ export function AppointmentForm({
     base?.customer_instagram ? `@${base.customer_instagram}` : "",
   );
   const [inventoryItemId, setInventoryItemId] = useState(base?.inventory_device_id ?? "");
+  const [listPrice, setListPrice] = useState<number | null>(
+    base?.product_price != null ? Number(base.product_price) : null,
+  );
+  const [discountKind, setDiscountKind] = useState<"nenhum" | "5" | "10" | "15" | "valor">(
+    "nenhum",
+  );
+  const [discountValue, setDiscountValue] = useState("");
   const [manualLink, setManualLink] = useState(false);
   const [showTechnical, setShowTechnical] = useState(false);
   const { data: availableItems = [] } = useAvailableItems(
@@ -121,8 +128,9 @@ export function AppointmentForm({
     const price = linkedItem.sale_price != null ? Number(linkedItem.sale_price) : null;
     lastLinkedId.current = linkedItem.id;
     if (price == null) return;
-    setProductPrice(String(price));
-  }, [linkedItem]);
+    setListPrice(price);
+    setProductPrice(String(applyDiscount(price, discountKind, discountValue)));
+  }, [linkedItem, discountKind, discountValue]);
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
