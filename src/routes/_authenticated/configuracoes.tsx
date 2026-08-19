@@ -43,6 +43,7 @@ import type { AppRole } from "@/hooks/useAuth";
 import { useStaleDays } from "@/lib/inventory";
 import { createCollaborator, deleteCollaborator } from "@/lib/collaborators.functions";
 import { useCommissionAmount } from "@/lib/commissions";
+import { ReceiptSettings } from "@/components/ReceiptSettings";
 import { useTradeInDefects, useTradeInModels } from "@/lib/trade-in";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
@@ -342,6 +343,13 @@ function ConfigPage() {
             </Button>
           </div>
         </form>
+      </Section>
+
+      <Section
+        title="Recibo de venda"
+        description="Dados da loja e textos de garantia impressos no comprovante em PDF."
+      >
+        <ReceiptSettings />
       </Section>
 
       <Section title="Modelos de aparelho" description="Opções disponíveis no formulário de agendamento.">

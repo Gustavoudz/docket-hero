@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { sendSaleReceiptEmail } from "@/lib/receipts.functions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { toast } from "sonner";
@@ -42,6 +44,7 @@ export function PaymentForm({
 }) {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const sendReceipt = useServerFn(sendSaleReceiptEmail);
   const [method, setMethod] = useState<"pix" | "debito" | "credito">("pix");
   const [status, setStatus] = useState<"aguardando" | "aprovado" | "recusado">("aprovado");
   const [gross, setGross] = useState(defaultAmount ? String(defaultAmount) : "");
@@ -92,6 +95,8 @@ export function PaymentForm({
     },
     onSuccess: () => {
       toast.success("Pagamento registrado");
+      // Recibo sai automaticamente por e-mail assim que a venda fica paga.
+      void sendReceipt({ data: { saleId, auto: true } }).catch(() => {});
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["payments"] });
       onDone?.();

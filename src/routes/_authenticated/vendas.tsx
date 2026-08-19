@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Receipt, Search, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -19,6 +20,9 @@ import {
   PAYMENT_METHOD_LABEL,
   PAYMENT_STATUS_LABEL,
 } from "@/components/PaymentForm";
+import { PixAutoPayment } from "@/components/PixAutoPayment";
+import { ReceiptActions } from "@/components/ReceiptActions";
+import { sendSaleReceiptEmail } from "@/lib/receipts.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, toISODate } from "@/lib/agenda";
 
@@ -294,6 +298,12 @@ function VendasPage() {
 
 function SaleDetail({ sale, sellerName }: { sale: SaleRow; sellerName: string }) {
   const { role } = useAuth();
+  const autoSendReceipt = useServerFn(sendSaleReceiptEmail);
+  // Envio automático do recibo assim que a venda está paga (uma única vez).
+  useEffect(() => {
+    if (sale.status !== "pago") return;
+    void autoSendReceipt({ data: { saleId: sale.id, auto: true } }).catch(() => {});
+  }, [sale.status, sale.id, autoSendReceipt]);
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const product = sale.inventory_items?.device_model ?? sale.appointments?.device_model ?? "—";
@@ -391,6 +401,17 @@ function SaleDetail({ sale, sellerName }: { sale: SaleRow; sellerName: string })
               defaultAmount={Number(sale.total)}
               onDone={() => setShowForm(false)}
             />
+          </div>
+        )}
+
+        {sale.status !== "cancelado" && sale.status !== "estornado" && (
+          <PixAutoPayment saleId={sale.id} />
+        )}
+
+        {sale.status === "pago" && (
+          <div className="space-y-2 rounded-lg border border-border/60 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Recibo da venda</p>
+            <ReceiptActions saleId={sale.id} />
           </div>
         )}
       </div>

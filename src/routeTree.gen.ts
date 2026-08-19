@@ -25,6 +25,8 @@ import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedSemanaRouteImport } from './routes/_authenticated/semana'
 import { Route as AuthenticatedTrocaRouteImport } from './routes/_authenticated/troca'
 import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
+import { Route as ApiPublicPagbankWebhookRouteImport } from './routes/api/public/pagbank-webhook'
+import { Route as ApiPublicReciboTokenRouteImport } from './routes/api/public/recibo.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -108,6 +110,16 @@ const AuthenticatedVendasRoute = AuthenticatedVendasRouteImport.update({
   path: '/vendas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicPagbankWebhookRoute = ApiPublicPagbankWebhookRouteImport.update({
+  id: '/api/public/pagbank-webhook',
+  path: '/api/public/pagbank-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicReciboTokenRoute = ApiPublicReciboTokenRouteImport.update({
+  id: '/api/public/recibo/$token',
+  path: '/api/public/recibo/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -125,6 +137,8 @@ export interface FileRoutesByFullPath {
   '/semana': typeof AuthenticatedSemanaRoute
   '/troca': typeof AuthenticatedTrocaRoute
   '/vendas': typeof AuthenticatedVendasRoute
+  '/api/public/pagbank-webhook': typeof ApiPublicPagbankWebhookRoute
+  '/api/public/recibo/$token': typeof ApiPublicReciboTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -142,6 +156,8 @@ export interface FileRoutesByTo {
   '/semana': typeof AuthenticatedSemanaRoute
   '/troca': typeof AuthenticatedTrocaRoute
   '/vendas': typeof AuthenticatedVendasRoute
+  '/api/public/pagbank-webhook': typeof ApiPublicPagbankWebhookRoute
+  '/api/public/recibo/$token': typeof ApiPublicReciboTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,6 +177,8 @@ export interface FileRoutesById {
   '/_authenticated/semana': typeof AuthenticatedSemanaRoute
   '/_authenticated/troca': typeof AuthenticatedTrocaRoute
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
+  '/api/public/pagbank-webhook': typeof ApiPublicPagbankWebhookRoute
+  '/api/public/recibo/$token': typeof ApiPublicReciboTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -180,6 +198,8 @@ export interface FileRouteTypes {
     | '/semana'
     | '/troca'
     | '/vendas'
+    | '/api/public/pagbank-webhook'
+    | '/api/public/recibo/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -197,6 +217,8 @@ export interface FileRouteTypes {
     | '/semana'
     | '/troca'
     | '/vendas'
+    | '/api/public/pagbank-webhook'
+    | '/api/public/recibo/$token'
   id:
     | '__root__'
     | '/'
@@ -215,12 +237,16 @@ export interface FileRouteTypes {
     | '/_authenticated/semana'
     | '/_authenticated/troca'
     | '/_authenticated/vendas'
+    | '/api/public/pagbank-webhook'
+    | '/api/public/recibo/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicPagbankWebhookRoute: typeof ApiPublicPagbankWebhookRoute
+  ApiPublicReciboTokenRoute: typeof ApiPublicReciboTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -337,6 +363,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVendasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/pagbank-webhook': {
+      id: '/api/public/pagbank-webhook'
+      path: '/api/public/pagbank-webhook'
+      fullPath: '/api/public/pagbank-webhook'
+      preLoaderRoute: typeof ApiPublicPagbankWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/recibo/$token': {
+      id: '/api/public/recibo/$token'
+      path: '/api/public/recibo/$token'
+      fullPath: '/api/public/recibo/$token'
+      preLoaderRoute: typeof ApiPublicReciboTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -379,6 +419,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicPagbankWebhookRoute: ApiPublicPagbankWebhookRoute,
+  ApiPublicReciboTokenRoute: ApiPublicReciboTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
