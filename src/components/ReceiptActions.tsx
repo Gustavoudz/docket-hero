@@ -125,9 +125,7 @@ export function ReceiptActions({ saleId }: { saleId: string }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button size="sm" variant="outline" disabled={load.isPending} onClick={() => load.mutate(false)}>
-        <Eye className="mr-1.5 h-4 w-4" /> Ver recibo
-      </Button>
+      <ReceiptQuickView saleId={saleId} />
       <Button size="sm" variant="outline" disabled={load.isPending} onClick={() => load.mutate(true)}>
         <Download className="mr-1.5 h-4 w-4" /> Baixar PDF
       </Button>
