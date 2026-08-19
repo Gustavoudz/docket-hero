@@ -19,6 +19,7 @@ import {
   History,
   BadgeDollarSign,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -169,6 +170,12 @@ function SideMenu() {
     maintenance?: boolean;
   }[] = [
     { title: "Agenda", url: "/agenda", icon: Calendar, active: currentPath === "/agenda" },
+    {
+      title: "Orçamento rápido",
+      url: "/orcamento",
+      icon: Zap,
+      active: currentPath === "/orcamento",
+    },
     {
       title: "Controle de Vendas",
       url: "/vendas",

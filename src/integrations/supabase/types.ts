@@ -753,6 +753,89 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          created_at: string
+          customer_contact: string | null
+          customer_name: string | null
+          deadline_at: string
+          discount: number
+          id: string
+          inventory_item_id: string | null
+          kind: Database["public"]["Enums"]["quote_kind"]
+          notes: string | null
+          product_color: string | null
+          product_condition: string | null
+          product_model: string
+          product_price: number
+          product_storage: string | null
+          seller_id: string
+          status: Database["public"]["Enums"]["quote_status"]
+          trade_color: string | null
+          trade_condition: string | null
+          trade_model: string | null
+          trade_storage: string | null
+          trade_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_contact?: string | null
+          customer_name?: string | null
+          deadline_at: string
+          discount?: number
+          id?: string
+          inventory_item_id?: string | null
+          kind?: Database["public"]["Enums"]["quote_kind"]
+          notes?: string | null
+          product_color?: string | null
+          product_condition?: string | null
+          product_model: string
+          product_price?: number
+          product_storage?: string | null
+          seller_id: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          trade_color?: string | null
+          trade_condition?: string | null
+          trade_model?: string | null
+          trade_storage?: string | null
+          trade_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_contact?: string | null
+          customer_name?: string | null
+          deadline_at?: string
+          discount?: number
+          id?: string
+          inventory_item_id?: string | null
+          kind?: Database["public"]["Enums"]["quote_kind"]
+          notes?: string | null
+          product_color?: string | null
+          product_condition?: string | null
+          product_model?: string
+          product_price?: number
+          product_storage?: string | null
+          seller_id?: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          trade_color?: string | null
+          trade_condition?: string | null
+          trade_model?: string | null
+          trade_storage?: string | null
+          trade_value?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       receipts: {
         Row: {
           created_at: string
@@ -1119,6 +1202,8 @@ export type Database = {
         | "recusado"
         | "cancelado"
         | "estornado"
+      quote_kind: "simples" | "upgrade"
+      quote_status: "enviado" | "convertido" | "sem_resposta"
       record_type: "agendamento" | "venda"
       sale_status:
         | "rascunho"
@@ -1276,6 +1361,8 @@ export const Constants = {
         "cancelado",
         "estornado",
       ],
+      quote_kind: ["simples", "upgrade"],
+      quote_status: ["enviado", "convertido", "sem_resposta"],
       record_type: ["agendamento", "venda"],
       sale_status: [
         "rascunho",
