@@ -24,6 +24,9 @@ import {
   type Appointment,
 } from "@/lib/agenda";
 import { fetchDayFinance } from "@/lib/finance";
+import { allowedRecordTypes, canViewRecord, type RecordType } from "@/lib/permissions";
+import { RecordTypePicker } from "@/components/RecordTypePicker";
+import { AccessDenied } from "@/components/AccessDenied";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   validateSearch: (search: Record<string, unknown>): { date?: string } =>
@@ -93,6 +96,8 @@ function AgendaPage() {
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [closedSummary, setClosedSummary] = useState<DaySummary | null>(null);
+  const [typePickerOpen, setTypePickerOpen] = useState(false);
+  const [newType, setNewType] = useState<RecordType>("agendamento");
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments", "day", date],
