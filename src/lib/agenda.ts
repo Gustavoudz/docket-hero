@@ -1,4 +1,9 @@
-export type AppointmentStatus = "pendente" | "concluido" | "cancelado" | "legado";
+export type AppointmentStatus =
+  | "pendente"
+  | "concluido"
+  | "cancelado"
+  | "legado"
+  | "convertido";
 
 export type PaymentEntry = {
   method: string;
@@ -31,6 +36,8 @@ export type Appointment = {
   inventory_device_id?: string | null;
   customer_id?: string | null;
   record_type?: "agendamento" | "venda" | null;
+  converted_from_appointment_id?: string | null;
+  profit_cents?: number | null;
 };
 
 export const STATUS_LABEL: Record<AppointmentStatus, string> = {
@@ -38,14 +45,15 @@ export const STATUS_LABEL: Record<AppointmentStatus, string> = {
   concluido: "Concluído",
   cancelado: "Cancelado",
   legado: "Legado",
+  convertido: "Convertido",
 };
 
 /** Registro removido das listas ativas (soft delete), mas mantido no histórico. */
 export const isLegado = (a: { status: AppointmentStatus }) => a.status === "legado";
 
-/** Remove registros "Legado" de qualquer lista/relatório ativo. */
+/** Remove registros "Legado"/"Convertido" de qualquer lista/relatório ativo. */
 export function activeRecords<T extends { status: AppointmentStatus }>(rows: T[]): T[] {
-  return rows.filter((r) => r.status !== "legado");
+  return rows.filter((r) => r.status !== "legado" && r.status !== "convertido");
 }
 
 export const PAYMENT_METHODS = [

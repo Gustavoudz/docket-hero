@@ -53,6 +53,8 @@ type Props = {
   defaultDate: string;
   appointment?: Appointment | null;
   recordType?: RecordType | undefined;
+  /** Agendamento de origem quando esta venda é gerada por "Transformar em venda". */
+  convertFrom?: Appointment | null;
 };
 
 export function AppointmentForm({
@@ -61,8 +63,11 @@ export function AppointmentForm({
   defaultDate,
   appointment,
   recordType,
+  convertFrom,
 }: Props) {
   const { user, fullName } = useAuth();
+  /** Registro usado só para pré-preencher os campos (edição ou conversão). */
+  const base: Appointment | null | undefined = appointment ?? convertFrom;
   const type: RecordType =
     recordType ?? (appointment?.record_type as RecordType | undefined) ?? "agendamento";
   const isVenda = type === "venda";
@@ -72,38 +77,38 @@ export function AppointmentForm({
     appointment?.deposit_amount != null ? String(appointment.deposit_amount) : "",
   );
   const [payments, setPayments] = useState<PaymentEntry[]>(() => {
-    const existing = appointment?.payments;
+    const existing = base?.payments;
     if (existing && existing.length > 0) return existing;
     return [
       {
-        method: appointment?.payment_method ?? "",
-        installments: appointment?.installments ?? 1,
-        installment_value: appointment?.installment_value ?? null,
+        method: base?.payment_method ?? "",
+        installments: base?.installments ?? 1,
+        installment_value: base?.installment_value ?? null,
       },
     ];
   });
   const [productPrice, setProductPrice] = useState<string>(
-    appointment?.product_price != null ? String(appointment.product_price) : "",
+    base?.product_price != null ? String(base.product_price) : "",
   );
-  const [model, setModel] = useState(appointment?.device_model ?? "");
-  const [customerName, setCustomerName] = useState(appointment?.customer_name ?? "");
+  const [model, setModel] = useState(base?.device_model ?? "");
+  const [customerName, setCustomerName] = useState(base?.customer_name ?? "");
   const [customerId, setCustomerId] = useState<string | null>(
-    appointment?.customer_id ?? null,
+    base?.customer_id ?? null,
   );
   const [customerPhone, setCustomerPhone] = useState<string | null>(
-    appointment?.customer_phone ?? null,
+    base?.customer_phone ?? null,
   );
   const [customerInstagram, setCustomerInstagram] = useState<string>(
-    appointment?.customer_instagram ? `@${appointment.customer_instagram}` : "",
+    base?.customer_instagram ? `@${base.customer_instagram}` : "",
   );
-  const [inventoryItemId, setInventoryItemId] = useState(appointment?.inventory_device_id ?? "");
+  const [inventoryItemId, setInventoryItemId] = useState(base?.inventory_device_id ?? "");
   const [manualLink, setManualLink] = useState(false);
   const [showTechnical, setShowTechnical] = useState(false);
   const [priceTouched, setPriceTouched] = useState(false);
   const [swapAsk, setSwapAsk] = useState<{ price: number } | null>(null);
   const { data: availableItems = [] } = useAvailableItems(
     model,
-    appointment?.inventory_device_id ?? null,
+    base?.inventory_device_id ?? null,
   );
 
   /** Item que será efetivamente vinculado: escolhido manualmente ou o mais antigo (reserva automática). */
@@ -111,7 +116,7 @@ export function AppointmentForm({
     ? availableItems.find((i) => i.id === inventoryItemId)
     : availableItems[0];
 
-  const lastLinkedId = useRef<string | null>(appointment?.inventory_device_id ?? null);
+  const lastLinkedId = useRef<string | null>(base?.inventory_device_id ?? null);
   useEffect(() => {
     if (!linkedItem) return;
     if (lastLinkedId.current === linkedItem.id) return;
@@ -192,12 +197,21 @@ export function AppointmentForm({
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
         inventory_device_id: linkedId,
+        converted_from_appointment_id:
+          convertFrom?.id ?? appointment?.converted_from_appointment_id ?? null,
       };
       const query = appointment
         ? supabase.from("appointments").update(payload).eq("id", appointment.id)
         : supabase.from("appointments").insert(payload);
       const { error } = await query;
       if (error) throw new Error(error.message);
+      if (!appointment && convertFrom) {
+        const { error: convertError } = await supabase
+          .from("appointments")
+          .update({ status: "convertido" })
+          .eq("id", convertFrom.id);
+        if (convertError) throw new Error(convertError.message);
+      }
       return notFound;
     },
     onSuccess: (notFound) => {
@@ -232,6 +246,13 @@ export function AppointmentForm({
                 : "📅 Novo agendamento"}
           </DialogTitle>
         </DialogHeader>
+        {convertFrom && !appointment && (
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Gerado a partir do agendamento de{" "}
+            {new Date(convertFrom.scheduled_at).toLocaleDateString("pt-BR")} — revise os dados antes
+            de salvar.
+          </p>
+        )}
         <form
           id="appointment-form"
           className="space-y-4"
@@ -258,7 +279,7 @@ export function AppointmentForm({
               <select
                 id="device_model"
                 name="device_model"
-                defaultValue={appointment?.device_model ?? ""}
+                defaultValue={base?.device_model ?? ""}
                 required
                 className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
                 onChange={(e) => {
@@ -272,9 +293,9 @@ export function AppointmentForm({
                     {m.name}
                   </option>
                 ))}
-                {appointment?.device_model &&
-                  !activeModels.some((m) => m.name === appointment.device_model) && (
-                    <option value={appointment.device_model}>{appointment.device_model}</option>
+                {base?.device_model &&
+                  !activeModels.some((m) => m.name === base.device_model) && (
+                    <option value={base.device_model}>{base.device_model}</option>
                   )}
               </select>
             ) : (
@@ -282,7 +303,7 @@ export function AppointmentForm({
                 id="device_model"
                 name="device_model"
                 placeholder="iPhone 13 128GB"
-                defaultValue={appointment?.device_model ?? ""}
+                defaultValue={base?.device_model ?? ""}
                 required
                 onChange={(e) => {
                   setModel(e.target.value);
@@ -376,7 +397,7 @@ export function AppointmentForm({
               <select
                 id="tag"
                 name="tag"
-                defaultValue={appointment?.tag ?? ""}
+                defaultValue={base?.tag ?? ""}
                 className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
               >
                 <option value="">Sem tag</option>
@@ -536,7 +557,7 @@ export function AppointmentForm({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Observações</Label>
-            <Textarea id="notes" name="notes" rows={3} defaultValue={appointment?.notes ?? ""} />
+            <Textarea id="notes" name="notes" rows={3} defaultValue={base?.notes ?? ""} />
           </div>
           <p className="text-xs text-muted-foreground">
             Atendente responsável: <span className="font-medium text-foreground">{fullName}</span>
@@ -544,7 +565,7 @@ export function AppointmentForm({
         </form>
         <DialogFooter>
           <Button type="submit" form="appointment-form" disabled={mutation.isPending}>
-            {appointment ? "Salvar" : "Criar agendamento"}
+            {appointment ? "Salvar" : isVenda ? "Criar venda" : "Criar agendamento"}
           </Button>
         </DialogFooter>
       </DialogContent>

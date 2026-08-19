@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BadgeCheck, Clock, Pencil, Trash2, X } from "lucide-react";
+import { BadgeCheck, Clock, Pencil, ShoppingCart, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +30,12 @@ export function AppointmentCard({
   appointment,
   attendantName,
   onEdit,
+  onConvert,
 }: {
   appointment: Appointment;
   attendantName?: string;
   onEdit?: ((a: Appointment) => void) | undefined;
+  onConvert?: ((a: Appointment) => void) | undefined;
 }) {
   const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -46,7 +48,28 @@ export function AppointmentCard({
   const [isTrade, setIsTrade] = useState<boolean | null>(null);
   const [tradeModel, setTradeModel] = useState("");
   const [tradeCost, setTradeCost] = useState("");
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isAgendamento = (appointment.record_type ?? "agendamento") === "agendamento";
+  const canConvert =
+    !!onConvert &&
+    isAgendamento &&
+    appointment.status === "pendente" &&
+    (role === "atendente" || role === "gerente");
+
+  /** Agendamento de origem, quando esta venda foi gerada por conversão. */
+  const { data: sourceAppointment } = useQuery({
+    queryKey: ["appointment", "source", appointment.converted_from_appointment_id],
+    enabled: !!appointment.converted_from_appointment_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, scheduled_at, customer_name, device_model, status")
+        .eq("id", appointment.converted_from_appointment_id!)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
   const { data: availableItems = [] } = useAvailableItems(
     linkOpen || completeOpen ? appointment.device_model : "",
   );
@@ -98,7 +121,7 @@ export function AppointmentCard({
   const complete = useMutation({
     mutationFn: async () => {
       const itemId = appointment.inventory_device_id ?? linkChoice ?? "";
-      if (!itemId) throw new Error("Vincule um aparelho do estoque antes de concluir");
+      if (!itemId) throw new Error("Não é possível concluir sem um aparelho vinculado ao estoque.");
       const { error } = await supabase
         .from("appointments")
         .update({ status: "concluido", inventory_device_id: itemId })
@@ -252,6 +275,12 @@ export function AppointmentCard({
             {appointment.customer_instagram && <span>@{appointment.customer_instagram}</span>}
           </div>
           {appointment.notes && <p className="mt-1 text-sm">{appointment.notes}</p>}
+          {sourceAppointment && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Gerado a partir do agendamento de{" "}
+              {new Date(sourceAppointment.scheduled_at).toLocaleDateString("pt-BR")}
+            </p>
+          )}
           {appointment.cancel_reason && (
             <p className="mt-1 text-sm text-destructive">Motivo: {appointment.cancel_reason}</p>
           )}
@@ -260,6 +289,16 @@ export function AppointmentCard({
 
       {appointment.status === "pendente" && (
         <div className="mt-3 flex gap-2">
+          {canConvert && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="flex-1"
+              onClick={() => onConvert!(appointment)}
+            >
+              <ShoppingCart className="mr-1 h-4 w-4" /> Transformar em venda
+            </Button>
+          )}
           <Button
             size="sm"
             className="flex-1"

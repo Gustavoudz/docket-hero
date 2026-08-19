@@ -67,6 +67,7 @@ export type Database = {
           attendant_id: string
           cancel_reason: string | null
           completed_at: string | null
+          converted_from_appointment_id: string | null
           created_at: string
           customer_id: string | null
           customer_instagram: string | null
@@ -84,6 +85,7 @@ export type Database = {
           payment_method: string | null
           payments: Json
           product_price: number | null
+          profit_cents: number | null
           record_type: Database["public"]["Enums"]["record_type"]
           sale_amount: number | null
           sale_id: string | null
@@ -97,6 +99,7 @@ export type Database = {
           attendant_id: string
           cancel_reason?: string | null
           completed_at?: string | null
+          converted_from_appointment_id?: string | null
           created_at?: string
           customer_id?: string | null
           customer_instagram?: string | null
@@ -114,6 +117,7 @@ export type Database = {
           payment_method?: string | null
           payments?: Json
           product_price?: number | null
+          profit_cents?: number | null
           record_type?: Database["public"]["Enums"]["record_type"]
           sale_amount?: number | null
           sale_id?: string | null
@@ -127,6 +131,7 @@ export type Database = {
           attendant_id?: string
           cancel_reason?: string | null
           completed_at?: string | null
+          converted_from_appointment_id?: string | null
           created_at?: string
           customer_id?: string | null
           customer_instagram?: string | null
@@ -144,6 +149,7 @@ export type Database = {
           payment_method?: string | null
           payments?: Json
           product_price?: number | null
+          profit_cents?: number | null
           record_type?: Database["public"]["Enums"]["record_type"]
           sale_amount?: number | null
           sale_id?: string | null
@@ -154,6 +160,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "appointments_converted_from_appointment_id_fkey"
+            columns: ["converted_from_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "appointments_customer_id_fkey"
             columns: ["customer_id"]
@@ -814,7 +827,12 @@ export type Database = {
     }
     Enums: {
       app_role: "gerente" | "atendente" | "vendedora"
-      appointment_status: "pendente" | "concluido" | "cancelado" | "legado"
+      appointment_status:
+        | "pendente"
+        | "concluido"
+        | "cancelado"
+        | "legado"
+        | "convertido"
       inventory_status:
         | "disponivel"
         | "reservado"
@@ -963,7 +981,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["gerente", "atendente", "vendedora"],
-      appointment_status: ["pendente", "concluido", "cancelado", "legado"],
+      appointment_status: [
+        "pendente",
+        "concluido",
+        "cancelado",
+        "legado",
+        "convertido",
+      ],
       inventory_status: [
         "disponivel",
         "reservado",
