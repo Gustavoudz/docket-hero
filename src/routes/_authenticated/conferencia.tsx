@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatBRL, formatDateLabel, formatTime, shiftDate, todayISO } from "@/lib/agenda";
-import { useInventoryCosts, type InventoryItem } from "@/lib/inventory";
+import { useInventoryCosts, useInventoryItems, type InventoryItem } from "@/lib/inventory";
 
 export const Route = createFileRoute("/_authenticated/conferencia")({
   head: () => ({
@@ -18,12 +18,14 @@ export const Route = createFileRoute("/_authenticated/conferencia")({
       { title: "Conferência diária do estoque — Legado Phones" },
       {
         name: "description",
-        content: "Saída do dia: aparelhos vendidos, custo total que saiu e confirmação da contagem.",
+        content:
+          "Estoque atual, saídas e entradas do dia (inclusive trocas) e saldo do dia em quantidade e custo.",
       },
       { property: "og:title", content: "Conferência diária do estoque — Legado Phones" },
       {
         property: "og:description",
-        content: "Saída do dia: aparelhos vendidos, custo total que saiu e confirmação da contagem.",
+        content:
+          "Estoque atual, saídas e entradas do dia (inclusive trocas) e saldo do dia em quantidade e custo.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -39,6 +41,12 @@ function ConferenciaPage() {
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const costs = useInventoryCosts(isGerente);
+  const { data: allItems = [] } = useInventoryItems();
+
+  const availableItems = allItems.filter((i) => i.status === "disponivel");
+  const availableCost = availableItems.reduce((sum, i) => sum + (costs[i.id] ?? 0), 0);
+  const reservedCount = allItems.filter((i) => i.status === "reservado").length;
+  const incompleteCount = allItems.filter((i) => i.status === "incompleto").length;
 
   const { data: sold = [], isLoading } = useQuery({
     queryKey: ["inventory_items", "sold", date],
@@ -56,6 +64,65 @@ function ConferenciaPage() {
     },
   });
 
+  const { data: entries, isLoading: loadingEntries } = useQuery({
+    queryKey: ["inventory_entries", date],
+    enabled: isGerente,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select("id, device_model, color, storage, created_at")
+        .gte("created_at", `${date}T00:00:00`)
+        .lte("created_at", `${date}T23:59:59`)
+        .order("created_at", { ascending: true });
+      if (error) throw new Error(error.message);
+      const rows = (data ?? []) as {
+        id: string;
+        device_model: string;
+        color: string | null;
+        storage: string | null;
+        created_at: string;
+      }[];
+      if (rows.length === 0) return [];
+
+      const ids = rows.map((r) => r.id);
+      const { data: events, error: eventsError } = await supabase
+        .from("inventory_events")
+        .select("item_id, appointment_id")
+        .eq("kind", "criado_via_troca")
+        .in("item_id", ids);
+      if (eventsError) throw new Error(eventsError.message);
+
+      const tradeByItem = new Map<string, string | null>();
+      for (const e of events ?? []) tradeByItem.set(e.item_id, e.appointment_id);
+
+      const apptIds = [...new Set((events ?? []).map((e) => e.appointment_id).filter(Boolean))] as string[];
+      const refByAppointment = new Map<string, string>();
+      if (apptIds.length > 0) {
+        const { data: sales, error: salesError } = await supabase
+          .from("sales")
+          .select("appointment_id, reference")
+          .in("appointment_id", apptIds);
+        if (salesError) throw new Error(salesError.message);
+        for (const s of sales ?? []) {
+          if (s.appointment_id) refByAppointment.set(s.appointment_id, s.reference);
+        }
+      }
+
+      return rows.map((r) => {
+        const isTrade = tradeByItem.has(r.id);
+        const apptId = tradeByItem.get(r.id) ?? null;
+        return {
+          ...r,
+          origin: isTrade ? ("troca" as const) : ("manual" as const),
+          saleReference: apptId ? (refByAppointment.get(apptId) ?? null) : null,
+        };
+      });
+    },
+  });
+
+  const entryList = entries ?? [];
+  const entriesCost = entryList.reduce((sum, i) => sum + (costs[i.id] ?? 0), 0);
+
   const { data: audit } = useQuery({
     queryKey: ["inventory_audit", date],
     enabled: isGerente,
@@ -71,6 +138,10 @@ function ConferenciaPage() {
   });
 
   const totalCost = sold.reduce((sum, i) => sum + (costs[i.id] ?? 0), 0);
+  const balanceCount = entryList.length - sold.length;
+  const balanceCost = entriesCost - totalCost;
+  const balanceTone = (value: number) =>
+    value > 0 ? "text-emerald-400" : value < 0 ? "text-destructive" : "text-muted-foreground";
 
   const confirm = useMutation({
     mutationFn: async (matched: boolean) => {
@@ -117,7 +188,33 @@ function ConferenciaPage() {
         </Button>
       </div>
 
-      <h1 className="mt-3 text-lg font-semibold capitalize">Saída do dia — {formatDateLabel(date)}</h1>
+      <h1 className="mt-3 text-lg font-semibold capitalize">
+        Conferência de estoque do dia — {formatDateLabel(date)}
+      </h1>
+
+      <section className="mt-4">
+        <h2 className="text-sm font-semibold">Estoque atual</h2>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+            <p className="text-xs text-muted-foreground">Disponíveis</p>
+            <p className="text-xl font-semibold">{availableItems.length}</p>
+          </div>
+          <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+            <p className="text-xs text-muted-foreground">Custo do estoque disponível</p>
+            <p className="text-xl font-semibold text-primary">{formatBRL(availableCost)}</p>
+          </div>
+          <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+            <p className="text-xs text-muted-foreground">Reservados</p>
+            <p className="text-xl font-semibold">{reservedCount}</p>
+          </div>
+          <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+            <p className="text-xs text-muted-foreground">Incompletos</p>
+            <p className="text-xl font-semibold">{incompleteCount}</p>
+          </div>
+        </div>
+      </section>
+
+      <h2 className="mt-6 text-sm font-semibold">Saídas do dia</h2>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
@@ -152,6 +249,75 @@ function ConferenciaPage() {
           </li>
         ))}
       </ul>
+
+      <h2 className="mt-6 text-sm font-semibold">Entradas do dia</h2>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+          <p className="text-xs text-muted-foreground">Itens que entraram</p>
+          <p className="text-xl font-semibold">{entryList.length}</p>
+        </div>
+        <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+          <p className="text-xs text-muted-foreground">Custo total que entrou</p>
+          <p className="text-xl font-semibold text-primary">{formatBRL(entriesCost)}</p>
+        </div>
+      </div>
+
+      <ul className="mt-3 space-y-2">
+        {loadingEntries && <li className="text-sm text-muted-foreground">Carregando…</li>}
+        {!loadingEntries && entryList.length === 0 && (
+          <li className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+            Nenhum aparelho entrou no estoque neste dia.
+          </li>
+        )}
+        {entryList.map((i) => (
+          <li
+            key={i.id}
+            className="flex items-center gap-3 rounded-lg border bg-card p-3 backdrop-blur-xl"
+          >
+            <span className="w-14 shrink-0 text-sm font-semibold">{formatTime(i.created_at)}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium">{i.device_model}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {[i.color, i.storage].filter(Boolean).join(" · ")}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {i.origin === "troca"
+                  ? `Troca (upgrade)${i.saleReference ? ` · Venda ${i.saleReference}` : ""}`
+                  : "Cadastro manual"}
+              </p>
+            </div>
+            <span className="shrink-0 text-sm">{formatBRL(costs[i.id] ?? 0)}</span>
+          </li>
+        ))}
+      </ul>
+
+      <section className="mt-6 rounded-lg border bg-card p-3 backdrop-blur-xl">
+        <h2 className="text-sm font-semibold">Saldo do dia</h2>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div>
+            <p className="text-xs text-muted-foreground">Saldo em quantidade</p>
+            <p className={`text-xl font-semibold ${balanceTone(balanceCount)}`}>
+              {balanceCount > 0 ? "+" : ""}
+              {balanceCount}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Saldo em custo</p>
+            <p className={`text-xl font-semibold ${balanceTone(balanceCost)}`}>
+              {balanceCost > 0 ? "+" : balanceCost < 0 ? "−" : ""}
+              {formatBRL(Math.abs(balanceCost))}
+            </p>
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {balanceCount === 0 && balanceCost === 0
+            ? "Entradas e saídas se equilibraram no dia."
+            : balanceCost >= 0
+              ? "Entrou mais do que saiu — o estoque cresceu no dia."
+              : "Saiu mais do que entrou — o estoque diminuiu no dia."}
+        </p>
+      </section>
 
       <div className="mt-6 rounded-lg border bg-card p-3 backdrop-blur-xl">
         <p className="text-sm font-medium">Conferência do dia</p>
