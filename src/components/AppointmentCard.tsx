@@ -167,6 +167,25 @@ export function AppointmentCard({
     complete.mutate();
   }
 
+  /**
+   * Clique em "Concluir": venda com tag Upgrade e aparelho já vinculado vai
+   * direto para o cadastro do aparelho que entra — sem nenhuma pergunta.
+   */
+  async function handleCompleteClick() {
+    if (isUpgrade && appointment.inventory_device_id) {
+      try {
+        if (!(await hasTradeItem())) {
+          setTradeFormOpen(true);
+          return;
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Falha ao verificar a troca");
+        return;
+      }
+    }
+    setCompleteOpen(true);
+  }
+
   /** Exclusão suave: o registro vira "Legado" e sai das listas ativas, mas fica no histórico. */
   const remove = useMutation({
     mutationFn: async () => {
@@ -294,7 +313,7 @@ export function AppointmentCard({
             size="sm"
             className="flex-1"
             disabled={update.isPending}
-            onClick={() => setCompleteOpen(true)}
+            onClick={() => void handleCompleteClick()}
           >
             Concluir
           </Button>
