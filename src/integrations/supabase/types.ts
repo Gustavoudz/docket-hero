@@ -852,6 +852,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_payments_from_appointment: {
+        Args: { _appointment_id: string; _sale_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -885,7 +889,7 @@ export type Database = {
         | "vendido"
         | "manutencao"
         | "incompleto"
-      payment_method: "pix" | "debito" | "credito"
+      payment_method: "pix" | "debito" | "credito" | "dinheiro"
       payment_status:
         | "aguardando"
         | "aprovado"
@@ -1041,7 +1045,7 @@ export const Constants = {
         "manutencao",
         "incompleto",
       ],
-      payment_method: ["pix", "debito", "credito"],
+      payment_method: ["pix", "debito", "credito", "dinheiro"],
       payment_status: [
         "aguardando",
         "aprovado",
