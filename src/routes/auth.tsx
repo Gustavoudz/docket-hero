@@ -95,7 +95,7 @@ function AuthPage() {
 
   return (
     <main className="flex min-h-screen flex-col justify-center px-4 py-10">
-      <div className="glass-strong mx-auto w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+      <div className="mx-auto w-full max-w-sm rounded-2xl border border-white/20 bg-black/40 p-6 shadow-2xl backdrop-blur-xl">
         <div className="text-center">
           <p className="font-script text-3xl text-primary">Bem vindo a Legado Phones</p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">Agenda da Loja</h1>
@@ -105,13 +105,13 @@ function AuthPage() {
         </div>
 
         <Tabs defaultValue="login" className="mt-6">
-          <TabsList className="glass grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 border border-white/15 bg-black/30 backdrop-blur-md">
             <TabsTrigger value="login">Entrar</TabsTrigger>
             <TabsTrigger value="signup">Criar conta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
-            <form onSubmit={handleLogin} className="glass mt-3 space-y-4 rounded-xl p-4">
+            <form onSubmit={handleLogin} className="mt-3 space-y-4 rounded-xl border border-white/15 bg-black/30 p-4 backdrop-blur-md">
               <div className="space-y-1.5">
                 <Label htmlFor="login-email">E-mail</Label>
                 <Input id="login-email" name="email" type="email" autoComplete="email" required />
@@ -133,7 +133,7 @@ function AuthPage() {
           </TabsContent>
 
           <TabsContent value="signup">
-            <form onSubmit={handleSignup} className="glass mt-3 space-y-4 rounded-xl p-4">
+            <form onSubmit={handleSignup} className="mt-3 space-y-4 rounded-xl border border-white/15 bg-black/30 p-4 backdrop-blur-md">
               <div className="space-y-1.5">
                 <Label htmlFor="signup-name">Nome</Label>
                 <Input id="signup-name" name="full_name" required maxLength={80} />
