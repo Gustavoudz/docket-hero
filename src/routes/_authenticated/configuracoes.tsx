@@ -278,9 +278,70 @@ function ConfigPage() {
                   <SelectItem value="nenhum">Sem acesso</SelectItem>
                 </SelectContent>
               </Select>
+              {p.id !== user?.id && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remover ${p.full_name || p.email}`}
+                  onClick={() => {
+                    if (confirm(`Remover ${p.full_name || p.email} do sistema?`))
+                      deleteCollabMut.mutate(p.id);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           );
         })}
+        <form
+          className="mt-3 space-y-2 border-t pt-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!newCollab.fullName.trim() || !newCollab.email.trim() || newCollab.password.length < 6) {
+              toast.error("Preencha nome, e-mail e senha com ao menos 6 caracteres.");
+              return;
+            }
+            createCollabMut.mutate({ ...newCollab, fullName: newCollab.fullName.trim(), email: newCollab.email.trim() });
+          }}
+        >
+          <p className="text-xs font-medium">Adicionar colaborador</p>
+          <Input
+            placeholder="Nome completo"
+            value={newCollab.fullName}
+            onChange={(e) => setNewCollab((s) => ({ ...s, fullName: e.target.value }))}
+          />
+          <Input
+            type="email"
+            placeholder="E-mail"
+            value={newCollab.email}
+            onChange={(e) => setNewCollab((s) => ({ ...s, email: e.target.value }))}
+          />
+          <Input
+            type="password"
+            placeholder="Senha provisória (mín. 6)"
+            value={newCollab.password}
+            onChange={(e) => setNewCollab((s) => ({ ...s, password: e.target.value }))}
+          />
+          <div className="flex gap-2">
+            <Select
+              value={newCollab.role}
+              onValueChange={(v) => setNewCollab((s) => ({ ...s, role: v as AppRole }))}
+            >
+              <SelectTrigger className="flex-1" aria-label="Função do novo colaborador">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gerente">Gerente (dono)</SelectItem>
+                <SelectItem value="atendente">Atendente</SelectItem>
+                <SelectItem value="vendedora">Vendedora</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button type="submit" disabled={createCollabMut.isPending}>
+              Adicionar
+            </Button>
+          </div>
+        </form>
       </Section>
 
       <Section title="Modelos de aparelho" description="Opções disponíveis no formulário de agendamento.">
