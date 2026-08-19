@@ -47,7 +47,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   defaultDate: string;
   appointment?: Appointment | null;
-  recordType?: RecordType;
+  recordType?: RecordType | undefined;
 };
 
 export function AppointmentForm({
