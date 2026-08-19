@@ -4,7 +4,12 @@ import { todayISO } from "@/lib/agenda";
 
 export const todayForInventory = todayISO;
 
-export type InventoryStatus = "disponivel" | "reservado" | "vendido" | "manutencao";
+export type InventoryStatus =
+  | "disponivel"
+  | "reservado"
+  | "vendido"
+  | "manutencao"
+  | "incompleto";
 
 export type InventoryItem = {
   id: string;
@@ -29,6 +34,7 @@ export const INVENTORY_STATUS_LABEL: Record<InventoryStatus, string> = {
   reservado: "Reservado",
   vendido: "Vendido",
   manutencao: "Em manutenção",
+  incompleto: "Incompleto",
 };
 
 export const INVENTORY_STATUS_COLOR: Record<InventoryStatus, string> = {
@@ -36,6 +42,7 @@ export const INVENTORY_STATUS_COLOR: Record<InventoryStatus, string> = {
   reservado: "#f59e0b",
   vendido: "#94a3b8",
   manutencao: "#38bdf8",
+  incompleto: "#e11d48",
 };
 
 export const INVENTORY_STATUSES: InventoryStatus[] = [
@@ -43,6 +50,7 @@ export const INVENTORY_STATUSES: InventoryStatus[] = [
   "reservado",
   "vendido",
   "manutencao",
+  "incompleto",
 ];
 
 const ITEM_COLUMNS =
@@ -99,6 +107,39 @@ export function useAvailableItems(model: string, currentItemId?: string | null) 
 export function itemLabel(item: InventoryItem) {
   const bits = [item.device_model, item.color, item.storage, item.apple_id].filter(Boolean).join(" · ");
   return bits || "Item sem identificação";
+}
+
+/** Itens que entraram por troca e ainda precisam do cadastro completo. */
+export function useIncompleteItems() {
+  return useQuery({
+    queryKey: ["inventory_items", "incompletos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select(ITEM_COLUMNS)
+        .eq("status", "incompleto")
+        .order("entered_at", { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as InventoryItem[];
+    },
+  });
+}
+
+/**
+ * Reserva automática: item Disponível mais antigo daquele modelo.
+ * Itens Incompletos, Em manutenção, Reservados e Vendidos ficam de fora.
+ */
+export async function findAutoReserveItem(model: string) {
+  if (!model) return null;
+  const { data, error } = await supabase
+    .from("inventory_items")
+    .select(ITEM_COLUMNS)
+    .eq("device_model", model)
+    .eq("status", "disponivel")
+    .order("entered_at", { ascending: true })
+    .limit(1);
+  if (error) throw new Error(error.message);
+  return ((data ?? [])[0] as unknown as InventoryItem | undefined) ?? null;
 }
 
 export async function logInventoryEvent(input: {
