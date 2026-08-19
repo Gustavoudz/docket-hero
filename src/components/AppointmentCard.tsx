@@ -46,6 +46,7 @@ export function AppointmentCard({
   const [revertReason, setRevertReason] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
   const [tradeFormOpen, setTradeFormOpen] = useState(false);
   const { user, role } = useAuth();
   /** Venda marcada com a tag "Upgrade": exige cadastro do aparelho que entra. */
@@ -85,6 +86,10 @@ export function AppointmentCard({
   });
   const { data: availableItems = [] } = useAvailableItems(
     linkOpen || completeOpen ? appointment.device_model : "",
+  );
+  /** Itens do modelo agendado, para avisar qual termo será usado na venda. */
+  const { data: convertItems = [] } = useAvailableItems(
+    convertOpen ? appointment.device_model : "",
   );
   const [reason, setReason] = useState("");
   const [reasonChoice, setReasonChoice] = useState("");
@@ -317,7 +322,7 @@ export function AppointmentCard({
               size="sm"
               variant="secondary"
               className="flex-1"
-              onClick={() => onConvert!(appointment)}
+              onClick={() => setConvertOpen(true)}
             >
               <ShoppingCart className="mr-1 h-4 w-4" /> Transformar em venda
             </Button>
@@ -401,6 +406,51 @@ export function AppointmentCard({
               onClick={() => remove.mutate()}
             >
               Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={convertOpen} onOpenChange={setConvertOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Transformar em venda</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Confira o termo de garantia que será usado no recibo desta venda:
+          </p>
+          <div className="space-y-2">
+            {convertItems.length === 0 && (
+              <p className="rounded-md border border-border/60 bg-muted/30 p-3 text-sm">
+                Nenhum aparelho de <strong>{appointment.device_model}</strong> disponível no
+                estoque. O termo será definido pela condição do aparelho vinculado na conclusão.
+              </p>
+            )}
+            {convertItems.map((i) => {
+              const lacrado = i.condition === "lacrado";
+              return (
+                <p
+                  key={i.id}
+                  className="rounded-md border border-border/60 bg-muted/30 p-3 text-sm"
+                >
+                  {itemLabel(i)} — este aparelho é{" "}
+                  <strong>{lacrado ? "Lacrado" : "Seminovo"}</strong> → será usado o termo{" "}
+                  <strong>{lacrado ? "Lacrado" : "Seminovo"}</strong>
+                </p>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConvertOpen(false)}>
+              Voltar
+            </Button>
+            <Button
+              onClick={() => {
+                setConvertOpen(false);
+                onConvert!(appointment);
+              }}
+            >
+              Continuar
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -317,40 +317,64 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          birth_date: string | null
+          cep: string | null
+          city: string | null
+          complement: string | null
           cpf: string
           created_at: string
           created_by: string | null
+          district: string | null
           email: string | null
           id: string
           name: string
           notes: string | null
           phone: string | null
+          state: string | null
+          street: string | null
+          street_number: string | null
           updated_at: string
           whatsapp: string | null
         }
         Insert: {
           address?: string | null
+          birth_date?: string | null
+          cep?: string | null
+          city?: string | null
+          complement?: string | null
           cpf: string
           created_at?: string
           created_by?: string | null
+          district?: string | null
           email?: string | null
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
+          state?: string | null
+          street?: string | null
+          street_number?: string | null
           updated_at?: string
           whatsapp?: string | null
         }
         Update: {
           address?: string | null
+          birth_date?: string | null
+          cep?: string | null
+          city?: string | null
+          complement?: string | null
           cpf?: string
           created_at?: string
           created_by?: string | null
+          district?: string | null
           email?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          state?: string | null
+          street?: string | null
+          street_number?: string | null
           updated_at?: string
           whatsapp?: string | null
         }

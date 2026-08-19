@@ -9,6 +9,14 @@ export type Customer = {
   whatsapp: string | null;
   email: string | null;
   address: string | null;
+  street: string | null;
+  street_number: string | null;
+  complement: string | null;
+  district: string | null;
+  city: string | null;
+  state: string | null;
+  cep: string | null;
+  birth_date: string | null;
   notes: string | null;
   created_at: string;
 };
@@ -44,7 +52,9 @@ export function useCustomers(search = "") {
     queryFn: async () => {
       let query = supabase
         .from("customers")
-        .select("id, name, cpf, phone, whatsapp, email, address, notes, created_at")
+        .select(
+          "id, name, cpf, phone, whatsapp, email, address, street, street_number, complement, district, city, state, cep, birth_date, notes, created_at",
+        )
         .order("name", { ascending: true })
         .limit(200);
       const term = search.trim();
