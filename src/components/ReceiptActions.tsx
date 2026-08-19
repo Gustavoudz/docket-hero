@@ -20,6 +20,30 @@ function openPdf(base64: string, fileName: string, download: boolean) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
+/** Botão compacto para abrir o PDF do recibo direto na lista de vendas. */
+export function ReceiptQuickView({ saleId }: { saleId: string }) {
+  const receipt = useServerFn(getSaleReceipt);
+  const load = useMutation({
+    mutationFn: async () => {
+      const r = (await receipt({ data: { saleId } })) as { pdfBase64: string; fileName: string };
+      openPdf(r.pdfBase64, r.fileName, false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={load.isPending}
+      onClick={() => load.mutate()}
+      className="h-8"
+    >
+      <Eye className="mr-1.5 h-4 w-4" />
+      {load.isPending ? "Abrindo…" : "Recibo"}
+    </Button>
+  );
+}
+
 /** Ver / baixar / reenviar o recibo de uma venda concluída. */
 export function ReceiptActions({ saleId }: { saleId: string }) {
   const receipt = useServerFn(getSaleReceipt);
