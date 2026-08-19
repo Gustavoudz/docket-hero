@@ -9,7 +9,7 @@ import { AppointmentCard } from "@/components/AppointmentCard";
 import { InventoryTurnover } from "@/components/InventoryTurnover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { conversionRate, shiftDate, todayISO, type Appointment } from "@/lib/agenda";
+import { activeRecords, conversionRate, shiftDate, todayISO, type Appointment } from "@/lib/agenda";
 import { formatBRL } from "@/lib/agenda";
 import { isStale, useInventoryCosts, useInventoryItems, useStaleDays } from "@/lib/inventory";
 
