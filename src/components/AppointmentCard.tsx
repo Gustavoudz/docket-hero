@@ -440,69 +440,20 @@ export function AppointmentCard({
               )}
             </div>
           )}
-          <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3">
-            <p className="text-sm font-medium">Essa venda envolve troca de aparelho (upgrade)? *</p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                className="flex-1"
-                variant={isTrade === true ? "default" : "outline"}
-                onClick={() => setIsTrade(true)}
-              >
-                Sim
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                className="flex-1"
-                variant={isTrade === false ? "default" : "outline"}
-                onClick={() => setIsTrade(false)}
-              >
-                Não
-              </Button>
-            </div>
-          </div>
-          {isTrade === true && (
-            <div className="space-y-3 rounded-md border border-primary/40 bg-primary/5 p-3">
-              <p className="text-sm font-medium">Aparelho que está entrando</p>
-              <div className="space-y-1.5">
-                <Label htmlFor={`trade-model-${appointment.id}`}>Modelo recebido *</Label>
-                <select
-                  id={`trade-model-${appointment.id}`}
-                  value={tradeModel}
-                  onChange={(e) => setTradeModel(e.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
-                >
-                  <option value="">Selecione o modelo…</option>
-                  {activeModels.map((m) => (
-                    <option key={m.id} value={m.name}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor={`trade-cost-${appointment.id}`}>Valor de avaliação (R$) *</Label>
-                <Input
-                  id={`trade-cost-${appointment.id}`}
-                  inputMode="decimal"
-                  placeholder="Ex.: 1800"
-                  value={tradeCost}
-                  onChange={(e) => setTradeCost(e.target.value)}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                O aparelho entra como <strong>Incompleto</strong> e precisa ter série e e-mail
-                cadastrados depois.
-              </p>
-            </div>
+          {isUpgrade && (
+            <p className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
+              Venda com tag <strong>Upgrade</strong>: o cadastro do aparelho que está entrando é
+              obrigatório e será aberto automaticamente se ainda não tiver sido feito.
+            </p>
           )}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setCompleteOpen(false)}>
               Voltar
             </Button>
-            <Button disabled={!completeReady || complete.isPending} onClick={() => complete.mutate()}>
+            <Button
+              disabled={!completeReady || complete.isPending}
+              onClick={() => void startComplete()}
+            >
               Concluir venda
             </Button>
           </DialogFooter>
