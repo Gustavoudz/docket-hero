@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  activeRecords,
   conversionRate,
   formatDateLabel,
   shiftDate,
@@ -68,6 +69,7 @@ async function fetchDaySummary(date: string, attendantId: string): Promise<DaySu
     .from("appointments")
     .select("id, status, sale_amount, product_price, cancel_reason, scheduled_date, scheduled_at")
     .eq("attendant_id", attendantId)
+    .neq("status", "legado")
     .or(
       `scheduled_date.eq.${date},and(scheduled_date.is.null,scheduled_at.gte.${start},scheduled_at.lte.${end})`,
     );
@@ -108,7 +110,7 @@ function AgendaPage() {
         .eq("scheduled_date", date)
         .order("scheduled_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as Appointment[];
+      return activeRecords((data ?? []) as unknown as Appointment[]);
     },
   });
 

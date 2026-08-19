@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Info, Plus, Trash2 } from "lucide-react";
 import {
   formatTime,
   PAYMENT_METHODS,
@@ -24,7 +24,12 @@ import {
   type PaymentEntry,
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
-import { findAutoReserveItem, itemLabel, useAvailableItems } from "@/lib/inventory";
+import {
+  findAutoReserveItem,
+  itemLabel,
+  useAvailableItems,
+  type InventoryItem,
+} from "@/lib/inventory";
 import { CustomerPicker } from "@/components/CustomerPicker";
 import type { Customer } from "@/lib/customers";
 import type { RecordType } from "@/lib/permissions";
@@ -93,10 +98,33 @@ export function AppointmentForm({
   );
   const [inventoryItemId, setInventoryItemId] = useState(appointment?.inventory_device_id ?? "");
   const [manualLink, setManualLink] = useState(false);
+  const [showTechnical, setShowTechnical] = useState(false);
+  const [priceTouched, setPriceTouched] = useState(false);
+  const [swapAsk, setSwapAsk] = useState<{ price: number } | null>(null);
   const { data: availableItems = [] } = useAvailableItems(
     model,
     appointment?.inventory_device_id ?? null,
   );
+
+  /** Item que será efetivamente vinculado: escolhido manualmente ou o mais antigo (reserva automática). */
+  const linkedItem: InventoryItem | undefined = inventoryItemId
+    ? availableItems.find((i) => i.id === inventoryItemId)
+    : availableItems[0];
+
+  const lastLinkedId = useRef<string | null>(appointment?.inventory_device_id ?? null);
+  useEffect(() => {
+    if (!linkedItem) return;
+    if (lastLinkedId.current === linkedItem.id) return;
+    const price = linkedItem.sale_price != null ? Number(linkedItem.sale_price) : null;
+    lastLinkedId.current = linkedItem.id;
+    if (price == null) return;
+    const current = Number(productPrice.replace(",", "."));
+    if (!priceTouched || !Number.isFinite(current) || current === price) {
+      setProductPrice(String(price));
+      return;
+    }
+    setSwapAsk({ price });
+  }, [linkedItem, priceTouched, productPrice]);
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -265,6 +293,47 @@ export function AppointmentForm({
           </div>
           {model && (
             <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 px-3 py-2">
+              {linkedItem && (
+                <div className="space-y-1 rounded-md border border-primary/30 bg-primary/5 p-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground">Aparelho vinculado</p>
+                      <p className="truncate text-sm font-semibold">{linkedItem.device_model}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {[linkedItem.color, linkedItem.storage].filter(Boolean).join(" · ") ||
+                          "Sem cor/armazenamento informados"}
+                      </p>
+                      <p className="text-xs">
+                        Valor de venda:{" "}
+                        <strong>
+                          {linkedItem.sale_price != null
+                            ? Number(linkedItem.sale_price).toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })
+                            : "não cadastrado"}
+                        </strong>
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Ver detalhes técnicos"
+                      title="Ver detalhes técnicos"
+                      onClick={() => setShowTechnical((v) => !v)}
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {showTechnical && (
+                    <div className="space-y-0.5 border-t border-border/60 pt-1 text-xs text-muted-foreground">
+                      <p>Número de série: {linkedItem.serial_number || "—"}</p>
+                      <p>E-mail (Apple ID): {linkedItem.apple_id || "—"}</p>
+                    </div>
+                  )}
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
                 {availableItems.length === 0
                   ? `Nenhum ${model} disponível em estoque no momento — o agendamento é criado mesmo assim.`
@@ -347,8 +416,15 @@ export function AppointmentForm({
               inputMode="decimal"
               placeholder="Ex.: 3500"
               value={productPrice}
-              onChange={(e) => setProductPrice(e.target.value)}
+              onChange={(e) => {
+                setPriceTouched(true);
+                setProductPrice(e.target.value);
+              }}
             />
+            <p className="text-xs text-muted-foreground">
+              Preenchido pelo valor de venda do aparelho vinculado. Editar aqui não altera o valor
+              cadastrado no estoque.
+            </p>
           </div>
           {!isVenda && (
             <div className="space-y-2 rounded-md border px-3 py-2">
@@ -472,6 +548,34 @@ export function AppointmentForm({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={!!swapAsk} onOpenChange={(o) => !o && setSwapAsk(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Trocar aparelho vinculado</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            O valor da venda foi ajustado manualmente. Trocar de aparelho vai atualizar para{" "}
+            {(swapAsk?.price ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.
+            Deseja continuar?
+          </p>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setSwapAsk(null)}>
+              Manter valor atual
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setProductPrice(String(swapAsk?.price ?? ""));
+                setPriceTouched(false);
+                setSwapAsk(null);
+              }}
+            >
+              Usar novo valor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

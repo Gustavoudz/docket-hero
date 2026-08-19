@@ -18,6 +18,7 @@ import { Route as AuthenticatedConciliacaoRouteImport } from './routes/_authenti
 import { Route as AuthenticatedConferenciaRouteImport } from './routes/_authenticated/conferencia'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticated/estoque'
+import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
 import { Route as AuthenticatedMesRouteImport } from './routes/_authenticated/mes'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedSemanaRouteImport } from './routes/_authenticated/semana'
@@ -71,6 +72,11 @@ const AuthenticatedEstoqueRoute = AuthenticatedEstoqueRouteImport.update({
   path: '/estoque',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHistoricoRoute = AuthenticatedHistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMesRoute = AuthenticatedMesRouteImport.update({
   id: '/mes',
   path: '/mes',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/conferencia': typeof AuthenticatedConferenciaRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/mes': typeof AuthenticatedMesRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/semana': typeof AuthenticatedSemanaRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/conferencia': typeof AuthenticatedConferenciaRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/estoque': typeof AuthenticatedEstoqueRoute
+  '/historico': typeof AuthenticatedHistoricoRoute
   '/mes': typeof AuthenticatedMesRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/semana': typeof AuthenticatedSemanaRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/_authenticated/conferencia': typeof AuthenticatedConferenciaRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/estoque': typeof AuthenticatedEstoqueRoute
+  '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
   '/_authenticated/mes': typeof AuthenticatedMesRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/semana': typeof AuthenticatedSemanaRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/conferencia'
     | '/configuracoes'
     | '/estoque'
+    | '/historico'
     | '/mes'
     | '/painel'
     | '/semana'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/conferencia'
     | '/configuracoes'
     | '/estoque'
+    | '/historico'
     | '/mes'
     | '/painel'
     | '/semana'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/_authenticated/conferencia'
     | '/_authenticated/configuracoes'
     | '/_authenticated/estoque'
+    | '/_authenticated/historico'
     | '/_authenticated/mes'
     | '/_authenticated/painel'
     | '/_authenticated/semana'
@@ -264,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEstoqueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/historico': {
+      id: '/_authenticated/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof AuthenticatedHistoricoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mes': {
       id: '/_authenticated/mes'
       path: '/mes'
@@ -309,6 +328,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConferenciaRoute: typeof AuthenticatedConferenciaRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedEstoqueRoute: typeof AuthenticatedEstoqueRoute
+  AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
   AuthenticatedMesRoute: typeof AuthenticatedMesRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedSemanaRoute: typeof AuthenticatedSemanaRoute
@@ -323,6 +343,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConferenciaRoute: AuthenticatedConferenciaRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedEstoqueRoute: AuthenticatedEstoqueRoute,
+  AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
   AuthenticatedMesRoute: AuthenticatedMesRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedSemanaRoute: AuthenticatedSemanaRoute,

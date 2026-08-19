@@ -9,7 +9,7 @@ import { AppointmentCard } from "@/components/AppointmentCard";
 import { InventoryTurnover } from "@/components/InventoryTurnover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { conversionRate, shiftDate, todayISO, type Appointment } from "@/lib/agenda";
+import { activeRecords, conversionRate, shiftDate, todayISO, type Appointment } from "@/lib/agenda";
 import { formatBRL } from "@/lib/agenda";
 import { isStale, useInventoryCosts, useInventoryItems, useStaleDays } from "@/lib/inventory";
 
@@ -62,7 +62,7 @@ function PainelPage() {
         .lte("scheduled_date", to)
         .order("scheduled_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as Appointment[];
+      return activeRecords((data ?? []) as unknown as Appointment[]);
     },
   });
 

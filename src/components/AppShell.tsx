@@ -15,6 +15,7 @@ import {
   ArrowRightLeft,
   PackagePlus,
   Users,
+  History,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -208,6 +209,12 @@ function SideMenu() {
             url: "/conciliacao",
             icon: Scale,
             active: currentPath === "/conciliacao",
+          },
+          {
+            title: "Histórico / Auditoria",
+            url: "/historico",
+            icon: History,
+            active: currentPath === "/historico",
           },
         ]
       : []),

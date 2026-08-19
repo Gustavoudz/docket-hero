@@ -92,7 +92,12 @@ type SaleRow = {
   appointment_id: string | null;
   customers: { name: string } | null;
   inventory_items: { device_model: string | null; imei: string | null; serial_number: string | null } | null;
-  appointments: { customer_name: string | null; device_model: string | null; scheduled_date: string | null } | null;
+  appointments: {
+    customer_name: string | null;
+    device_model: string | null;
+    scheduled_date: string | null;
+    status?: string | null;
+  } | null;
   payments: PaymentRow[];
 };
 
@@ -103,11 +108,14 @@ function useSales() {
       const { data, error } = await supabase
         .from("sales")
         .select(
-          "id, sale_number, reference, status, total, created_at, seller_id, appointment_id, customers(name), inventory_items(device_model, imei, serial_number), appointments(customer_name, device_model, scheduled_date), payments(*)",
+          "id, sale_number, reference, status, total, created_at, seller_id, appointment_id, customers(name), inventory_items(device_model, imei, serial_number), appointments(customer_name, device_model, scheduled_date, status), payments(*)",
         )
         .order("sale_number", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as SaleRow[];
+      // vendas cujo registro de origem virou "Legado" saem das listas ativas
+      return ((data ?? []) as unknown as SaleRow[]).filter(
+        (s) => s.appointments?.status !== "legado",
+      );
     },
   });
 }
