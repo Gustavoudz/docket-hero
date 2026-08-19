@@ -11,6 +11,7 @@ import {
   Package,
   Receipt,
   ClipboardCheck,
+  Scale,
   ArrowRightLeft,
   PackagePlus,
   Users,
@@ -201,6 +202,12 @@ function SideMenu() {
             url: "/conferencia",
             icon: ClipboardCheck,
             active: currentPath === "/conferencia",
+          },
+          {
+            title: "Conciliação",
+            url: "/conciliacao",
+            icon: Scale,
+            active: currentPath === "/conciliacao",
           },
         ]
       : []),
