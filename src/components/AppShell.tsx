@@ -176,7 +176,7 @@ function SideMenu() {
     ...(role === "gerente"
       ? [
           {
-            title: "Painel do gerente",
+            title: "Painel de controle",
             url: "/painel",
             icon: BarChart3,
             active: currentPath === "/painel",
