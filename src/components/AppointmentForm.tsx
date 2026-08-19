@@ -27,6 +27,7 @@ import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 import { findAutoReserveItem, itemLabel, useAvailableItems } from "@/lib/inventory";
 import { CustomerPicker } from "@/components/CustomerPicker";
 import type { Customer } from "@/lib/customers";
+import type { RecordType } from "@/lib/permissions";
 
 const schema = z.object({
   customer_name: z.string().trim().min(1, "Informe o nome do cliente").max(120),
@@ -46,10 +47,20 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   defaultDate: string;
   appointment?: Appointment | null;
+  recordType?: RecordType;
 };
 
-export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }: Props) {
+export function AppointmentForm({
+  open,
+  onOpenChange,
+  defaultDate,
+  appointment,
+  recordType,
+}: Props) {
   const { user, fullName } = useAuth();
+  const type: RecordType =
+    recordType ?? (appointment?.record_type as RecordType | undefined) ?? "agendamento";
+  const isVenda = type === "venda";
   const queryClient = useQueryClient();
   const [deposit, setDeposit] = useState(appointment?.deposit_paid ?? false);
   const [depositAmount, setDepositAmount] = useState<string>(
@@ -141,8 +152,10 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
           : null,
         notes: v.notes || null,
         tag: v.tag || null,
-        deposit_paid: deposit,
-        deposit_amount: deposit && Number.isFinite(amount) && amount > 0 ? amount : null,
+        record_type: type,
+        deposit_paid: isVenda ? false : deposit,
+        deposit_amount:
+          !isVenda && deposit && Number.isFinite(amount) && amount > 0 ? amount : null,
         product_price: Number.isFinite(price) && price > 0 ? price : null,
         payments: cleanPayments,
         payment_method: first?.method ?? null,
@@ -162,7 +175,8 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
     onSuccess: (notFound) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
-      toast.success(appointment ? "Agendamento atualizado" : "Agendamento criado");
+      const noun = isVenda ? "Venda" : "Agendamento";
+      toast.success(appointment ? `${noun} atualizado` : `${noun} criado`);
       if (notFound) {
         toast.warning(`Nenhum ${notFound} disponível em estoque no momento`);
       } else {
