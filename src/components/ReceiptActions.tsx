@@ -34,14 +34,22 @@ function base64ToBlobUrl(base64: string) {
 /** Botão compacto que abre o PDF do recibo em um visualizador dentro do app. */
 export function ReceiptQuickView({ saleId }: { saleId: string }) {
   const receipt = useServerFn(getSaleReceipt);
-  const [pdf, setPdf] = useState<{ url: string; fileName: string } | null>(null);
+  const [pdf, setPdf] = useState<{ url: string; viewUrl: string; fileName: string } | null>(null);
 
   useEffect(() => () => { if (pdf) URL.revokeObjectURL(pdf.url); }, [pdf]);
 
   const load = useMutation({
     mutationFn: async () => {
-      const r = (await receipt({ data: { saleId } })) as { pdfBase64: string; fileName: string };
-      setPdf({ url: base64ToBlobUrl(r.pdfBase64), fileName: r.fileName });
+      const r = (await receipt({ data: { saleId } })) as {
+        pdfBase64: string;
+        fileName: string;
+        token: string;
+      };
+      setPdf({
+        url: base64ToBlobUrl(r.pdfBase64),
+        viewUrl: `/api/public/recibo/${r.token}`,
+        fileName: r.fileName,
+      });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -67,22 +75,29 @@ export function ReceiptQuickView({ saleId }: { saleId: string }) {
           {pdf && (
             <div className="space-y-3">
               <iframe
-                src={pdf.url}
+                src={pdf.viewUrl}
                 title="Recibo em PDF"
                 className="h-[70vh] w-full rounded-lg border border-border/60 bg-white"
               />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  const a = document.createElement("a");
-                  a.href = pdf.url;
-                  a.download = pdf.fileName;
-                  a.click();
-                }}
-              >
-                <Download className="mr-1.5 h-4 w-4" /> Baixar PDF
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const a = document.createElement("a");
+                    a.href = pdf.url;
+                    a.download = pdf.fileName;
+                    a.click();
+                  }}
+                >
+                  <Download className="mr-1.5 h-4 w-4" /> Baixar PDF
+                </Button>
+                <Button size="sm" variant="ghost" asChild>
+                  <a href={pdf.viewUrl} target="_blank" rel="noopener noreferrer">
+                    Abrir em nova aba
+                  </a>
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
