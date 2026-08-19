@@ -52,10 +52,12 @@ export function InventoryForm({
   open,
   onOpenChange,
   item,
+  defaults,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item?: InventoryItem | null;
+  defaults?: { device_model?: string; cost_price?: number };
 }) {
   const { user, role } = useAuth();
   const isGerente = role === "gerente";
@@ -68,6 +70,8 @@ export function InventoryForm({
   const formRef = useRef<HTMLFormElement>(null);
   const extract = useServerFn(extractDeviceFromPhoto);
   const [reading, setReading] = useState(false);
+  const [batch, setBatch] = useState(false);
+  const [batchLines, setBatchLines] = useState("");
 
   function setField(name: string, value: string) {
     const el = formRef.current?.elements.namedItem(name) as
@@ -165,6 +169,36 @@ export function InventoryForm({
             .upsert({ item_id: item.id, cost_price: cost }, { onConflict: "item_id" });
           if (costError) throw new Error(costError.message);
         }
+        return;
+      }
+
+      if (batch) {
+        const units = batchLines
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => {
+            const [serial, appleId] = line.split(/[;,\t]/).map((p) => p.trim());
+            return { serial_number: serial || null, apple_id: appleId || null };
+          });
+        if (units.length === 0) throw new Error("Informe pelo menos uma unidade (uma por linha)");
+        const { data: rows, error: batchError } = await supabase
+          .from("inventory_items")
+          .insert(
+            units.map((u) => ({
+              ...payload,
+              serial_number: u.serial_number,
+              apple_id: u.apple_id,
+              imei: null,
+              created_by: user?.id ?? null,
+            })),
+          )
+          .select("id");
+        if (batchError) throw new Error(batchError.message);
+        const { error: costsError } = await supabase
+          .from("inventory_costs")
+          .insert((rows ?? []).map((r) => ({ item_id: r.id, cost_price: cost! })));
+        if (costsError) throw new Error(costsError.message);
         return;
       }
 
