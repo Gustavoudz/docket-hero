@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCents, toCents } from "@/lib/finance";
+import { AccessDenied } from "@/components/AccessDenied";
 
 export const Route = createFileRoute("/_authenticated/conciliacao")({
   head: () => ({
@@ -108,9 +109,7 @@ function ConciliacaoPage() {
   if (role !== "gerente") {
     return (
       <AppShell>
-        <p className="text-sm text-muted-foreground">
-          Esta seção é exclusiva do gerente.
-        </p>
+        <AccessDenied message="A conciliação é exclusiva do gerente." />
       </AppShell>
     );
   }

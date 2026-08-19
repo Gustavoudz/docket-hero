@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
+import { AccessDenied } from "@/components/AccessDenied";
 import { AppointmentCard } from "@/components/AppointmentCard";
 import { InventoryTurnover } from "@/components/InventoryTurnover";
 import { Input } from "@/components/ui/input";
@@ -92,9 +93,7 @@ function PainelPage() {
   if (role && role !== "gerente") {
     return (
       <AppShell>
-        <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground backdrop-blur-xl">
-          Este painel é exclusivo do gerente.
-        </p>
+        <AccessDenied message="Este painel é exclusivo do gerente." />
       </AppShell>
     );
   }

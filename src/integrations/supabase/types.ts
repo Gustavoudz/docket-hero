@@ -84,6 +84,7 @@ export type Database = {
           payment_method: string | null
           payments: Json
           product_price: number | null
+          record_type: Database["public"]["Enums"]["record_type"]
           sale_amount: number | null
           sale_id: string | null
           scheduled_at: string
@@ -113,6 +114,7 @@ export type Database = {
           payment_method?: string | null
           payments?: Json
           product_price?: number | null
+          record_type?: Database["public"]["Enums"]["record_type"]
           sale_amount?: number | null
           sale_id?: string | null
           scheduled_at: string
@@ -142,6 +144,7 @@ export type Database = {
           payment_method?: string | null
           payments?: Json
           product_price?: number | null
+          record_type?: Database["public"]["Enums"]["record_type"]
           sale_amount?: number | null
           sale_id?: string | null
           scheduled_at?: string
@@ -810,7 +813,7 @@ export type Database = {
       is_gerente: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "gerente" | "atendente"
+      app_role: "gerente" | "atendente" | "vendedora"
       appointment_status: "pendente" | "concluido" | "cancelado"
       inventory_status:
         | "disponivel"
@@ -825,6 +828,7 @@ export type Database = {
         | "recusado"
         | "cancelado"
         | "estornado"
+      record_type: "agendamento" | "venda"
       sale_status:
         | "rascunho"
         | "aguardando_pagamento"
@@ -958,7 +962,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["gerente", "atendente"],
+      app_role: ["gerente", "atendente", "vendedora"],
       appointment_status: ["pendente", "concluido", "cancelado"],
       inventory_status: [
         "disponivel",
@@ -975,6 +979,7 @@ export const Constants = {
         "cancelado",
         "estornado",
       ],
+      record_type: ["agendamento", "venda"],
       sale_status: [
         "rascunho",
         "aguardando_pagamento",

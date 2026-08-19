@@ -24,6 +24,9 @@ import {
   type Appointment,
 } from "@/lib/agenda";
 import { fetchDayFinance } from "@/lib/finance";
+import { allowedRecordTypes, canViewRecord, type RecordType } from "@/lib/permissions";
+import { RecordTypePicker } from "@/components/RecordTypePicker";
+import { AccessDenied } from "@/components/AccessDenied";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   validateSearch: (search: Record<string, unknown>): { date?: string } =>
@@ -93,6 +96,8 @@ function AgendaPage() {
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [closedSummary, setClosedSummary] = useState<DaySummary | null>(null);
+  const [typePickerOpen, setTypePickerOpen] = useState(false);
+  const [newType, setNewType] = useState<RecordType>("agendamento");
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments", "day", date],
@@ -177,7 +182,29 @@ function AgendaPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const visible = role === "gerente" ? appointments : mine;
+  const creatable = allowedRecordTypes(role);
+  const visible = useMemo(
+    () => appointments.filter((a) => canViewRecord(role, a, user?.id)),
+    [appointments, role, user?.id],
+  );
+
+  const startNew = () => {
+    setEditing(null);
+    if (creatable.length === 1) {
+      setNewType(creatable[0]!);
+      setFormOpen(true);
+      return;
+    }
+    setTypePickerOpen(true);
+  };
+
+  if (role && creatable.length === 0) {
+    return (
+      <AppShell>
+        <AccessDenied message="Seu perfil não tem permissão para ver a agenda." />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
@@ -268,21 +295,29 @@ function AgendaPage() {
       <Button
         size="lg"
         className="fixed bottom-5 left-1/2 z-30 -translate-x-1/2 shadow-lg"
-        onClick={() => {
-          setEditing(null);
+        onClick={startNew}
+      >
+        <Plus className="mr-1 h-5 w-5" /> Novo
+      </Button>
+
+      <RecordTypePicker
+        open={typePickerOpen}
+        onOpenChange={setTypePickerOpen}
+        onSelect={(t) => {
+          setNewType(t);
+          setTypePickerOpen(false);
           setFormOpen(true);
         }}
-      >
-        <Plus className="mr-1 h-5 w-5" /> Novo agendamento
-      </Button>
+      />
 
       {formOpen && (
         <AppointmentForm
-          key={editing?.id ?? "new"}
+          key={editing?.id ?? `new-${newType}`}
           open={formOpen}
           onOpenChange={setFormOpen}
           defaultDate={date}
           appointment={editing}
+          recordType={editing ? undefined : newType}
         />
       )}
 

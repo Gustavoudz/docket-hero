@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
+import { AccessDenied } from "@/components/AccessDenied";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -140,9 +141,7 @@ function ConfigPage() {
   if (role && role !== "gerente") {
     return (
       <AppShell>
-        <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground backdrop-blur-xl">
-          Estas configurações são exclusivas do gerente.
-        </p>
+        <AccessDenied message="Estas configurações são exclusivas do gerente." />
       </AppShell>
     );
   }

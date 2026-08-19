@@ -30,6 +30,7 @@ export type Appointment = {
   tag?: string | null;
   inventory_device_id?: string | null;
   customer_id?: string | null;
+  record_type?: "agendamento" | "venda" | null;
 };
 
 export const STATUS_LABEL: Record<AppointmentStatus, string> = {
