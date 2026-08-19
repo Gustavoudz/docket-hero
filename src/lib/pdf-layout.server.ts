@@ -29,7 +29,23 @@ export function wrapText(font: PDFFont, s: string, size: number, max: number): s
   const out: string[] = [];
   for (const raw of String(s ?? "").split("\n")) {
     let cur = "";
+    /** Quebra palavras longas (e-mails, URLs) que não cabem na largura. */
+    const words: string[] = [];
     for (const w of raw.split(/\s+/).filter(Boolean)) {
+      if (font.widthOfTextAtSize(w, size) <= max) {
+        words.push(w);
+        continue;
+      }
+      let piece = "";
+      for (const ch of w) {
+        if (font.widthOfTextAtSize(piece + ch, size) > max && piece) {
+          words.push(piece);
+          piece = ch;
+        } else piece += ch;
+      }
+      if (piece) words.push(piece);
+    }
+    for (const w of words) {
       const t = cur ? `${cur} ${w}` : w;
       if (font.widthOfTextAtSize(t, size) > max && cur) {
         out.push(cur);
