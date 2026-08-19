@@ -347,24 +347,34 @@ export function InventoryForm({
               <Input id="storage" name="storage" placeholder="256GB" defaultValue={item?.storage ?? ""} />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="serial_number">Número de série</Label>
-            <Input
-              id="serial_number"
-              name="serial_number"
-              placeholder="Recomendado"
-              defaultValue={item?.serial_number ?? ""}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="imei">IMEI</Label>
-            <Input id="imei" name="imei" placeholder="Opcional" defaultValue={item?.imei ?? ""} />
-          </div>
+          {!batch && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="serial_number">Número de série</Label>
+                <Input
+                  id="serial_number"
+                  name="serial_number"
+                  placeholder="Recomendado"
+                  defaultValue={item?.serial_number ?? ""}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="imei">IMEI</Label>
+                <Input id="imei" name="imei" placeholder="Opcional" defaultValue={item?.imei ?? ""} />
+              </div>
+            </>
+          )}
           <div className="grid grid-cols-2 gap-3">
             {(isGerente || !item) && (
               <div className="space-y-1.5">
                 <Label htmlFor="cost_price">Valor de custo (R$){item ? "" : " *"}</Label>
-                <Input id="cost_price" name="cost_price" inputMode="decimal" placeholder="Ex.: 2800" />
+                <Input
+                  id="cost_price"
+                  name="cost_price"
+                  inputMode="decimal"
+                  placeholder="Ex.: 2800"
+                  defaultValue={defaults?.cost_price != null ? String(defaults.cost_price) : ""}
+                />
               </div>
             )}
             <div className="space-y-1.5">
@@ -417,7 +427,7 @@ export function InventoryForm({
         </form>
         <DialogFooter>
           <Button type="submit" form="inventory-form" disabled={mutation.isPending}>
-            {item ? "Salvar" : "Cadastrar item"}
+            {item ? "Salvar" : batch ? "Cadastrar lote" : "Cadastrar item"}
           </Button>
         </DialogFooter>
       </DialogContent>
