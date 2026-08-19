@@ -293,6 +293,9 @@ export function AppointmentCard({
             ))}
             {attendantName && <span>Atendente: {attendantName}</span>}
             {appointment.customer_instagram && <span>@{appointment.customer_instagram}</span>}
+            {appointment.battery_health != null && (
+              <span>Bateria: {appointment.battery_health}%</span>
+            )}
           </div>
           {appointment.notes && <p className="mt-1 text-sm">{appointment.notes}</p>}
           {sourceAppointment && (
