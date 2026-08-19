@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedComissoesRouteImport } from './routes/_authenticated/comissoes'
 import { Route as AuthenticatedConciliacaoRouteImport } from './routes/_authenticated/conciliacao'
 import { Route as AuthenticatedConferenciaRouteImport } from './routes/_authenticated/conferencia'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
@@ -47,6 +48,11 @@ const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
 const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedComissoesRoute = AuthenticatedComissoesRouteImport.update({
+  id: '/comissoes',
+  path: '/comissoes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConciliacaoRoute =
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/comissoes': typeof AuthenticatedComissoesRoute
   '/conciliacao': typeof AuthenticatedConciliacaoRoute
   '/conferencia': typeof AuthenticatedConferenciaRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/agenda': typeof AuthenticatedAgendaRoute
   '/clientes': typeof AuthenticatedClientesRoute
+  '/comissoes': typeof AuthenticatedComissoesRoute
   '/conciliacao': typeof AuthenticatedConciliacaoRoute
   '/conferencia': typeof AuthenticatedConferenciaRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
+  '/_authenticated/comissoes': typeof AuthenticatedComissoesRoute
   '/_authenticated/conciliacao': typeof AuthenticatedConciliacaoRoute
   '/_authenticated/conferencia': typeof AuthenticatedConferenciaRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda'
     | '/clientes'
+    | '/comissoes'
     | '/conciliacao'
     | '/conferencia'
     | '/configuracoes'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/agenda'
     | '/clientes'
+    | '/comissoes'
     | '/conciliacao'
     | '/conferencia'
     | '/configuracoes'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/agenda'
     | '/_authenticated/clientes'
+    | '/_authenticated/comissoes'
     | '/_authenticated/conciliacao'
     | '/_authenticated/conferencia'
     | '/_authenticated/configuracoes'
@@ -246,6 +258,13 @@ declare module '@tanstack/react-router' {
       path: '/clientes'
       fullPath: '/clientes'
       preLoaderRoute: typeof AuthenticatedClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/comissoes': {
+      id: '/_authenticated/comissoes'
+      path: '/comissoes'
+      fullPath: '/comissoes'
+      preLoaderRoute: typeof AuthenticatedComissoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/conciliacao': {
@@ -324,6 +343,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
+  AuthenticatedComissoesRoute: typeof AuthenticatedComissoesRoute
   AuthenticatedConciliacaoRoute: typeof AuthenticatedConciliacaoRoute
   AuthenticatedConferenciaRoute: typeof AuthenticatedConferenciaRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
@@ -339,6 +359,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
+  AuthenticatedComissoesRoute: AuthenticatedComissoesRoute,
   AuthenticatedConciliacaoRoute: AuthenticatedConciliacaoRoute,
   AuthenticatedConferenciaRoute: AuthenticatedConferenciaRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
