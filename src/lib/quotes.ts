@@ -97,6 +97,37 @@ function money(value: number) {
 
 export type MessageTone = "suave" | "agressiva";
 
+/** Sugestões de armazenamento para os campos manuais. */
+export const STORAGE_SUGGESTIONS = ["64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
+
+/** Resumo do orçamento para virar observação do agendamento. */
+export function buildQuoteAppointmentNotes(quote: Quote) {
+  const lines = [`Origem: orçamento rápido (${quote.kind === "upgrade" ? "upgrade" : "simples"}).`];
+  if (quote.discount > 0) lines.push(`Desconto combinado: R$ ${quote.discount}.`);
+  if (quote.kind === "upgrade") {
+    const troca = [quote.trade_model, quote.trade_storage, quote.trade_color]
+      .filter(Boolean)
+      .join(" ");
+    lines.push(
+      `Troca: ${troca || "aparelho do cliente"}${
+        quote.trade_condition ? ` — ${quote.trade_condition}` : ""
+      }${quote.trade_battery_health != null ? ` — bateria ${quote.trade_battery_health}%` : ""}${
+        quote.trade_value != null ? ` — avaliado em R$ ${quote.trade_value}` : ""
+      }.`,
+    );
+  }
+  if (quote.notes?.trim()) lines.push(quote.notes.trim());
+  return lines.join("\n");
+}
+
+/** Valor final do orçamento (produto - desconto - troca). */
+export function quoteFinalPrice(quote: Quote) {
+  return Math.max(
+    0,
+    quote.product_price - quote.discount - (quote.kind === "upgrade" ? (quote.trade_value ?? 0) : 0),
+  );
+}
+
 export function buildQuoteMessage(quote: Quote, tone: MessageTone) {
   const greeting = quote.customer_name?.trim()
     ? `Oi, ${quote.customer_name.trim()}!`
