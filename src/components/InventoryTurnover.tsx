@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, Gauge } from "lucide-react";
+import { CalendarDays, Download, Gauge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
