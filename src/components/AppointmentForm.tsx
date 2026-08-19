@@ -104,8 +104,6 @@ export function AppointmentForm({
   const [inventoryItemId, setInventoryItemId] = useState(base?.inventory_device_id ?? "");
   const [manualLink, setManualLink] = useState(false);
   const [showTechnical, setShowTechnical] = useState(false);
-  const [priceTouched, setPriceTouched] = useState(false);
-  const [swapAsk, setSwapAsk] = useState<{ price: number } | null>(null);
   const { data: availableItems = [] } = useAvailableItems(
     model,
     base?.inventory_device_id ?? null,
@@ -123,13 +121,8 @@ export function AppointmentForm({
     const price = linkedItem.sale_price != null ? Number(linkedItem.sale_price) : null;
     lastLinkedId.current = linkedItem.id;
     if (price == null) return;
-    const current = Number(productPrice.replace(",", "."));
-    if (!priceTouched || !Number.isFinite(current) || current === price) {
-      setProductPrice(String(price));
-      return;
-    }
-    setSwapAsk({ price });
-  }, [linkedItem, priceTouched, productPrice]);
+    setProductPrice(String(price));
+  }, [linkedItem]);
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -437,10 +430,7 @@ export function AppointmentForm({
               inputMode="decimal"
               placeholder="Ex.: 3500"
               value={productPrice}
-              onChange={(e) => {
-                setPriceTouched(true);
-                setProductPrice(e.target.value);
-              }}
+              onChange={(e) => setProductPrice(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
               Preenchido pelo valor de venda do aparelho vinculado. Editar aqui não altera o valor
@@ -570,33 +560,6 @@ export function AppointmentForm({
         </DialogFooter>
       </DialogContent>
 
-      <Dialog open={!!swapAsk} onOpenChange={(o) => !o && setSwapAsk(null)}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Trocar aparelho vinculado</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            O valor da venda foi ajustado manualmente. Trocar de aparelho vai atualizar para{" "}
-            {(swapAsk?.price ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.
-            Deseja continuar?
-          </p>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setSwapAsk(null)}>
-              Manter valor atual
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setProductPrice(String(swapAsk?.price ?? ""));
-                setPriceTouched(false);
-                setSwapAsk(null);
-              }}
-            >
-              Usar novo valor
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Dialog>
   );
 }
