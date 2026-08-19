@@ -7,12 +7,18 @@ export type ArgValue = string | number | boolean | null;
 
 export type PendingAction = { name: string; args: Record<string, ArgValue>; summary: string };
 
+export type PhotoInput = { images: string[]; condition: "lacrado" | "seminovo" };
+
 export type AssistantReply = { reply: string; pending: PendingAction | null };
 
 export const assistantChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { messages: AssistantMessage[]; confirm?: PendingAction | null }) => input,
+    (input: {
+      messages: AssistantMessage[];
+      confirm?: PendingAction | null;
+      photo?: PhotoInput | null;
+    }) => input,
   )
   .handler(async ({ data, context }): Promise<AssistantReply> => {
     const { runAssistant } = await import("./assistant.server");
@@ -21,5 +27,6 @@ export const assistantChat = createServerFn({ method: "POST" })
       userId: context.userId,
       messages: (data.messages ?? []).slice(-24),
       confirm: data.confirm ?? null,
+      photo: data.photo ?? null,
     });
   });
