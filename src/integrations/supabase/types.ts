@@ -68,6 +68,7 @@ export type Database = {
           cancel_reason: string | null
           completed_at: string | null
           created_at: string
+          customer_id: string | null
           customer_instagram: string | null
           customer_name: string
           customer_phone: string | null
@@ -96,6 +97,7 @@ export type Database = {
           cancel_reason?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_id?: string | null
           customer_instagram?: string | null
           customer_name: string
           customer_phone?: string | null
@@ -124,6 +126,7 @@ export type Database = {
           cancel_reason?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_id?: string | null
           customer_instagram?: string | null
           customer_name?: string
           customer_phone?: string | null
@@ -147,7 +150,15 @@ export type Database = {
           tag?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "appointments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       attendant_colors: {
         Row: {
@@ -191,6 +202,48 @@ export type Database = {
           label?: string
           sort_order?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          address: string | null
+          cpf: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          cpf: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          cpf?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
