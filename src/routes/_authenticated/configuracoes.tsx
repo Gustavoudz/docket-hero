@@ -477,11 +477,10 @@ function ConfigPage() {
         </form>
       </Section>
 
-      <Section title="Zona de perigo">
-        <p className="text-sm text-muted-foreground">
-          Apaga todos os agendamentos, vendas, itens de estoque, histórico e conferências. Modelos,
-          tabela de troca, motivos, cores e usuários não são afetados.
-        </p>
+      <Section
+        title="Zona de perigo"
+        description="Apaga todos os agendamentos, vendas, itens de estoque, histórico e conferências. Modelos, tabela de troca, motivos, cores e usuários não são afetados."
+      >
         <Button variant="destructive" className="w-full" onClick={() => setResetOpen(true)}>
           <AlertTriangle className="mr-2 h-4 w-4" />
           Resetar dados de teste
