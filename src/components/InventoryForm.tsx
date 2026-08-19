@@ -54,12 +54,20 @@ export function InventoryForm({
   onOpenChange,
   item,
   defaults,
+  tradeIn,
+  onSaved,
+  onCancelFlow,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item?: InventoryItem | null;
   defaults?: { device_model?: string; cost_price?: number };
+  /** Fluxo de troca/upgrade: o modal fica travado até o cadastro ser salvo. */
+  tradeIn?: { appointmentId: string; customerName: string } | undefined;
+  onSaved?: ((itemId: string) => void) | undefined;
+  onCancelFlow?: (() => void) | undefined;
 }) {
+  const locked = !!tradeIn;
   const { user, role } = useAuth();
   const isGerente = role === "gerente";
   const queryClient = useQueryClient();
@@ -150,6 +158,8 @@ export function InventoryForm({
 
       const completingIncomplete =
         item?.status === "incompleto" && status === "incompleto" && !!v.serial_number;
+      /** Na troca, a situação segue a regra padrão: sem série o item entra como Incompleto. */
+      const tradeStatus: InventoryStatus = v.serial_number ? "disponivel" : "incompleto";
 
       const payload = {
         device_model: v.device_model,
@@ -160,7 +170,11 @@ export function InventoryForm({
         condition,
         sale_price: toNumber(v.sale_price),
         notes: v.notes || null,
-        status: completingIncomplete ? ("disponivel" as InventoryStatus) : status,
+        status: locked
+          ? tradeStatus
+          : completingIncomplete
+            ? ("disponivel" as InventoryStatus)
+            : status,
         entered_at: v.entered_at,
       };
 
@@ -181,10 +195,10 @@ export function InventoryForm({
             .upsert({ item_id: item.id, cost_price: cost }, { onConflict: "item_id" });
           if (costError) throw new Error(costError.message);
         }
-        return;
+        return null;
       }
 
-      if (batch) {
+      if (batch && !locked) {
         const units = batchLines
           .split("\n")
           .map((line) => line.trim())
@@ -211,7 +225,7 @@ export function InventoryForm({
           .from("inventory_costs")
           .insert((rows ?? []).map((r) => ({ item_id: r.id, cost_price: cost! })));
         if (costsError) throw new Error(costsError.message);
-        return;
+        return null;
       }
 
       const { data, error } = await supabase
@@ -224,24 +238,59 @@ export function InventoryForm({
         .from("inventory_costs")
         .insert({ item_id: data!.id, cost_price: cost! });
       if (costError) throw new Error(costError.message);
+      if (tradeIn) {
+        await logInventoryEvent({
+          itemId: data!.id,
+          kind: "criado_via_troca",
+          reason: `Recebido na venda de ${tradeIn.customerName}`,
+          appointmentId: tradeIn.appointmentId,
+          actorId: user?.id ?? null,
+        });
+      }
+      return data!.id as string;
     },
-    onSuccess: () => {
+    onSuccess: (createdId) => {
       queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_costs"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory_events"] });
+      queryClient.invalidateQueries({ queryKey: ["trade_item"] });
       toast.success(
         item ? "Item atualizado" : batch ? "Itens cadastrados em lote" : "Item cadastrado no estoque",
       );
       onOpenChange(false);
+      if (createdId && onSaved) onSaved(createdId);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+    <Dialog open={open} onOpenChange={locked ? () => {} : onOpenChange}>
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-md"
+        hideClose={locked}
+        {...(locked
+          ? {
+              onInteractOutside: (e: Event) => e.preventDefault(),
+              onEscapeKeyDown: (e: KeyboardEvent) => e.preventDefault(),
+              onPointerDownOutside: (e: Event) => e.preventDefault(),
+            }
+          : {})}
+      >
         <DialogHeader>
-          <DialogTitle>{item ? "Editar item de estoque" : "Novo item de estoque"}</DialogTitle>
+          <DialogTitle>
+            {locked
+              ? "Cadastrar aparelho recebido na troca"
+              : item
+                ? "Editar item de estoque"
+                : "Novo item de estoque"}
+          </DialogTitle>
         </DialogHeader>
+        {locked && (
+          <p className="text-sm text-muted-foreground">
+            Venda com tag Upgrade: cadastre o aparelho que está entrando para concluir. Use a foto
+            para preencher modelo, série e capacidade — informe o valor de custo e o de venda.
+          </p>
+        )}
         <form
           id="inventory-form"
           ref={formRef}
