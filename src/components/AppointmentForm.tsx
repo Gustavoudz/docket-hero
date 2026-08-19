@@ -246,6 +246,13 @@ export function AppointmentForm({
                 : "📅 Novo agendamento"}
           </DialogTitle>
         </DialogHeader>
+        {convertFrom && !appointment && (
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Gerado a partir do agendamento de{" "}
+            {new Date(convertFrom.scheduled_at).toLocaleDateString("pt-BR")} — revise os dados antes
+            de salvar.
+          </p>
+        )}
         <form
           id="appointment-form"
           className="space-y-4"
