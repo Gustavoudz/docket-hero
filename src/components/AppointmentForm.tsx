@@ -48,6 +48,7 @@ const schema = z.object({
   time: z.string().min(1, "Informe o horário"),
   customer_phone: z.string().trim().max(30).optional(),
   customer_instagram: z.string().trim().max(60).optional(),
+  customer_email: z.string().trim().max(120).optional(),
   battery_health: z.string().trim().max(4).optional(),
   deposit_amount: z.string().trim().max(20).optional(),
   product_price: z.string().trim().max(20).optional(),
@@ -124,6 +125,9 @@ export function AppointmentForm({
   const [customerInstagram, setCustomerInstagram] = useState<string>(
     base?.customer_instagram ? `@${base.customer_instagram}` : "",
   );
+  const [customerEmail, setCustomerEmail] = useState<string>(
+    (base as { customer_email?: string | null } | undefined)?.customer_email ?? "",
+  );
   const [inventoryItemId, setInventoryItemId] = useState(base?.inventory_device_id ?? "");
   const [listPrice, setListPrice] = useState<number | null>(
     base?.product_price != null ? Number(base.product_price) : null,
@@ -177,6 +181,7 @@ export function AppointmentForm({
         time: form.get("time"),
         customer_phone: form.get("customer_phone") ?? "",
         customer_instagram: form.get("customer_instagram") ?? "",
+        customer_email: form.get("customer_email") ?? "",
         battery_health: form.get("battery_health") ?? "",
         deposit_amount: form.get("deposit_amount") ?? "",
         product_price: form.get("product_price") ?? "",
@@ -214,6 +219,7 @@ export function AppointmentForm({
         customer_instagram: v.customer_instagram
           ? v.customer_instagram.replace(/^@+/, "")
           : null,
+        customer_email: v.customer_email ? v.customer_email.toLowerCase() : null,
         battery_health: (() => {
           const n = Math.round(Number((v.battery_health ?? "").replace("%", "").trim()));
           return Number.isFinite(n) && n >= 0 && n <= 100 && (v.battery_health ?? "") !== ""
@@ -487,6 +493,20 @@ export function AppointmentForm({
               value={customerInstagram}
               onChange={(e) => setCustomerInstagram(e.target.value)}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="customer_email">E-mail do cliente</Label>
+            <Input
+              id="customer_email"
+              name="customer_email"
+              type="email"
+              placeholder="cliente@email.com"
+              value={customerEmail}
+              onChange={(e) => setCustomerEmail(e.target.value)}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Usado para enviar o recibo da venda automaticamente.
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="battery_health">Saúde da bateria (%)</Label>
