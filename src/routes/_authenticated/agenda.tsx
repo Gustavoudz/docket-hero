@@ -41,6 +41,48 @@ export const Route = createFileRoute("/_authenticated/agenda")({
   component: AgendaPage,
 });
 
+type DaySummary = {
+  total: number;
+  completedCount: number;
+  cancelledCount: number;
+  totalCents: number;
+  cancelReasons: string[];
+};
+
+const toCents = (v: unknown) =>
+  v == null || Number.isNaN(Number(v)) ? 0 : Math.round(Number(v) * 100);
+
+function formatCents(cents: number) {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+/** Recalcula o dia em tempo real, direto do banco (nunca cache/snapshot). */
+async function fetchDaySummary(date: string, attendantId: string): Promise<DaySummary> {
+  const start = `${date}T00:00:00-03:00`;
+  const end = `${date}T23:59:59.999-03:00`;
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("id, status, sale_amount, product_price, cancel_reason, scheduled_date, scheduled_at")
+    .eq("attendant_id", attendantId)
+    .or(
+      `scheduled_date.eq.${date},and(scheduled_date.is.null,scheduled_at.gte.${start},scheduled_at.lte.${end})`,
+    );
+  if (error) throw new Error(error.message);
+  const rows = data ?? [];
+  const completed = rows.filter((r) => r.status === "concluido");
+  const cancelled = rows.filter((r) => r.status === "cancelado");
+  return {
+    total: rows.length,
+    completedCount: completed.length,
+    cancelledCount: cancelled.length,
+    totalCents: completed.reduce(
+      (sum, r) => sum + toCents(r.sale_amount ?? r.product_price ?? 0),
+      0,
+    ),
+    cancelReasons: cancelled.map((c) => c.cancel_reason ?? ""),
+  };
+}
+
 function AgendaPage() {
   const { user, role } = useAuth();
   const { date: dateParam } = Route.useSearch();
@@ -49,6 +91,7 @@ function AgendaPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [closedSummary, setClosedSummary] = useState<DaySummary | null>(null);
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments", "day", date],
@@ -86,27 +129,40 @@ function AgendaPage() {
     },
   });
 
+  const { data: daySummary } = useQuery({
+    queryKey: ["daySummary", date, user?.id, appointments.length],
+    enabled: !!user,
+    staleTime: 0,
+    gcTime: 0,
+    queryFn: () => fetchDaySummary(date, user!.id),
+  });
+
   const closeDay = useMutation({
     mutationFn: async () => {
       if (pending.length > 0) {
         throw new Error(`${pending.length} agendamento(s) ainda estão pendentes`);
       }
+      // Sempre recalcula em tempo real, direto do banco (sem cache/snapshot)
+      const summary = await fetchDaySummary(date, user!.id);
       const payload = {
         attendant_id: user!.id,
         closure_date: date,
-        total_appointments: mine.length,
-        completed_count: completed.length,
-        cancelled_count: cancelled.length,
-        conversion_rate: conversionRate(completed.length, mine.length),
-        cancel_reasons: cancelled.map((c) => c.cancel_reason ?? ""),
+        total_appointments: summary.total,
+        completed_count: summary.completedCount,
+        cancelled_count: summary.cancelledCount,
+        conversion_rate: conversionRate(summary.completedCount, summary.total),
+        cancel_reasons: summary.cancelReasons,
       };
       const { error } = await supabase
         .from("day_closures")
         .upsert(payload, { onConflict: "attendant_id,closure_date" });
       if (error) throw new Error(error.message);
+      return summary;
     },
-    onSuccess: () => {
+    onSuccess: (summary) => {
+      setClosedSummary(summary);
       queryClient.invalidateQueries({ queryKey: ["closure"] });
+      queryClient.invalidateQueries({ queryKey: ["appointments", "day", date] });
       setSummaryOpen(true);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -175,7 +231,7 @@ function AgendaPage() {
             <p className="text-sm font-medium">Fechamento do dia</p>
             <p className="text-xs text-muted-foreground">
               {closure
-                ? `Dia fechado · ${closure.completed_count} concluídos · ${closure.conversion_rate}% de conversão`
+                ? `Dia fechado · ${daySummary?.completedCount ?? 0} venda(s) concluída(s) · ${formatCents(daySummary?.totalCents ?? 0)} faturado`
                 : pending.length > 0
                   ? `Faltam ${pending.length} agendamento(s) sem status definido`
                   : "Tudo definido, pode fechar o dia"}
@@ -227,12 +283,19 @@ function AgendaPage() {
             <DialogTitle>Resumo do dia — {formatDateLabel(date)}</DialogTitle>
           </DialogHeader>
           <dl className="grid grid-cols-2 gap-3 text-sm">
-            <Stat label="Total" value={mine.length} />
-            <Stat label="Concluídos" value={completed.length} />
-            <Stat label="Cancelados" value={cancelled.length} />
-            <Stat label="Conversão" value={`${conversionRate(completed.length, mine.length)}%`} />
+            <Stat label="Total" value={(closedSummary ?? daySummary)?.total ?? mine.length} />
+            <Stat label="Vendas concluídas" value={(closedSummary ?? daySummary)?.completedCount ?? completed.length} />
+            <Stat
+              label="Total faturado"
+              value={formatCents((closedSummary ?? daySummary)?.totalCents ?? 0)}
+            />
+            <Stat label="Cancelados" value={(closedSummary ?? daySummary)?.cancelledCount ?? cancelled.length} />
+            <Stat
+              label="Conversão"
+              value={`${conversionRate((closedSummary ?? daySummary)?.completedCount ?? completed.length, (closedSummary ?? daySummary)?.total ?? mine.length)}%`}
+            />
           </dl>
-          {cancelled.length > 0 && (
+          {((closedSummary ?? daySummary)?.cancelReasons.length ?? cancelled.length) > 0 && (
             <div>
               <p className="text-sm font-medium">Motivos de cancelamento</p>
               <ul className="mt-1 space-y-0.5 text-sm text-muted-foreground">
