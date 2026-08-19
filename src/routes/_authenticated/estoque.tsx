@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Pencil, RotateCcw, History, AlarmClock } from "lucide-react";
+import { Plus, Search, Pencil, RotateCcw, History, AlarmClock, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/agenda";
+import { exportInventoryCSV } from "@/lib/inventory-export";
 import {
   INVENTORY_STATUSES,
   INVENTORY_STATUS_COLOR,
@@ -202,16 +203,34 @@ function EstoquePage() {
             ))}
           </select>
         </div>
-        <Button
-          type="button"
-          variant={onlyStale ? "default" : "outline"}
-          size="sm"
-          className="w-full transition-transform active:scale-[0.98]"
-          onClick={() => setOnlyStale((v) => !v)}
-        >
-          <AlarmClock className="mr-1 h-4 w-4" />
-          {onlyStale ? "Mostrando só parados" : `Mostrar só parados (${staleItems.length})`}
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant={onlyStale ? "default" : "outline"}
+            size="sm"
+            className="transition-transform active:scale-[0.98]"
+            onClick={() => setOnlyStale((v) => !v)}
+          >
+            <AlarmClock className="mr-1 h-4 w-4" />
+            {onlyStale ? "Só parados" : `Só parados (${staleItems.length})`}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="transition-transform active:scale-[0.98]"
+            onClick={() => {
+              if (filtered.length === 0) {
+                toast.info("Nenhum item para exportar com os filtros atuais.");
+                return;
+              }
+              exportInventoryCSV(filtered, costs, "estoque");
+              toast.success(`${filtered.length} item(ns) exportado(s).`);
+            }}
+          >
+            <Download className="mr-1 h-4 w-4" /> Exportar
+          </Button>
+        </div>
       </div>
 
       <ul className="mt-3 space-y-2">
