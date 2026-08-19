@@ -95,6 +95,17 @@ export function InventoryForm({
     setPayments((prev) => prev.map((p, i) => (i === index ? { ...p, ...patch } : p)));
   }
 
+  /** Formas de pagamento válidas (com valor informado). */
+  const cleanPayments: PaymentEntry[] = payments
+    .filter((p) => p.method)
+    .map((p) => ({
+      method: p.method,
+      amount: p.amount != null && Number(p.amount) > 0 ? Number(p.amount) : null,
+      installments: p.method === "credito" ? (p.installments ?? null) : null,
+      installment_value: p.method === "credito" ? (p.installment_value ?? null) : null,
+    }))
+    .filter((p) => (p.amount ?? 0) > 0 || ((p.installments ?? 0) > 0 && (p.installment_value ?? 0) > 0));
+
   function setField(name: string, value: string) {
     const el = formRef.current?.elements.namedItem(name) as
       | HTMLInputElement
@@ -275,7 +286,7 @@ export function InventoryForm({
         item ? "Item atualizado" : batch ? "Itens cadastrados em lote" : "Item cadastrado no estoque",
       );
       onOpenChange(false);
-      if (createdId && onSaved) onSaved(createdId);
+      if (createdId && onSaved) onSaved(createdId, cleanPayments);
     },
     onError: (e: Error) => toast.error(e.message),
   });
