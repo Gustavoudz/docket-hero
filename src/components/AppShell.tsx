@@ -202,6 +202,12 @@ function SideMenu() {
             icon: ClipboardCheck,
             active: currentPath === "/conferencia",
           },
+          {
+            title: "Conciliação",
+            url: "/conciliacao",
+            icon: Scale,
+            active: currentPath === "/conciliacao",
+          },
         ]
       : []),
     {
