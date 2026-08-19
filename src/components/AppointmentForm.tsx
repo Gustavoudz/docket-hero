@@ -312,8 +312,28 @@ export function AppointmentForm({
             }}
           />
           <div className="space-y-1.5">
+            <Label htmlFor="seller_id">Vendedor responsável *</Label>
+            <select
+              id="seller_id"
+              value={sellerId}
+              onChange={(e) => setSellerId(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+            >
+              {sellerOptions.length === 0 && (
+                <option value={user?.id ?? ""}>{fullName ?? "Eu"}</option>
+              )}
+              {sellerOptions.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.full_name || p.email}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-muted-foreground">
+              A comissão desta venda vai para o vendedor selecionado.
+            </p>
+          </div>
+          <div className="space-y-1.5">
             <Label htmlFor="device_model">Modelo de interesse *</Label>
-            {null}
             {activeModels.length > 0 ? (
               <select
                 id="device_model"
