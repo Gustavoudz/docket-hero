@@ -849,6 +849,104 @@ export type Database = {
           },
         ]
       }
+      service_orders: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          customer_name: string
+          device_model: string
+          device_password: string | null
+          finished_at: string | null
+          id: string
+          imei: string | null
+          installments: number
+          kind: string
+          notes: string | null
+          opened_at: string
+          os_number: number
+          parts: string | null
+          payment_method: string | null
+          public_token: string
+          reported_issue: string | null
+          responsible_id: string | null
+          serial_number: string | null
+          services: string | null
+          status: string
+          storage: string | null
+          total: number
+          updated_at: string
+          warranty_days: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name: string
+          device_model: string
+          device_password?: string | null
+          finished_at?: string | null
+          id?: string
+          imei?: string | null
+          installments?: number
+          kind?: string
+          notes?: string | null
+          opened_at?: string
+          os_number?: number
+          parts?: string | null
+          payment_method?: string | null
+          public_token?: string
+          reported_issue?: string | null
+          responsible_id?: string | null
+          serial_number?: string | null
+          services?: string | null
+          status?: string
+          storage?: string | null
+          total?: number
+          updated_at?: string
+          warranty_days?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          customer_name?: string
+          device_model?: string
+          device_password?: string | null
+          finished_at?: string | null
+          id?: string
+          imei?: string | null
+          installments?: number
+          kind?: string
+          notes?: string | null
+          opened_at?: string
+          os_number?: number
+          parts?: string | null
+          payment_method?: string | null
+          public_token?: string
+          reported_issue?: string | null
+          responsible_id?: string | null
+          serial_number?: string | null
+          services?: string | null
+          status?: string
+          storage?: string | null
+          total?: number
+          updated_at?: string
+          warranty_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       status_colors: {
         Row: {
           color: string
