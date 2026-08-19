@@ -20,6 +20,7 @@ import {
   PAYMENT_STATUS_LABEL,
 } from "@/components/PaymentForm";
 import { PixAutoPayment } from "@/components/PixAutoPayment";
+import { ReceiptActions } from "@/components/ReceiptActions";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, toISODate } from "@/lib/agenda";
 
