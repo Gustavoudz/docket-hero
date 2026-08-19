@@ -91,7 +91,7 @@ function AgendaPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [liveSummary, setLiveSummary] = useState<DaySummary | null>(null);
+  const [closedSummary, setClosedSummary] = useState<DaySummary | null>(null);
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments", "day", date],
@@ -160,7 +160,7 @@ function AgendaPage() {
       return summary;
     },
     onSuccess: (summary) => {
-      setLiveSummary(summary);
+      setClosedSummary(summary);
       queryClient.invalidateQueries({ queryKey: ["closure"] });
       queryClient.invalidateQueries({ queryKey: ["appointments", "day", date] });
       setSummaryOpen(true);
