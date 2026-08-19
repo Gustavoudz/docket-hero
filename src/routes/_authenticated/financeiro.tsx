@@ -1,22 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { AlertTriangle, CalendarClock, CheckCircle2, Clock, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarClock, CalendarDays, CheckCircle2, Clock, Wallet } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AccessDenied } from "@/components/AccessDenied";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCents, toCents } from "@/lib/finance";
