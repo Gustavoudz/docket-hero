@@ -341,42 +341,6 @@ function FinanceiroPage() {
         </section>
 
         <section className="glass rounded-xl border border-border/20 p-4">
-          <h2 className="mb-3 text-sm font-medium">Faturamento e lucro por dia</h2>
-          {(data?.chart.length ?? 0) === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {isLoading ? "Carregando…" : "Sem vendas concluídas no período."}
-            </p>
-          ) : (
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data!.chart}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.25} />
-                  <XAxis
-                    dataKey="day"
-                    tickFormatter={(d: string) => d.slice(8, 10) + "/" + d.slice(5, 7)}
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={11}
-                  />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} width={70} />
-                  <Tooltip
-                    formatter={(v: number) => formatCents(Math.round(v * 100))}
-                    labelFormatter={(d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("pt-BR")}
-                    contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: 8,
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="faturamento" name="Faturamento" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="lucro" name="Lucro" fill="hsl(142 70% 45%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </section>
-
-        <section className="glass rounded-xl border border-border/20 p-4">
           <h2 className="mb-3 text-sm font-medium">Vendas concluídas no período</h2>
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Carregando…</p>
