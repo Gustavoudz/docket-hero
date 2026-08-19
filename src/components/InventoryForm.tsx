@@ -35,6 +35,7 @@ const schema = z.object({
   storage: z.string().trim().max(60).optional(),
   serial_number: z.string().trim().max(80).optional(),
   imei: z.string().trim().max(40).optional(),
+  battery_health: z.string().trim().max(4).optional(),
   cost_price: z.string().trim().optional(),
   sale_price: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(1000).optional(),
@@ -48,6 +49,13 @@ function toNumber(value?: string) {
   if (!value) return null;
   const n = Number(value.replace(/\./g, "").replace(",", "."));
   return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function batteryToNumber(value?: string) {
+  if (!value) return null;
+  const n = Math.round(Number(value.replace("%", "").trim()));
+  if (!Number.isFinite(n) || n < 0 || n > 100) return null;
+  return n;
 }
 
 export function InventoryForm({
@@ -170,6 +178,7 @@ export function InventoryForm({
         storage: form.get("storage") ?? "",
         serial_number: form.get("serial_number") ?? "",
         imei: form.get("imei") ?? "",
+        battery_health: form.get("battery_health") ?? "",
         cost_price: form.get("cost_price") ?? "",
         sale_price: form.get("sale_price") ?? "",
         notes: form.get("notes") ?? "",
@@ -195,6 +204,7 @@ export function InventoryForm({
         storage: v.storage || null,
         serial_number: v.serial_number || null,
         imei: v.imei || null,
+        battery_health: batteryToNumber(v.battery_health),
         condition,
         sale_price: toNumber(v.sale_price),
         notes: v.notes || null,
@@ -450,6 +460,19 @@ export function InventoryForm({
               <div className="space-y-1.5">
                 <Label htmlFor="imei">IMEI</Label>
                 <Input id="imei" name="imei" placeholder="Opcional" defaultValue={item?.imei ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="battery_health">Saúde da bateria (%)</Label>
+                <Input
+                  id="battery_health"
+                  name="battery_health"
+                  type="number"
+                  min={0}
+                  max={100}
+                  inputMode="numeric"
+                  placeholder="Ex.: 89"
+                  defaultValue={item?.battery_health ?? ""}
+                />
               </div>
             </>
           )}
