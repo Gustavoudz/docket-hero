@@ -23,6 +23,7 @@ import {
   todayISO,
   type Appointment,
 } from "@/lib/agenda";
+import { fetchDayFinance } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   validateSearch: (search: Record<string, unknown>): { date?: string } =>
