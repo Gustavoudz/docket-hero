@@ -389,7 +389,6 @@ export function AppointmentCard({
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="sm:max-w-sm">
-        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Tem certeza?</DialogTitle>
           </DialogHeader>
@@ -413,6 +412,7 @@ export function AppointmentCard({
       </Dialog>
 
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+        <DialogContent className="sm:max-w-md">
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Vincular aparelho do estoque</DialogTitle>
