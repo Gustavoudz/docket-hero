@@ -548,6 +548,34 @@ export function AppointmentForm({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={!!swapAsk} onOpenChange={(o) => !o && setSwapAsk(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Trocar aparelho vinculado</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            O valor da venda foi ajustado manualmente. Trocar de aparelho vai atualizar para{" "}
+            {(swapAsk?.price ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.
+            Deseja continuar?
+          </p>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setSwapAsk(null)}>
+              Manter valor atual
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setProductPrice(String(swapAsk?.price ?? ""));
+                setPriceTouched(false);
+                setSwapAsk(null);
+              }}
+            >
+              Usar novo valor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
