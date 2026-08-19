@@ -169,6 +169,10 @@ export function InventoryForm({
       const cost = toNumber(v.cost_price);
       if (!item && !cost) throw new Error("Informe o valor de custo do aparelho");
 
+      if (locked && cleanPayments.length === 0) {
+        throw new Error("Informe como o cliente pagou (Pix, débito, crédito ou dinheiro)");
+      }
+
       const completingIncomplete =
         item?.status === "incompleto" && status === "incompleto" && !!v.serial_number;
       /** Na troca, a situação segue a regra padrão: sem série o item entra como Incompleto. */
