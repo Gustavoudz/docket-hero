@@ -223,6 +223,12 @@ function SideMenu() {
             active: currentPath === "/conciliacao",
           },
           {
+            title: "Financeiro",
+            url: "/financeiro",
+            icon: Wallet,
+            active: currentPath === "/financeiro",
+          },
+          {
             title: "Histórico / Auditoria",
             url: "/historico",
             icon: History,
