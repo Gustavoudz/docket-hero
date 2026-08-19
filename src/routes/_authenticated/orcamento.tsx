@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
+import { CardListSkeleton } from "@/components/ListSkeleton";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -225,10 +228,11 @@ function ProductPicker({
   const { data: items = [] } = useInventoryItems();
   const { modelOptions, storageOptions } = useSuggestions();
   const [term, setTerm] = useState("");
+  const debouncedTerm = useDebouncedValue(term, 300);
   const [manual, setManual] = useState(false);
 
   const results = useMemo(() => {
-    const q = term.trim().toLowerCase();
+    const q = debouncedTerm.trim().toLowerCase();
     if (!q) return [];
     return items
       .filter((i) => i.status !== "vendido")
@@ -236,7 +240,7 @@ function ProductPicker({
         [i.device_model, i.color, i.storage].filter(Boolean).join(" ").toLowerCase().includes(q),
       )
       .slice(0, 8);
-  }, [items, term]);
+  }, [items, debouncedTerm]);
 
   return (
     <div className="space-y-2">
@@ -666,11 +670,12 @@ function QuoteCard({ quote, onSchedule }: { quote: Quote; onSchedule: (quote: Qu
 }
 
 function OrcamentoPage() {
-  const { data: quotes = [] } = useQuotes();
+  const { data: quotes = [], isLoading } = useQuotes();
   const [picking, setPicking] = useState(false);
   const [kind, setKind] = useState<QuoteKind | null>(null);
   const [created, setCreated] = useState<Quote | null>(null);
   const [scheduling, setScheduling] = useState<Quote | null>(null);
+  const { visible, hasMore, sentinelRef } = useIncrementalList(quotes, 20);
 
   return (
     <AppShell>
@@ -697,14 +702,20 @@ function OrcamentoPage() {
       </Button>
 
       <div className="mt-5 space-y-3">
-        {quotes.length === 0 && (
+        {isLoading && <CardListSkeleton rows={4} />}
+        {!isLoading && quotes.length === 0 && (
           <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Nenhum orçamento ainda.
           </p>
         )}
-        {quotes.map((q) => (
+        {visible.map((q) => (
           <QuoteCard key={q.id} quote={q} onSchedule={setScheduling} />
         ))}
+        {hasMore && (
+          <div ref={sentinelRef}>
+            <CardListSkeleton rows={2} />
+          </div>
+        )}
       </div>
 
       {scheduling && (

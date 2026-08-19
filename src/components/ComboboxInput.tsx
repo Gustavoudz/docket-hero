@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Input } from "@/components/ui/input";
 
 type Props = {
@@ -14,12 +15,13 @@ type Props = {
 export function ComboboxInput({ id, value, onChange, options, placeholder, ariaLabel }: Props) {
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedValue = useDebouncedValue(value, 300);
 
   const matches = useMemo(() => {
-    const q = value.trim().toLowerCase();
+    const q = debouncedValue.trim().toLowerCase();
     const list = q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
     return list.filter((o) => o.toLowerCase() !== q).slice(0, 8);
-  }, [options, value]);
+  }, [options, debouncedValue]);
 
   return (
     <div className="relative">

@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Receipt, Search, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { TableRowsSkeleton } from "@/components/ListSkeleton";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -140,12 +143,13 @@ function useSellers() {
 
 function VendasPage() {
   const [term, setTerm] = useState("");
+  const debouncedTerm = useDebouncedValue(term, 300);
   const [detail, setDetail] = useState<SaleRow | null>(null);
   const { data: sales = [], isLoading } = useSales();
   const { data: sellers = {} } = useSellers();
 
   const filtered = useMemo(() => {
-    const t = term.trim().toLowerCase();
+    const t = debouncedTerm.trim().toLowerCase();
     if (!t) return sales;
     return sales.filter((s) => {
       const client = s.customers?.name ?? s.appointments?.customer_name ?? "";
@@ -158,7 +162,9 @@ function VendasPage() {
         (s.inventory_items?.imei ?? "").includes(t)
       );
     });
-  }, [sales, term]);
+  }, [sales, debouncedTerm]);
+
+  const { visible, hasMore, sentinelRef } = useIncrementalList(filtered, 25);
 
   const current = detail ? (sales.find((s) => s.id === detail.id) ?? detail) : null;
 
@@ -199,11 +205,7 @@ function VendasPage() {
             </thead>
             <tbody>
               {isLoading && (
-                <tr>
-                  <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
-                    Carregando…
-                  </td>
-                </tr>
+                <TableRowsSkeleton rows={6} cols={10} />
               )}
               {!isLoading && filtered.length === 0 && (
                 <tr>
@@ -212,7 +214,7 @@ function VendasPage() {
                   </td>
                 </tr>
               )}
-              {filtered.map((s) => {
+              {visible.map((s) => {
                 const product = s.inventory_items?.device_model ?? s.appointments?.device_model ?? "—";
                 const idcode = s.inventory_items?.imei || s.inventory_items?.serial_number;
                 const date = s.appointments?.scheduled_date ?? toISODate(new Date(s.created_at));
@@ -285,6 +287,13 @@ function VendasPage() {
                   </tr>
                 );
               })}
+              {hasMore && (
+                <tr ref={sentinelRef as unknown as React.Ref<HTMLTableRowElement>}>
+                  <td colSpan={10} className="px-3 py-3 text-center text-xs text-muted-foreground">
+                    Carregando mais vendas…
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

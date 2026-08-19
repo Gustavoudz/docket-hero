@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
+import { CardListSkeleton } from "@/components/ListSkeleton";
 import { InventoryForm } from "@/components/InventoryForm";
 import { InventoryHistory } from "@/components/InventoryHistory";
 import { MasterPasswordDialog } from "@/components/MasterPasswordDialog";
@@ -20,6 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/agenda";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { exportInventoryCSV } from "@/lib/inventory-export";
 import {
   INVENTORY_STATUSES,
@@ -72,6 +75,7 @@ function EstoquePage() {
   const [modelFilter, setModelFilter] = useState("");
   const [colorFilter, setColorFilter] = useState("");
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [onlyStale, setOnlyStale] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<InventoryItem | null>(null);
@@ -89,19 +93,21 @@ function EstoquePage() {
     [items],
   );
 
-  const filtered = items.filter((i) => {
+  const filtered = useMemo(() => items.filter((i) => {
     if (statusFilter && i.status !== statusFilter) return false;
     if (modelFilter && i.device_model !== modelFilter) return false;
     if (colorFilter && i.color !== colorFilter) return false;
     if (onlyStale && !isStale(i, staleDays)) return false;
-    const term = search.trim().toLowerCase();
+    const term = debouncedSearch.trim().toLowerCase();
     if (!term) return true;
     return (
       (i.apple_id ?? "").toLowerCase().includes(term) ||
       (i.serial_number ?? "").toLowerCase().includes(term) ||
       (i.imei ?? "").toLowerCase().includes(term)
     );
-  });
+  }), [items, statusFilter, modelFilter, colorFilter, onlyStale, staleDays, debouncedSearch]);
+
+  const { visible, hasMore, sentinelRef } = useIncrementalList(filtered, 30);
 
   const available = items.filter((i) => i.status === "disponivel");
   const totalAvailableCost = available.reduce((sum, i) => sum + (costs[i.id] ?? 0), 0);
@@ -268,13 +274,17 @@ function EstoquePage() {
       </div>
 
       <ul className="mt-3 space-y-2">
-        {isLoading && <li className="text-sm text-muted-foreground">Carregando…</li>}
+        {isLoading && (
+          <li>
+            <CardListSkeleton rows={6} />
+          </li>
+        )}
         {!isLoading && filtered.length === 0 && (
           <li className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
             Nenhum item encontrado.
           </li>
         )}
-        {filtered.map((i) => {
+        {visible.map((i) => {
           const stale = isStale(i, staleDays);
           return (
           <li
@@ -361,6 +371,11 @@ function EstoquePage() {
           );
         })}
       </ul>
+      {hasMore && (
+        <div ref={sentinelRef} className="mt-2">
+          <CardListSkeleton rows={2} />
+        </div>
+      )}
 
       <Button
         size="lg"

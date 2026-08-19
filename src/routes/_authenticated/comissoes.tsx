@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, ArrowLeft, BadgeDollarSign, Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { CardListSkeleton } from "@/components/ListSkeleton";
 import { AccessDenied } from "@/components/AccessDenied";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -259,7 +260,7 @@ function Ranking({
 
 function CommissionsPage() {
   const { role, user, fullName } = useAuth();
-  const { data: commissions = [] } = useCommissions();
+  const { data: commissions = [], isLoading } = useCommissions();
   const { data: profiles = [] } = useProfiles();
   const [ref_, setRef] = useState(() => new Date());
   const [selected, setSelected] = useState<string | null>(null);
@@ -313,7 +314,13 @@ function CommissionsPage() {
         <Ranking list={commissions} ref_={ref_} nameOf={nameOf} onSelect={setSelected} />
       </div>
 
-      {sellers.length === 0 && (
+      {isLoading && (
+        <div className="mt-4">
+          <CardListSkeleton rows={3} />
+        </div>
+      )}
+
+      {!isLoading && sellers.length === 0 && (
         <p className="mt-4 rounded-xl border border-border/40 bg-card/50 p-6 text-center text-sm text-muted-foreground">
           Nenhuma comissão registrada ainda.
         </p>

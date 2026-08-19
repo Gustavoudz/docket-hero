@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { Download, Receipt, Zap } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AccessDenied } from "@/components/AccessDenied";
+import { TableRowsSkeleton } from "@/components/ListSkeleton";
+import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -212,6 +214,8 @@ function ExtratoPage() {
     return { total, byMethod, salesCount: sales.size };
   }, [rows]);
 
+  const { visible, hasMore, sentinelRef } = useIncrementalList(rows, 40);
+
   const sellerOptions = useMemo(() => {
     const map = new Map<string, string>();
     for (const r of data?.rows ?? []) if (r.sellerId) map.set(r.sellerId, r.seller);
@@ -322,7 +326,13 @@ function ExtratoPage() {
 
         <section className="glass rounded-xl border border-border/20 p-4">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando…</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <tbody>
+                  <TableRowsSkeleton rows={6} cols={5} />
+                </tbody>
+              </table>
+            </div>
           ) : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum pagamento no período.</p>
           ) : (
@@ -340,7 +350,7 @@ function ExtratoPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
+                  {visible.map((r) => (
                     <tr key={r.id} className="border-b border-border/10 last:border-0">
                       <td className="whitespace-nowrap py-2 pr-3 text-muted-foreground">
                         {new Date(r.createdAt).toLocaleString("pt-BR")}
@@ -373,6 +383,13 @@ function ExtratoPage() {
                       <td className="py-2">{r.seller}</td>
                     </tr>
                   ))}
+                  {hasMore && (
+                    <tr ref={sentinelRef as unknown as React.Ref<HTMLTableRowElement>}>
+                      <td colSpan={7} className="py-3 text-center text-xs text-muted-foreground">
+                        Carregando mais pagamentos…
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

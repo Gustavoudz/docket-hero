@@ -22,9 +22,14 @@ export const DEFAULT_STATUS_COLORS: Record<AppointmentStatus, string> = {
   convertido: "#38bdf8",
 };
 
+/** Listas de configuração mudam pouco: ficam em cache na sessão e só
+ *  recarregam quando algo é cadastrado/alterado (invalidateQueries). */
+const CONFIG_CACHE = { staleTime: 30 * 60_000, gcTime: 60 * 60_000 } as const;
+
 export function useDeviceModels() {
   return useQuery({
     queryKey: ["device_models"],
+    ...CONFIG_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("device_models")
@@ -39,6 +44,7 @@ export function useDeviceModels() {
 export function useCancelReasons() {
   return useQuery({
     queryKey: ["cancel_reasons"],
+    ...CONFIG_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cancel_reasons")
@@ -53,6 +59,7 @@ export function useCancelReasons() {
 export function useAppointmentTags() {
   return useQuery({
     queryKey: ["appointment_tags"],
+    ...CONFIG_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointment_tags")
@@ -67,6 +74,7 @@ export function useAppointmentTags() {
 export function useStatusColors() {
   const query = useQuery({
     queryKey: ["status_colors"],
+    ...CONFIG_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("status_colors").select("status, color");
       if (error) throw error;
@@ -81,6 +89,7 @@ export function useStatusColors() {
 export function useAttendantColors() {
   const query = useQuery({
     queryKey: ["attendant_colors"],
+    ...CONFIG_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("attendant_colors").select("user_id, color");
       if (error) throw error;
@@ -95,6 +104,7 @@ export function useAttendantColors() {
 export function useProfiles() {
   return useQuery({
     queryKey: ["profiles"],
+    ...CONFIG_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("id, full_name, email");
       if (error) throw error;
@@ -108,6 +118,7 @@ export type UserRoleRow = { user_id: string; role: "gerente" | "atendente" | "ve
 export function useUserRoles() {
   return useQuery({
     queryKey: ["user_roles"],
+    ...CONFIG_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("user_roles").select("user_id, role");
       if (error) throw error;
