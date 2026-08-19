@@ -39,6 +39,7 @@ export type Appointment = {
   customer_id?: string | null;
   record_type?: "agendamento" | "venda" | null;
   converted_from_appointment_id?: string | null;
+  quote_id?: string | null;
   profit_cents?: number | null;
 };
 
