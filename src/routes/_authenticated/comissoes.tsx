@@ -174,6 +174,89 @@ function Detail({
   );
 }
 
+const RANKING_PERIODS: { key: RankingPeriod; label: string }[] = [
+  { key: "day", label: "Hoje" },
+  { key: "week", label: "Semana" },
+  { key: "month", label: "Mês" },
+  { key: "all", label: "Geral" },
+];
+
+const MEDALS = ["🥇", "🥈", "🥉"];
+
+/** Ranking de vendedores — quem mais vendeu no período. */
+function Ranking({
+  list,
+  ref_,
+  nameOf,
+  onSelect,
+}: {
+  list: Commission[];
+  ref_: Date;
+  nameOf: (id: string) => string;
+  onSelect?: (id: string) => void;
+}) {
+  const [period, setPeriod] = useState<RankingPeriod>("month");
+  const rows = useMemo(() => ranking(list, ref_, period), [list, ref_, period]);
+  const top = rows[0]?.sales ?? 0;
+
+  return (
+    <section className="rounded-xl border border-border/40 bg-card/60 p-4 backdrop-blur-xl">
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <Trophy className="h-4 w-4 text-primary" /> Ranking de vendedores
+        </h2>
+        <div className="flex gap-1">
+          {RANKING_PERIODS.map((p) => (
+            <Button
+              key={p.key}
+              size="sm"
+              variant={period === p.key ? "default" : "ghost"}
+              className="h-7 px-2 text-xs"
+              onClick={() => setPeriod(p.key)}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
+      </header>
+
+      {rows.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">Nenhuma venda no período.</p>
+      ) : (
+        <ol className="mt-3 space-y-2">
+          {rows.map((r, i) => (
+            <li key={r.sellerId}>
+              <button
+                onClick={() => onSelect?.(r.sellerId)}
+                className="w-full rounded-lg border border-border/30 bg-background/30 px-3 py-2 text-left transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="w-6 text-center text-sm">{MEDALS[i] ?? `${i + 1}º`}</span>
+                    <span className="truncate text-sm font-medium">{nameOf(r.sellerId)}</span>
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {r.sales} venda{r.sales === 1 ? "" : "s"} ·{" "}
+                    <span className="font-semibold tabular-nums text-primary">
+                      {formatBRL(r.total)}
+                    </span>
+                  </span>
+                </div>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/10">
+                  <div
+                    className="h-full rounded-full bg-primary/80"
+                    style={{ width: `${top ? Math.max(8, (r.sales / top) * 100) : 0}%` }}
+                  />
+                </div>
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
 function CommissionsPage() {
   const { role, user, fullName } = useAuth();
   const { data: commissions = [] } = useCommissions();
