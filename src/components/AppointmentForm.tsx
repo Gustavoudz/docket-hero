@@ -25,6 +25,8 @@ import {
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
 import { findAutoReserveItem, itemLabel, useAvailableItems } from "@/lib/inventory";
+import { CustomerPicker } from "@/components/CustomerPicker";
+import type { Customer } from "@/lib/customers";
 
 const schema = z.object({
   customer_name: z.string().trim().min(1, "Informe o nome do cliente").max(120),
@@ -68,6 +70,16 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
     appointment?.product_price != null ? String(appointment.product_price) : "",
   );
   const [model, setModel] = useState(appointment?.device_model ?? "");
+  const [customerName, setCustomerName] = useState(appointment?.customer_name ?? "");
+  const [customerId, setCustomerId] = useState<string | null>(
+    appointment?.customer_id ?? null,
+  );
+  const [customerPhone, setCustomerPhone] = useState<string | null>(
+    appointment?.customer_phone ?? null,
+  );
+  const [customerInstagram, setCustomerInstagram] = useState<string>(
+    appointment?.customer_instagram ? `@${appointment.customer_instagram}` : "",
+  );
   const [inventoryItemId, setInventoryItemId] = useState(appointment?.inventory_device_id ?? "");
   const [manualLink, setManualLink] = useState(false);
   const { data: availableItems = [] } = useAvailableItems(
@@ -122,7 +134,8 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
       const payload = {
         customer_name: v.customer_name,
         device_model: v.device_model,
-        customer_phone: v.customer_phone || null,
+        customer_id: customerId,
+        customer_phone: v.customer_phone || customerPhone || null,
         customer_instagram: v.customer_instagram
           ? v.customer_instagram.replace(/^@+/, "")
           : null,
@@ -177,16 +190,18 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
             mutation.mutate(new FormData(e.currentTarget));
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="customer_name">Cliente *</Label>
-            <Input
-              id="customer_name"
-              name="customer_name"
-              defaultValue={appointment?.customer_name ?? ""}
-              autoFocus
-              required
-            />
-          </div>
+          <CustomerPicker
+            name={customerName}
+            onNameChange={setCustomerName}
+            customerId={customerId}
+            onSelect={(c: Customer | null) => {
+              setCustomerId(c?.id ?? null);
+              if (c) {
+                setCustomerName(c.name);
+                setCustomerPhone(c.phone ?? c.whatsapp ?? null);
+              }
+            }}
+          />
           <div className="space-y-1.5">
             <Label htmlFor="device_model">Modelo de interesse *</Label>
             {activeModels.length > 0 ? (
@@ -298,9 +313,8 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
               id="customer_instagram"
               name="customer_instagram"
               placeholder="@cliente"
-              defaultValue={
-                appointment?.customer_instagram ? `@${appointment.customer_instagram}` : ""
-              }
+              value={customerInstagram}
+              onChange={(e) => setCustomerInstagram(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
