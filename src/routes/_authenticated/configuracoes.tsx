@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { AppointmentStatus } from "@/lib/agenda";
 import { STATUS_LABEL } from "@/lib/agenda";
 import {
@@ -135,6 +145,20 @@ function ConfigPage() {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["attendant_colors"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [resetOpen, setResetOpen] = useState(false);
+  const resetMut = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("reset_test_data");
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      setResetOpen(false);
+      queryClient.invalidateQueries();
+      toast.success("Dados de teste apagados. As configurações foram mantidas.");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -452,6 +476,43 @@ function ConfigPage() {
           <Button type="submit">Adicionar</Button>
         </form>
       </Section>
+
+      <Section title="Zona de perigo">
+        <p className="text-sm text-muted-foreground">
+          Apaga todos os agendamentos, vendas, itens de estoque, histórico e conferências. Modelos,
+          tabela de troca, motivos, cores e usuários não são afetados.
+        </p>
+        <Button variant="destructive" className="w-full" onClick={() => setResetOpen(true)}>
+          <AlertTriangle className="mr-2 h-4 w-4" />
+          Resetar dados de teste
+        </Button>
+      </Section>
+
+      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resetar dados de teste?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso vai apagar todos os agendamentos, vendas e itens de estoque cadastrados até agora.
+              Configurações (modelos, tabela de troca, usuários) não serão afetadas. Essa ação não pode
+              ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resetMut.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={resetMut.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                resetMut.mutate();
+              }}
+            >
+              {resetMut.isPending ? "Resetando…" : "Confirmar reset"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
