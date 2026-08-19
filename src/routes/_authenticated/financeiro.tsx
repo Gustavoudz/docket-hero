@@ -228,6 +228,7 @@ function FinanceiroPage() {
   const today = isoDay(new Date());
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState(today);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const range = useMemo(() => rangeFor(period, from, to), [period, from, to]);
 
@@ -266,7 +267,6 @@ function FinanceiroPage() {
               ["hoje", "Hoje"],
               ["semana", "Semana"],
               ["mes", "Mês"],
-              ["custom", "Personalizado"],
             ] as [PeriodKey, string][]
           ).map(([key, label]) => (
             <Button
