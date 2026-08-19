@@ -309,6 +309,10 @@ function CommissionsPage() {
         Geradas automaticamente quando um agendamento vira venda concluída.
       </p>
 
+      <div className="mt-4">
+        <Ranking list={commissions} ref_={ref_} nameOf={nameOf} onSelect={setSelected} />
+      </div>
+
       {sellers.length === 0 && (
         <p className="mt-4 rounded-xl border border-border/40 bg-card/50 p-6 text-center text-sm text-muted-foreground">
           Nenhuma comissão registrada ainda.
