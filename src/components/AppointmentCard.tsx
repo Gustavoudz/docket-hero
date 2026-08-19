@@ -45,10 +45,22 @@ export function AppointmentCard({
   const [revertReason, setRevertReason] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
-  const [isTrade, setIsTrade] = useState<boolean | null>(null);
-  const [tradeModel, setTradeModel] = useState("");
-  const [tradeCost, setTradeCost] = useState("");
+  const [tradeFormOpen, setTradeFormOpen] = useState(false);
   const { user, role } = useAuth();
+  /** Venda marcada com a tag "Upgrade": exige cadastro do aparelho que entra. */
+  const isUpgrade = (appointment.tag ?? "").trim().toLowerCase() === "upgrade";
+
+  /** Já existe item de estoque criado a partir desta troca? Consulta sempre atual. */
+  async function hasTradeItem() {
+    const { data, error } = await supabase
+      .from("inventory_events")
+      .select("id")
+      .eq("appointment_id", appointment.id)
+      .eq("kind", "criado_via_troca")
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return (data?.length ?? 0) > 0;
+  }
   const isAgendamento = (appointment.record_type ?? "agendamento") === "agendamento";
   const canConvert =
     !!onConvert &&
@@ -122,56 +134,39 @@ export function AppointmentCard({
     mutationFn: async () => {
       const itemId = appointment.inventory_device_id ?? linkChoice ?? "";
       if (!itemId) throw new Error("Não é possível concluir sem um aparelho vinculado ao estoque.");
+      if (isUpgrade && !(await hasTradeItem())) {
+        throw new Error("Cadastre o aparelho recebido na troca antes de concluir a venda.");
+      }
       const { error } = await supabase
         .from("appointments")
         .update({ status: "concluido", inventory_device_id: itemId })
         .eq("id", appointment.id);
       if (error) throw new Error(error.message);
-
-      if (!isTrade) return;
-      const cost = Number(tradeCost.replace(/\./g, "").replace(",", "."));
-      const { data: created, error: itemError } = await supabase
-        .from("inventory_items")
-        .insert({
-          device_model: tradeModel,
-          condition: "seminovo",
-          status: "incompleto",
-          entered_at: todayForInventory(),
-          created_by: user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      if (itemError) throw new Error(itemError.message);
-      const { error: costError } = await supabase
-        .from("inventory_costs")
-        .insert({ item_id: created!.id, cost_price: cost });
-      if (costError) throw new Error(costError.message);
-      await logInventoryEvent({
-        itemId: created!.id,
-        kind: "criado_via_troca",
-        reason: `Recebido na venda de ${appointment.customer_name}`,
-        appointmentId: appointment.id,
-        actorId: user?.id ?? null,
-      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
-      toast.success(
-        isTrade
-          ? "Venda concluída — aparelho recebido aguardando cadastro completo"
-          : "Venda concluída",
-      );
+      toast.success("Venda concluída");
       setCompleteOpen(false);
-      setIsTrade(null);
-      setTradeModel("");
-      setTradeCost("");
       setLinkChoice("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const tradeCostValue = Number(tradeCost.replace(/\./g, "").replace(",", "."));
+  /** Antes de concluir uma venda Upgrade, o cadastro do aparelho que entra é obrigatório. */
+  async function startComplete() {
+    try {
+      if (isUpgrade && !(await hasTradeItem())) {
+        setCompleteOpen(false);
+        setTradeFormOpen(true);
+        return;
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao verificar a troca");
+      return;
+    }
+    complete.mutate();
+  }
 
   /** Exclusão suave: o registro vira "Legado" e sai das listas ativas, mas fica no histórico. */
   const remove = useMutation({
@@ -191,10 +186,7 @@ export function AppointmentCard({
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const completeReady =
-    isTrade !== null &&
-    (appointment.inventory_device_id || linkChoice) &&
-    (!isTrade || (tradeModel && Number.isFinite(tradeCostValue) && tradeCostValue > 0));
+  const completeReady = !!(appointment.inventory_device_id || linkChoice);
 
   const revert = useMutation({
     mutationFn: async (why: string) => {
