@@ -10,6 +10,7 @@ import {
   Settings,
   Package,
   Receipt,
+  FileText,
   ClipboardCheck,
   Scale,
   ArrowRightLeft,
