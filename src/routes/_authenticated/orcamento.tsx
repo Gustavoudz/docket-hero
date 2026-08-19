@@ -513,7 +513,10 @@ function QuoteCard({ quote }: { quote: Quote }) {
 
   async function setStatus(status: QuoteStatus) {
     const { error } = await supabase.from("quotes").update({ status }).eq("id", quote.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ["quotes"] });
     toast.success("Status atualizado");
   }
