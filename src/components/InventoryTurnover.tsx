@@ -45,7 +45,9 @@ export function InventoryTurnover() {
   const fastest = ranking.slice(0, 5);
   const slowest = [...ranking].reverse().slice(0, 5);
 
-  const entered = items.filter((i) => inRange(i.entered_at, from, to));
+  const entered = items.filter(
+    (i) => i.status !== "incompleto" && inRange(i.entered_at, from, to),
+  );
   const sold = items.filter((i) => i.status === "vendido" && inRange(i.sold_at, from, to));
   const cost = (list: InventoryItem[]) => list.reduce((sum, i) => sum + (costs[i.id] ?? 0), 0);
   const enteredCost = cost(entered);
