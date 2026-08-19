@@ -44,6 +44,7 @@ export function PaymentForm({
 }) {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const sendReceipt = useServerFn(sendSaleReceiptEmail);
   const [method, setMethod] = useState<"pix" | "debito" | "credito">("pix");
   const [status, setStatus] = useState<"aguardando" | "aprovado" | "recusado">("aprovado");
   const [gross, setGross] = useState(defaultAmount ? String(defaultAmount) : "");
