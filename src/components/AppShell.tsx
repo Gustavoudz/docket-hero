@@ -12,6 +12,7 @@ import {
   Receipt,
   ClipboardCheck,
   ArrowRightLeft,
+  PackagePlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useIncompleteItems } from "@/lib/inventory";
 
 type Notification = {
   id: string;
@@ -125,6 +127,24 @@ function NotificationBell() {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function IncompleteBadge() {
+  const { data: incomplete = [] } = useIncompleteItems();
+  if (incomplete.length === 0) return null;
+  return (
+    <Link
+      to="/estoque"
+      search={{ incompletos: true }}
+      className="flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-[11px] font-semibold text-amber-400 ring-1 ring-amber-500/40 transition-colors hover:bg-amber-500/25"
+    >
+      <PackagePlus className="h-4 w-4" />
+      <span className="hidden sm:inline">
+        {incomplete.length} aparelho{incomplete.length === 1 ? "" : "s"} aguardando cadastro
+      </span>
+      <span className="sm:hidden">{incomplete.length}</span>
+    </Link>
   );
 }
 
@@ -289,6 +309,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           )}
           <div className="ml-auto flex items-center gap-1">
+            <IncompleteBadge />
             {role === "gerente" && <NotificationBell />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

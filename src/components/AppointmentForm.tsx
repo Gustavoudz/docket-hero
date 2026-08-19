@@ -24,7 +24,7 @@ import {
   type PaymentEntry,
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
-import { itemLabel, useAvailableItems } from "@/lib/inventory";
+import { findAutoReserveItem, itemLabel, useAvailableItems } from "@/lib/inventory";
 
 const schema = z.object({
   customer_name: z.string().trim().min(1, "Informe o nome do cliente").max(120),
@@ -69,6 +69,7 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
   );
   const [model, setModel] = useState(appointment?.device_model ?? "");
   const [inventoryItemId, setInventoryItemId] = useState(appointment?.inventory_device_id ?? "");
+  const [manualLink, setManualLink] = useState(false);
   const { data: availableItems = [] } = useAvailableItems(
     model,
     appointment?.inventory_device_id ?? null,
@@ -109,6 +110,15 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
             p.method === "credito" && p.installment_value ? Number(p.installment_value) : null,
         }));
       const first = cleanPayments[0];
+      let linkedId: string | null = inventoryItemId || null;
+      const modelChanged = !!appointment && appointment.device_model !== v.device_model;
+      if (modelChanged && linkedId === (appointment?.inventory_device_id ?? null)) linkedId = null;
+      let notFound: string | null = null;
+      if (!linkedId) {
+        const auto = await findAutoReserveItem(v.device_model);
+        linkedId = auto?.id ?? null;
+        if (!auto) notFound = v.device_model;
+      }
       const payload = {
         customer_name: v.customer_name,
         device_model: v.device_model,
@@ -127,17 +137,24 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
         installment_value: first?.installment_value ?? null,
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
-        inventory_device_id: inventoryItemId || null,
+        inventory_device_id: linkedId,
       };
       const query = appointment
         ? supabase.from("appointments").update(payload).eq("id", appointment.id)
         : supabase.from("appointments").insert(payload);
       const { error } = await query;
       if (error) throw new Error(error.message);
+      return notFound;
     },
-    onSuccess: () => {
+    onSuccess: (notFound) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
       toast.success(appointment ? "Agendamento atualizado" : "Agendamento criado");
+      if (notFound) {
+        toast.warning(`Nenhum ${notFound} disponível em estoque no momento`);
+      } else {
+        toast.info("Aparelho reservado automaticamente para este agendamento");
+      }
       onOpenChange(false);
     },
     onError: (error: Error) => toast.error(error.message),
@@ -210,26 +227,41 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
             )}
           </div>
           {model && (
-            <div className="space-y-1.5">
-              <Label htmlFor="inventory_device_id">Aparelho vinculado (estoque)</Label>
-              <select
-                id="inventory_device_id"
-                value={inventoryItemId}
-                onChange={(e) => setInventoryItemId(e.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
-              >
-                <option value="">Sem aparelho vinculado</option>
-                {availableItems.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {itemLabel(i)}
-                  </option>
-                ))}
-              </select>
+            <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 px-3 py-2">
               <p className="text-xs text-muted-foreground">
                 {availableItems.length === 0
-                  ? "Nenhum aparelho disponível deste modelo no estoque."
-                  : "Ao vincular, o aparelho fica reservado automaticamente."}
+                  ? `Nenhum ${model} disponível em estoque no momento — o agendamento é criado mesmo assim.`
+                  : "A reserva é automática: o aparelho mais antigo deste modelo será reservado ao salvar."}
               </p>
+              {availableItems.length > 0 && !manualLink && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setManualLink(true)}
+                >
+                  Trocar aparelho vinculado
+                </Button>
+              )}
+              {manualLink && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="inventory_device_id">Escolher outro aparelho</Label>
+                  <select
+                    id="inventory_device_id"
+                    value={inventoryItemId}
+                    onChange={(e) => setInventoryItemId(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+                  >
+                    <option value="">Automático (mais antigo no estoque)</option>
+                    {availableItems.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {itemLabel(i)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
           {activeTags.length > 0 && (

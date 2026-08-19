@@ -22,6 +22,7 @@ import { extractDeviceFromPhoto } from "@/lib/inventory-vision.functions";
 import {
   INVENTORY_STATUS_LABEL,
   INVENTORY_STATUSES,
+  logInventoryEvent,
   todayForInventory,
   type InventoryItem,
   type InventoryStatus,
@@ -147,6 +148,9 @@ export function InventoryForm({
       const cost = toNumber(v.cost_price);
       if (!item && !cost) throw new Error("Informe o valor de custo do aparelho");
 
+      const completingIncomplete =
+        item?.status === "incompleto" && status === "incompleto" && !!v.serial_number;
+
       const payload = {
         device_model: v.device_model,
         color: v.color || null,
@@ -156,13 +160,21 @@ export function InventoryForm({
         condition,
         sale_price: toNumber(v.sale_price),
         notes: v.notes || null,
-        status,
+        status: completingIncomplete ? ("disponivel" as InventoryStatus) : status,
         entered_at: v.entered_at,
       };
 
       if (item) {
         const { error } = await supabase.from("inventory_items").update(payload).eq("id", item.id);
         if (error) throw new Error(error.message);
+        if (completingIncomplete) {
+          await logInventoryEvent({
+            itemId: item.id,
+            kind: "cadastro_completado",
+            reason: "Número de série informado — item liberado como Disponível",
+            actorId: user?.id ?? null,
+          });
+        }
         if (cost && isGerente) {
           const { error: costError } = await supabase
             .from("inventory_costs")
