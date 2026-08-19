@@ -579,7 +579,7 @@ export function InventoryForm({
               name="notes"
               rows={3}
               placeholder="Ex.: tela com risco, bateria a trocar…"
-              defaultValue={item?.notes ?? ""}
+              defaultValue={item?.notes ?? defaults?.notes ?? ""}
             />
           </div>
           {locked && (
