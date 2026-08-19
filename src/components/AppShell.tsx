@@ -204,7 +204,12 @@ function SideMenu() {
           },
         ]
       : []),
-    { title: "Controle de Vendas", url: "/vendas", icon: Receipt, maintenance: true },
+    {
+      title: "Controle de Vendas",
+      url: "/vendas",
+      icon: Receipt,
+      active: currentPath === "/vendas",
+    },
   ];
 
   return (
