@@ -29,6 +29,7 @@ export type Appointment = {
   completed_at: string | null;
   tag?: string | null;
   inventory_device_id?: string | null;
+  customer_id?: string | null;
 };
 
 export const STATUS_LABEL: Record<AppointmentStatus, string> = {

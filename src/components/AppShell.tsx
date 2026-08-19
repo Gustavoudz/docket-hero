@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
   ArrowRightLeft,
   PackagePlus,
+  Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -186,6 +187,7 @@ function SideMenu() {
         ]
       : []),
     { title: "Estoque", url: "/estoque", icon: Package, active: currentPath === "/estoque" },
+    { title: "Clientes", url: "/clientes", icon: Users, active: currentPath === "/clientes" },
     {
       title: "Avaliação de troca",
       url: "/troca",
