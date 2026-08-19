@@ -236,6 +236,12 @@ function SideMenu() {
       icon: Receipt,
       active: currentPath === "/vendas",
     },
+    {
+      title: "Recibos",
+      url: "/recibos",
+      icon: FileText,
+      active: currentPath === "/recibos",
+    },
   ];
 
   return (
