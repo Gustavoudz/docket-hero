@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { AppointmentCard } from "@/components/AppointmentCard";
+import { InventoryTurnover } from "@/components/InventoryTurnover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { conversionRate, shiftDate, todayISO, type Appointment } from "@/lib/agenda";
@@ -147,6 +148,8 @@ function PainelPage() {
           <Stat label="Custo parado" value={formatBRL(staleCost)} />
         </div>
       </section>
+
+      <InventoryTurnover />
 
       {topReasons.length > 0 && (
         <section className="mt-5 rounded-lg border bg-card p-3 backdrop-blur-xl">
