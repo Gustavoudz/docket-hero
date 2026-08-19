@@ -313,6 +313,7 @@ export function AppointmentForm({
           />
           <div className="space-y-1.5">
             <Label htmlFor="device_model">Modelo de interesse *</Label>
+            {null}
             {activeModels.length > 0 ? (
               <select
                 id="device_model"
