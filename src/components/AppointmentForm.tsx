@@ -194,7 +194,15 @@ export function AppointmentForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{appointment ? "Editar agendamento" : "Novo agendamento"}</DialogTitle>
+          <DialogTitle>
+            {appointment
+              ? isVenda
+                ? "Editar venda"
+                : "Editar agendamento"
+              : isVenda
+                ? "💳 Nova venda"
+                : "📅 Novo agendamento"}
+          </DialogTitle>
         </DialogHeader>
         <form
           id="appointment-form"
@@ -342,25 +350,27 @@ export function AppointmentForm({
               onChange={(e) => setProductPrice(e.target.value)}
             />
           </div>
-          <div className="space-y-2 rounded-md border px-3 py-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="deposit">Sinal pago?</Label>
-              <Switch id="deposit" checked={deposit} onCheckedChange={setDeposit} />
-            </div>
-            {deposit && (
-              <div className="space-y-1.5">
-                <Label htmlFor="deposit_amount">Valor do sinal (R$)</Label>
-                <Input
-                  id="deposit_amount"
-                  name="deposit_amount"
-                  inputMode="decimal"
-                  placeholder="Ex.: 50, 100..."
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                />
+          {!isVenda && (
+            <div className="space-y-2 rounded-md border px-3 py-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="deposit">Sinal pago?</Label>
+                <Switch id="deposit" checked={deposit} onCheckedChange={setDeposit} />
               </div>
-            )}
-          </div>
+              {deposit && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="deposit_amount">Valor do sinal (R$)</Label>
+                  <Input
+                    id="deposit_amount"
+                    name="deposit_amount"
+                    inputMode="decimal"
+                    placeholder="Ex.: 50, 100..."
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
           <div className="space-y-3 rounded-md border px-3 py-3">
             <p className="text-sm font-medium">Formas de pagamento</p>
             {payments.map((p, i) => (
