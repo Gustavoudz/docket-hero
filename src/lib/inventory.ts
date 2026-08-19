@@ -108,12 +108,15 @@ export async function logInventoryEvent(input: {
   appointmentId?: string | null;
   actorId?: string | null;
 }) {
+  const { data: auth } = await supabase.auth.getUser();
+  const actorId = auth.user?.id ?? null;
+  if (!actorId) return;
   await supabase.from("inventory_events").insert({
     item_id: input.itemId,
     kind: input.kind,
     reason: input.reason ?? null,
     appointment_id: input.appointmentId ?? null,
-    actor_id: input.actorId ?? null,
+    actor_id: actorId,
   });
 }
 
