@@ -114,3 +114,38 @@ export function groupByDay(list: Commission[]) {
       total: items.filter((i) => i.status === "ativa").reduce((acc, i) => acc + i.amount, 0),
     }));
 }
+
+export type RankingPeriod = "day" | "week" | "month" | "all";
+
+export type RankingRow = {
+  sellerId: string;
+  sales: number;
+  total: number;
+};
+
+/** Ranking de vendedores no período: quem mais vendeu primeiro. */
+export function ranking(list: Commission[], ref: Date, period: RankingPeriod): RankingRow[] {
+  const dayStart = startOfDay(ref);
+  const range: [Date, Date] | null =
+    period === "day"
+      ? [dayStart, addDays(dayStart, 1)]
+      : period === "week"
+        ? [startOfWeek(ref), addDays(startOfWeek(ref), 7)]
+        : period === "month"
+          ? [startOfMonth(ref), addMonths(startOfMonth(ref), 1)]
+          : null;
+
+  const rows = new Map<string, RankingRow>();
+  for (const c of list) {
+    if (c.status !== "ativa") continue;
+    if (range) {
+      const t = new Date(c.completed_at).getTime();
+      if (t < range[0].getTime() || t >= range[1].getTime()) continue;
+    }
+    const row = rows.get(c.seller_id) ?? { sellerId: c.seller_id, sales: 0, total: 0 };
+    row.sales += 1;
+    row.total += c.amount;
+    rows.set(c.seller_id, row);
+  }
+  return [...rows.values()].sort((a, b) => b.sales - a.sales || b.total - a.total);
+}

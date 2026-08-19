@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.sync_commission_on_sale() FROM PUBLIC, anon, authenticated;
