@@ -20,6 +20,7 @@ import {
 import { useDeviceModels } from "@/lib/settings";
 import { extractDeviceFromPhoto } from "@/lib/inventory-vision.functions";
 import { PAYMENT_METHODS, formatBRL, paymentsTotal, type PaymentEntry } from "@/lib/agenda";
+import { compressImageFiles } from "@/lib/image-compress";
 import {
   INVENTORY_STATUS_LABEL,
   INVENTORY_STATUSES,
