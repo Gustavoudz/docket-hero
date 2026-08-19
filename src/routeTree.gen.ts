@@ -22,6 +22,7 @@ import { Route as AuthenticatedEstoqueRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedHistoricoRouteImport } from './routes/_authenticated/historico'
 import { Route as AuthenticatedMesRouteImport } from './routes/_authenticated/mes'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
+import { Route as AuthenticatedRecibosRouteImport } from './routes/_authenticated.recibos'
 import { Route as AuthenticatedSemanaRouteImport } from './routes/_authenticated/semana'
 import { Route as AuthenticatedTrocaRouteImport } from './routes/_authenticated/troca'
 import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
@@ -95,6 +96,11 @@ const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
   path: '/painel',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRecibosRoute = AuthenticatedRecibosRouteImport.update({
+  id: '/recibos',
+  path: '/recibos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSemanaRoute = AuthenticatedSemanaRouteImport.update({
   id: '/semana',
   path: '/semana',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/historico': typeof AuthenticatedHistoricoRoute
   '/mes': typeof AuthenticatedMesRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/recibos': typeof AuthenticatedRecibosRoute
   '/semana': typeof AuthenticatedSemanaRoute
   '/troca': typeof AuthenticatedTrocaRoute
   '/vendas': typeof AuthenticatedVendasRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/historico': typeof AuthenticatedHistoricoRoute
   '/mes': typeof AuthenticatedMesRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/recibos': typeof AuthenticatedRecibosRoute
   '/semana': typeof AuthenticatedSemanaRoute
   '/troca': typeof AuthenticatedTrocaRoute
   '/vendas': typeof AuthenticatedVendasRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/_authenticated/historico': typeof AuthenticatedHistoricoRoute
   '/_authenticated/mes': typeof AuthenticatedMesRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
+  '/_authenticated/recibos': typeof AuthenticatedRecibosRoute
   '/_authenticated/semana': typeof AuthenticatedSemanaRoute
   '/_authenticated/troca': typeof AuthenticatedTrocaRoute
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/mes'
     | '/painel'
+    | '/recibos'
     | '/semana'
     | '/troca'
     | '/vendas'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/mes'
     | '/painel'
+    | '/recibos'
     | '/semana'
     | '/troca'
     | '/vendas'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/_authenticated/historico'
     | '/_authenticated/mes'
     | '/_authenticated/painel'
+    | '/_authenticated/recibos'
     | '/_authenticated/semana'
     | '/_authenticated/troca'
     | '/_authenticated/vendas'
@@ -342,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/recibos': {
+      id: '/_authenticated/recibos'
+      path: '/recibos'
+      fullPath: '/recibos'
+      preLoaderRoute: typeof AuthenticatedRecibosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/semana': {
       id: '/_authenticated/semana'
       path: '/semana'
@@ -391,6 +410,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHistoricoRoute: typeof AuthenticatedHistoricoRoute
   AuthenticatedMesRoute: typeof AuthenticatedMesRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
+  AuthenticatedRecibosRoute: typeof AuthenticatedRecibosRoute
   AuthenticatedSemanaRoute: typeof AuthenticatedSemanaRoute
   AuthenticatedTrocaRoute: typeof AuthenticatedTrocaRoute
   AuthenticatedVendasRoute: typeof AuthenticatedVendasRoute
@@ -407,6 +427,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHistoricoRoute: AuthenticatedHistoricoRoute,
   AuthenticatedMesRoute: AuthenticatedMesRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
+  AuthenticatedRecibosRoute: AuthenticatedRecibosRoute,
   AuthenticatedSemanaRoute: AuthenticatedSemanaRoute,
   AuthenticatedTrocaRoute: AuthenticatedTrocaRoute,
   AuthenticatedVendasRoute: AuthenticatedVendasRoute,

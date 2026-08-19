@@ -10,6 +10,7 @@ import {
   Settings,
   Package,
   Receipt,
+  FileText,
   ClipboardCheck,
   Scale,
   ArrowRightLeft,
@@ -235,6 +236,16 @@ function SideMenu() {
       icon: Receipt,
       active: currentPath === "/vendas",
     },
+    ...(role === "gerente"
+      ? [
+          {
+            title: "Recibos",
+            url: "/recibos",
+            icon: FileText,
+            active: currentPath === "/recibos",
+          },
+        ]
+      : []),
   ];
 
   return (
