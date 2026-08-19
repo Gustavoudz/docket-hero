@@ -216,7 +216,9 @@ export function InventoryForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_costs"] });
-      toast.success(item ? "Item atualizado" : "Item cadastrado no estoque");
+      toast.success(
+        item ? "Item atualizado" : batch ? "Itens cadastrados em lote" : "Item cadastrado no estoque",
+      );
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -290,7 +292,7 @@ export function InventoryForm({
               id="device_model"
               name="device_model"
               required
-              defaultValue={item?.device_model ?? ""}
+              defaultValue={item?.device_model ?? defaults?.device_model ?? ""}
               className={selectClass}
             >
               <option value="">Selecione o modelo…</option>
@@ -302,8 +304,39 @@ export function InventoryForm({
               {item && !activeModels.some((m) => m.name === item.device_model) && (
                 <option value={item.device_model}>{item.device_model}</option>
               )}
+              {!item &&
+                defaults?.device_model &&
+                !activeModels.some((m) => m.name === defaults.device_model) && (
+                  <option value={defaults.device_model}>{defaults.device_model}</option>
+                )}
             </select>
           </div>
+          {!item && (
+            <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-3">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={batch}
+                  onChange={(e) => setBatch(e.target.checked)}
+                  className="h-4 w-4 accent-[hsl(var(--primary))]"
+                />
+                Cadastrar em lote
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Vários aparelhos iguais (mesmo modelo, cor, armazenamento e custo). Informe uma
+                unidade por linha: número de série e, se quiser, o e-mail (Apple ID) separado por
+                ponto e vírgula.
+              </p>
+              {batch && (
+                <Textarea
+                  rows={5}
+                  value={batchLines}
+                  onChange={(e) => setBatchLines(e.target.value)}
+                  placeholder={"F2LX...; email1@icloud.com\nF3MZ...; email2@icloud.com"}
+                />
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="color">Cor</Label>
