@@ -860,6 +860,7 @@ export type Database = {
         Returns: boolean
       }
       is_gerente: { Args: never; Returns: boolean }
+      reset_test_data: { Args: never; Returns: Json }
       write_audit_log: {
         Args: {
           _action: string
