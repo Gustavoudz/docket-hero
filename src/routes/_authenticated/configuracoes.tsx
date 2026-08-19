@@ -30,7 +30,16 @@ import {
   useDeviceModels,
   useProfiles,
   useStatusColors,
+  useUserRoles,
 } from "@/lib/settings";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { AppRole } from "@/hooks/useAuth";
 import { useStaleDays } from "@/lib/inventory";
 import { useCommissionAmount } from "@/lib/commissions";
 import { useTradeInDefects, useTradeInModels } from "@/lib/trade-in";
@@ -93,6 +102,7 @@ function ConfigPage() {
   const { data: reasons = [] } = useCancelReasons();
   const { data: tags = [] } = useAppointmentTags();
   const { data: profiles = [] } = useProfiles();
+  const { data: userRoles = [] } = useUserRoles();
   const statusColors = useStatusColors();
   const attendantColors = useAttendantColors();
   const staleDays = useStaleDays();
@@ -165,6 +175,22 @@ function ConfigPage() {
   });
 
   const [resetOpen, setResetOpen] = useState(false);
+
+  const roleMut = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: AppRole | "nenhum" }) => {
+      const { error: delError } = await supabase.from("user_roles").delete().eq("user_id", userId);
+      if (delError) throw new Error(delError.message);
+      if (role !== "nenhum") {
+        const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
+        if (error) throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user_roles"] });
+      toast.success("Função do colaborador atualizada");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const resetMut = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.rpc("reset_test_data");
@@ -189,6 +215,44 @@ function ConfigPage() {
   return (
     <AppShell>
       <h1 className="text-lg font-semibold">Configurações</h1>
+
+      <Section
+        title="Colaboradores e funções"
+        description="Defina a função de cada pessoa da loja. A função controla o que ela enxerga no sistema."
+      >
+        {profiles.length === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhum colaborador cadastrado ainda.</p>
+        )}
+        {profiles.map((p) => {
+          const current = userRoles.find((r) => r.user_id === p.id)?.role ?? "nenhum";
+          return (
+            <div key={p.id} className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm">{p.full_name || p.email}</p>
+                {p.full_name && p.email && (
+                  <p className="truncate text-xs text-muted-foreground">{p.email}</p>
+                )}
+              </div>
+              <Select
+                value={current}
+                onValueChange={(v) =>
+                  roleMut.mutate({ userId: p.id, role: v as AppRole | "nenhum" })
+                }
+              >
+                <SelectTrigger className="w-40" aria-label={`Função de ${p.full_name || p.email}`}>
+                  <SelectValue placeholder="Função" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gerente">Gerente (dono)</SelectItem>
+                  <SelectItem value="atendente">Atendente</SelectItem>
+                  <SelectItem value="vendedora">Vendedora</SelectItem>
+                  <SelectItem value="nenhum">Sem acesso</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          );
+        })}
+      </Section>
 
       <Section title="Modelos de aparelho" description="Opções disponíveis no formulário de agendamento.">
         {models.map((m) => (
