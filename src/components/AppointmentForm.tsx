@@ -30,7 +30,7 @@ import {
   type Appointment,
   type PaymentEntry,
 } from "@/lib/agenda";
-import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
+import { useAppointmentTags, useDeviceModels, useProfiles, useUserRoles } from "@/lib/settings";
 import {
   findAutoReserveItem,
   itemLabel,
@@ -133,6 +133,7 @@ export function AppointmentForm({
   );
   const [discountValue, setDiscountValue] = useState("");
   const [manualLink, setManualLink] = useState(false);
+  const [sellerId, setSellerId] = useState<string>(base?.seller_id ?? user?.id ?? "");
   const [showTechnical, setShowTechnical] = useState(false);
   const { data: availableItems = [] } = useAvailableItems(
     model,
