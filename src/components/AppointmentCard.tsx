@@ -389,6 +389,7 @@ export function AppointmentCard({
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Tem certeza?</DialogTitle>
           </DialogHeader>
