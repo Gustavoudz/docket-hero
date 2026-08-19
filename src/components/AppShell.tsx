@@ -209,6 +209,12 @@ function SideMenu() {
             icon: Scale,
             active: currentPath === "/conciliacao",
           },
+          {
+            title: "Histórico / Auditoria",
+            url: "/historico",
+            icon: History,
+            active: currentPath === "/historico",
+          },
         ]
       : []),
     {
