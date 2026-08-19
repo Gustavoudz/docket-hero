@@ -413,7 +413,6 @@ export function AppointmentCard({
 
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
         <DialogContent className="sm:max-w-md">
-        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Vincular aparelho do estoque</DialogTitle>
           </DialogHeader>
