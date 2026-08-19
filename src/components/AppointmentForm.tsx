@@ -35,6 +35,7 @@ import type { Customer } from "@/lib/customers";
 import type { RecordType } from "@/lib/permissions";
 
 const schema = z.object({
+  // eslint-disable-next-line
   customer_name: z.string().trim().min(1, "Informe o nome do cliente").max(120),
   device_model: z.string().trim().min(1, "Informe o modelo do aparelho").max(120),
   date: z.string().min(1, "Informe a data"),
