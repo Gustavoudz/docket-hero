@@ -45,6 +45,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIncompleteItems } from "@/lib/inventory";
+import { AssistantPanel } from "@/components/AssistantPanel";
 
 type Notification = {
   id: string;
@@ -369,6 +370,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
           <div className="ml-auto flex items-center gap-1">
             <IncompleteBadge />
+            <AssistantPanel />
             {role === "gerente" && <NotificationBell />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
