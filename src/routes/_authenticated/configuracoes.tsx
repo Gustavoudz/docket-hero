@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/select";
 import type { AppRole } from "@/hooks/useAuth";
 import { useStaleDays } from "@/lib/inventory";
+import { resetTestData } from "@/lib/reset-data.functions";
 import { createCollaborator, deleteCollaborator } from "@/lib/collaborators.functions";
 import { useCommissionAmount } from "@/lib/commissions";
 import { ReceiptSettings } from "@/components/ReceiptSettings";
@@ -223,8 +224,7 @@ function ConfigPage() {
   });
   const resetMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("reset_test_data");
-      if (error) throw new Error(error.message);
+      await resetTestData();
     },
     onSuccess: () => {
       setResetOpen(false);
