@@ -40,6 +40,7 @@ import {
 import { CustomerPicker } from "@/components/CustomerPicker";
 import type { Customer } from "@/lib/customers";
 import type { RecordType } from "@/lib/permissions";
+import { buildQuoteAppointmentNotes, quoteFinalPrice, type Quote } from "@/lib/quotes";
 
 const schema = z.object({
   customer_name: z.string().trim().min(1, "Informe o nome do cliente").max(120),
@@ -79,6 +80,8 @@ type Props = {
   recordType?: RecordType | undefined;
   /** Agendamento de origem quando esta venda é gerada por "Transformar em venda". */
   convertFrom?: Appointment | null;
+  /** Orçamento rápido de origem quando o registro vem de "Transformar em agendamento". */
+  fromQuote?: Quote | null;
 };
 
 export function AppointmentForm({
@@ -88,10 +91,18 @@ export function AppointmentForm({
   appointment,
   recordType,
   convertFrom,
+  fromQuote,
 }: Props) {
   const { user, fullName } = useAuth();
   /** Registro usado só para pré-preencher os campos (edição ou conversão). */
   const base: Appointment | null | undefined = appointment ?? convertFrom;
+  /** Dados vindos do orçamento (só quando é um registro novo). */
+  const quote = appointment ? null : (fromQuote ?? null);
+  const initialModel = base?.device_model ?? quote?.product_model ?? "";
+  const quoteContact = quote?.customer_contact?.trim() ?? "";
+  const quoteIsInstagram = !!quoteContact && !/^\d[\d\s()+-]*$/.test(quoteContact);
+  const initialNotes =
+    base?.notes ?? (quote ? buildQuoteAppointmentNotes(quote) : "");
   const type: RecordType =
     recordType ?? (appointment?.record_type as RecordType | undefined) ?? "agendamento";
   const isVenda = type === "venda";
@@ -112,25 +123,39 @@ export function AppointmentForm({
     ];
   });
   const [productPrice, setProductPrice] = useState<string>(
-    base?.product_price != null ? String(base.product_price) : "",
+    base?.product_price != null
+      ? String(base.product_price)
+      : quote
+        ? String(quoteFinalPrice(quote))
+        : "",
   );
-  const [model, setModel] = useState(base?.device_model ?? "");
-  const [customerName, setCustomerName] = useState(base?.customer_name ?? "");
+  const [model, setModel] = useState(initialModel);
+  const [customerName, setCustomerName] = useState(
+    base?.customer_name ?? quote?.customer_name ?? "",
+  );
   const [customerId, setCustomerId] = useState<string | null>(
     base?.customer_id ?? null,
   );
   const [customerPhone, setCustomerPhone] = useState<string | null>(
-    base?.customer_phone ?? null,
+    base?.customer_phone ?? (quoteContact && !quoteIsInstagram ? quoteContact : null),
   );
   const [customerInstagram, setCustomerInstagram] = useState<string>(
-    base?.customer_instagram ? `@${base.customer_instagram}` : "",
+    base?.customer_instagram
+      ? `@${base.customer_instagram}`
+      : quoteIsInstagram
+        ? `@${quoteContact.replace(/^@+/, "")}`
+        : "",
   );
   const [customerEmail, setCustomerEmail] = useState<string>(
     (base as { customer_email?: string | null } | undefined)?.customer_email ?? "",
   );
   const [inventoryItemId, setInventoryItemId] = useState(base?.inventory_device_id ?? "");
   const [listPrice, setListPrice] = useState<number | null>(
-    base?.product_price != null ? Number(base.product_price) : null,
+    base?.product_price != null
+      ? Number(base.product_price)
+      : quote
+        ? quoteFinalPrice(quote)
+        : null,
   );
   const [discountKind, setDiscountKind] = useState<"nenhum" | "5" | "10" | "15" | "valor">(
     "nenhum",
