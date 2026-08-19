@@ -70,7 +70,6 @@ export function AppointmentForm({ open, onOpenChange, defaultDate, appointment }
   const [model, setModel] = useState(appointment?.device_model ?? "");
   const [inventoryItemId, setInventoryItemId] = useState(appointment?.inventory_device_id ?? "");
   const [manualLink, setManualLink] = useState(false);
-  const [warning, setWarning] = useState<string | null>(null);
   const { data: availableItems = [] } = useAvailableItems(
     model,
     appointment?.inventory_device_id ?? null,
