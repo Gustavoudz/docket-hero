@@ -22,8 +22,9 @@ import {
   STATUS_LABEL,
   type Appointment,
 } from "@/lib/agenda";
-import { useAppointmentTags, useCancelReasons, useDeviceModels, useStatusColors } from "@/lib/settings";
-import { itemLabel, logInventoryEvent, todayForInventory, useAvailableItems } from "@/lib/inventory";
+import { useAppointmentTags, useCancelReasons, useStatusColors } from "@/lib/settings";
+import { itemLabel, logInventoryEvent, useAvailableItems } from "@/lib/inventory";
+import { InventoryForm } from "@/components/InventoryForm";
 import { useAuth } from "@/hooks/useAuth";
 
 export function AppointmentCard({
@@ -85,8 +86,6 @@ export function AppointmentCard({
   const { data: availableItems = [] } = useAvailableItems(
     linkOpen || completeOpen ? appointment.device_model : "",
   );
-  const { data: deviceModels = [] } = useDeviceModels();
-  const activeModels = deviceModels.filter((m) => m.active);
   const [reason, setReason] = useState("");
   const [reasonChoice, setReasonChoice] = useState("");
   const { data: reasons = [] } = useCancelReasons();
@@ -539,6 +538,23 @@ export function AppointmentCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {tradeFormOpen && (
+        <InventoryForm
+          open={tradeFormOpen}
+          onOpenChange={setTradeFormOpen}
+          tradeIn={{ appointmentId: appointment.id, customerName: appointment.customer_name }}
+          onSaved={() => {
+            setTradeFormOpen(false);
+            complete.mutate();
+          }}
+          onCancelFlow={() => {
+            setTradeFormOpen(false);
+            setCompleteOpen(false);
+            toast.info("Conclusão cancelada — a venda continua Pendente");
+          }}
+        />
+      )}
     </li>
   );
 }
