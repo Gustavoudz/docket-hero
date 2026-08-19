@@ -666,11 +666,12 @@ function QuoteCard({ quote, onSchedule }: { quote: Quote; onSchedule: (quote: Qu
 }
 
 function OrcamentoPage() {
-  const { data: quotes = [] } = useQuotes();
+  const { data: quotes = [], isLoading } = useQuotes();
   const [picking, setPicking] = useState(false);
   const [kind, setKind] = useState<QuoteKind | null>(null);
   const [created, setCreated] = useState<Quote | null>(null);
   const [scheduling, setScheduling] = useState<Quote | null>(null);
+  const { visible, hasMore, sentinelRef } = useIncrementalList(quotes, 20);
 
   return (
     <AppShell>
@@ -697,14 +698,20 @@ function OrcamentoPage() {
       </Button>
 
       <div className="mt-5 space-y-3">
-        {quotes.length === 0 && (
+        {isLoading && <CardListSkeleton rows={4} />}
+        {!isLoading && quotes.length === 0 && (
           <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
             Nenhum orçamento ainda.
           </p>
         )}
-        {quotes.map((q) => (
+        {visible.map((q) => (
           <QuoteCard key={q.id} quote={q} onSchedule={setScheduling} />
         ))}
+        {hasMore && (
+          <div ref={sentinelRef}>
+            <CardListSkeleton rows={2} />
+          </div>
+        )}
       </div>
 
       {scheduling && (
