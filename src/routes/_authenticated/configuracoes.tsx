@@ -369,6 +369,7 @@ function ConfigPage() {
         title="Avaliação de troca — modelos"
         description="Valor de referência de cada modelo aceito em troca."
       >
+        {null}
         {tradeModels.map((m) => (
           <div key={m.id} className="flex items-center gap-2">
             <Input
