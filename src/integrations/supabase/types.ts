@@ -194,6 +194,36 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity_id: string | null
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+        }
+        Relationships: []
+      }
       cancel_reasons: {
         Row: {
           active: boolean
@@ -824,6 +854,15 @@ export type Database = {
         Returns: boolean
       }
       is_gerente: { Args: never; Returns: boolean }
+      write_audit_log: {
+        Args: {
+          _action: string
+          _details: Json
+          _entity_id: string
+          _entity_type: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "gerente" | "atendente" | "vendedora"
