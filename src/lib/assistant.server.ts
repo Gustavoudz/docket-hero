@@ -2,7 +2,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import type { AppRole } from "@/hooks/useAuth";
 import { toolsForRole, todaySP, type ToolCtx } from "./assistant-tools.server";
-import type { ArgValue, AssistantMessage, AssistantReply, PendingAction } from "./assistant.functions";
+import type {
+  ArgValue,
+  AssistantMessage,
+  AssistantReply,
+  PendingAction,
+  PhotoInput,
+} from "./assistant.functions";
 
 type ChatMessage = {
   role: "system" | "user" | "assistant" | "tool";
@@ -26,7 +32,8 @@ function systemPrompt(role: AppRole) {
     "Use as ferramentas disponíveis para consultar dados reais — nunca invente números, nomes, valores ou datas.",
     "Consultas podem ser feitas direto. Ações que criam, alteram ou cancelam algo passam por uma confirmação automática do sistema: apenas chame a ferramenta e o sistema mostra o resumo e pede o 'Confirma?'.",
     "Se faltar alguma informação obrigatória para a ação, pergunte antes de chamar a ferramenta. Nunca preencha um dado que o usuário não disse.",
-    "Você não tem acesso à câmera. Portanto não pode concluir vendas com tag Upgrade (exige cadastrar o aparelho da troca com foto) nem usar a leitura por foto no cadastro de estoque. Nesses casos, explique com educação que a ação precisa ser feita na tela normal do sistema (Controle de Vendas ou Estoque).",
+    "O usuário pode enviar fotos no próprio chat: quando isso acontece, os dados lidos da foto chegam para você em uma mensagem do sistema. Use esses dados para concluir vendas com tag Upgrade (cadastro do aparelho da troca) e para cadastrar itens de estoque por foto. Se a ação precisar de foto e nenhuma foi enviada, peça a foto.",
+    "Você não altera Configurações, Segurança nem usuários do sistema — se pedirem isso, explique que essas mudanças são feitas nas telas de Configurações.",
     "Se o usuário pedir algo fora do que o perfil dele pode fazer, explique que ele não tem permissão para essa ação.",
   ].join(" ");
 }
@@ -36,12 +43,48 @@ export async function runAssistant(input: {
   userId: string;
   messages: AssistantMessage[];
   confirm: PendingAction | null;
+  photo?: PhotoInput | null;
 }): Promise<AssistantReply> {
   const role = await resolveRole(input.supabase, input.userId);
   if (!role) return { reply: "Seu usuário ainda não tem um perfil de acesso definido.", pending: null };
 
   const tools = toolsForRole(role);
   const ctx: ToolCtx = { supabase: input.supabase, userId: input.userId, role };
+
+  // Foto enviada no chat: usa exatamente a mesma extração das telas de Estoque/Troca.
+  let photoFields: Record<string, ArgValue> = {};
+  let photoNote: string | null = null;
+  if (input.photo && (input.photo.images ?? []).length > 0) {
+    try {
+      const [{ extractDevice }, { data: models }] = await Promise.all([
+        import("./inventory-vision.server"),
+        input.supabase.from("device_models").select("name").eq("active", true),
+      ]);
+      const read = await extractDevice({
+        images: input.photo.images.slice(0, 5),
+        condition: input.photo.condition,
+        models: (models ?? []).map((m) => m.name as string),
+      });
+      photoFields = {
+        foto_modelo: read.device_model,
+        foto_cor: read.color,
+        foto_armazenamento: read.storage,
+        foto_serie: read.serial_number,
+        foto_imei: read.imei,
+        foto_estado: input.photo.condition,
+      };
+      photoNote =
+        `Dados lidos da foto enviada pelo usuário (estado: ${input.photo.condition}): ` +
+        `modelo=${read.device_model ?? "não legível"}, cor=${read.color ?? "não legível"}, ` +
+        `armazenamento=${read.storage ?? "não legível"}, série=${read.serial_number ?? "não legível"}, ` +
+        `IMEI=${read.imei ?? "não legível"}. Use exatamente esses dados, nunca invente os que faltam.`;
+    } catch (e) {
+      return {
+        reply: e instanceof Error ? e.message : "Não consegui ler a foto. Tente de novo.",
+        pending: null,
+      };
+    }
+  }
 
   // Execução após o "sim" do usuário.
   if (input.confirm) {
@@ -62,6 +105,7 @@ export async function runAssistant(input: {
 
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt(role) },
+    ...(photoNote ? [{ role: "system" as const, content: photoNote }] : []),
     ...input.messages.map((m) => ({ role: m.role, content: m.content })),
   ];
 
@@ -98,6 +142,7 @@ export async function runAssistant(input: {
       } catch {
         args = {};
       }
+      args = { ...args, ...photoFields };
       try {
         const summary = tool.preview ? await tool.preview(args, ctx) : tool.description;
         return { reply: `${summary}\n\nConfirma?`, pending: { name: tool.name, args, summary } };
