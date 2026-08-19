@@ -32,7 +32,7 @@ export function CustomerForm({ open, onOpenChange, customer, defaultName, onSave
   const [phone, setPhone] = useState(customer?.phone ?? "");
   const [whatsapp, setWhatsapp] = useState(customer?.whatsapp ?? "");
   const [email, setEmail] = useState(customer?.email ?? "");
-  const [address, setAddress] = useState(customer?.address ?? "");
+  const [address] = useState(customer?.address ?? "");
   const [street, setStreet] = useState(customer?.street ?? "");
   const [streetNumber, setStreetNumber] = useState(customer?.street_number ?? "");
   const [complement, setComplement] = useState(customer?.complement ?? "");

@@ -63,7 +63,7 @@ export async function loadReceiptData(
   const { data: sale } = await db
     .from("sales")
     .select(
-      "id, reference, total, created_at, appointment_id, inventory_item_id, customers(name, email, cpf, phone, whatsapp, address), appointments(customer_name, customer_email, payment_method, installments, completed_at, attendant_id), inventory_items(device_model, color, storage, serial_number, condition)",
+      "id, reference, total, created_at, appointment_id, inventory_item_id, customers(name, email, cpf, phone, whatsapp, address, street, street_number, complement, district, city, state, cep, birth_date), appointments(customer_name, customer_email, payment_method, installments, completed_at, attendant_id), inventory_items(device_model, color, storage, serial_number, condition)",
     )
     .eq("id", receipt.sale_id)
     .maybeSingle();
@@ -111,10 +111,19 @@ export async function loadReceiptData(
     customerEmail: receipt.customer_email || appt?.customer_email || cust?.email || null,
     customerDoc: fmtDoc(cust?.cpf),
     customerPhone: cust?.phone || cust?.whatsapp || null,
-    customerAddress: cust?.address ?? null,
-    customerCep: null,
-    customerCity: null,
-    customerState: null,
+    customerAddress:
+      [
+        [cust?.street, cust?.street_number].filter(Boolean).join(", "),
+        cust?.complement,
+        cust?.district,
+      ]
+        .filter(Boolean)
+        .join(" — ") ||
+      cust?.address ||
+      null,
+    customerCep: cust?.cep ?? null,
+    customerCity: cust?.city ?? null,
+    customerState: cust?.state ?? null,
     device: {
       model: item?.device_model ?? "—",
       color: item?.color ?? null,
@@ -321,17 +330,46 @@ export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
   ]);
 
   label("OBSERVAÇÃO");
-  if (d.warranty) {
-    for (const l of wrapText(ctx.font, d.warranty, 9, W)) {
-      ctx.page.drawText(l, { x: X, y: y - 9, size: 9, font: ctx.font });
-      y -= 12;
+  /** Texto do termo com o nome real da loja no lugar do marcador [Loja]. */
+  const warrantyText = (d.warranty ?? "").split("[Loja]").join(d.store.name);
+  const BOTTOM = 70;
+
+  /** Abre uma página nova mantendo o cabeçalho reduzido do modelo. */
+  const newPage = () => {
+    ctx.page = pdf.addPage(A4);
+    let top = A4[1] - MARGIN;
+    ctx.page.drawText(d.store.name.toUpperCase(), { x: X, y: top - 10, size: 10, font: ctx.bold });
+    ctx.page.drawText(`RECIBO DA VENDA: ${d.saleReference}`, {
+      x: X + W - ctx.font.widthOfTextAtSize(`RECIBO DA VENDA: ${d.saleReference}`, 8.5),
+      y: top - 10,
+      size: 8.5,
+      font: ctx.font,
+    });
+    top -= 24;
+    dashedLine(ctx, X, top, W);
+    return top - 14;
+  };
+
+  if (warrantyText) {
+    // Reduz a fonte (até 7pt) para tentar caber sem quebrar página; depois pagina.
+    let size = 9;
+    for (const candidate of [9, 8.5, 8, 7.5, 7]) {
+      size = candidate;
+      const lines = wrapText(ctx.font, warrantyText, candidate, W);
+      if (y - lines.length * (candidate + 3) > BOTTOM + 120) break;
+    }
+    for (const l of wrapText(ctx.font, warrantyText, size, W)) {
+      if (y - (size + 3) < BOTTOM) y = newPage();
+      ctx.page.drawText(l, { x: X, y: y - size, size, font: ctx.font });
+      y -= size + 3;
     }
   }
+  if (y < 180) y = newPage();
   label("DADOS ADICIONAIS", 10);
 
   signatures(
     ctx,
-    Math.min(y - 120, 250),
+    Math.max(BOTTOM + 40, Math.min(y - 60, 250)),
     { name: d.customerName.toUpperCase() },
     {
       name: d.store.name,
