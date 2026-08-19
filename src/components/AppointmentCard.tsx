@@ -151,15 +151,20 @@ export function AppointmentCard({
 
   const tradeCostValue = Number(tradeCost.replace(/\./g, "").replace(",", "."));
 
+  /** Exclusão suave: o registro vira "Legado" e sai das listas ativas, mas fica no histórico. */
   const remove = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("appointments").delete().eq("id", appointment.id);
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: "legado" })
+        .eq("id", appointment.id);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
-      toast.success("Agendamento excluído");
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+      toast.success("Registro movido para o histórico");
       setDeleteOpen(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -316,14 +321,29 @@ export function AppointmentCard({
         </div>
       )}
 
-      <MasterPasswordDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Excluir agendamento"
-        description={`O agendamento de ${appointment.customer_name} será removido permanentemente.`}
-        pending={remove.isPending}
-        onConfirm={() => remove.mutate()}
-      />
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Tem certeza?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Isso vai remover <strong>{appointment.customer_name}</strong> das listas ativas, mas o
+            registro fica salvo no histórico.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={remove.isPending}
+              onClick={() => remove.mutate()}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
         <DialogContent className="sm:max-w-md">
