@@ -1,16 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Search, UserPlus, Users } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { FileText, MoreVertical, Receipt, Search, UserPlus, Users, Wrench } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { CustomerForm } from "@/components/CustomerForm";
+import { ServiceOrderForm } from "@/components/ServiceOrderForm";
+import { PdfViewerDialog } from "@/components/PdfViewerDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { getSaleReceipt } from "@/lib/receipts.functions";
+import { OS_STATUS_LABEL, useCustomerServiceOrders } from "@/lib/service-orders";
 import { formatBRL } from "@/lib/agenda";
 import { formatCPF, useCustomerStats, useCustomers, type Customer } from "@/lib/customers";
 
@@ -38,6 +54,8 @@ export const Route = createFileRoute("/_authenticated/clientes")({
 
 function CustomerDetail({ customer, onEdit }: { customer: Customer; onEdit: () => void }) {
   const { data: stats } = useCustomerStats(customer.id);
+  const { data: orders = [] } = useCustomerServiceOrders(customer.id);
+  const [pdf, setPdf] = useState<{ url: string; fileName: string } | null>(null);
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-2 text-center">
@@ -64,9 +82,47 @@ function CustomerDetail({ customer, onEdit }: { customer: Customer; onEdit: () =
         <Row label="Endereço" value={customer.address} />
         <Row label="Observações" value={customer.notes} />
       </dl>
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-muted-foreground">Ordens de serviço / garantia</p>
+        {orders.length === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhuma ordem de serviço registrada.</p>
+        )}
+        {orders.map((o) => (
+          <button
+            key={o.id}
+            onClick={() =>
+              setPdf({
+                url: `/api/public/os/${o.public_token}`,
+                fileName: `os-${String(o.os_number).padStart(4, "0")}.pdf`,
+              })
+            }
+            className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs transition-colors hover:bg-foreground/5"
+          >
+            <span>
+              <span className="block font-medium">
+                OS Nº {String(o.os_number).padStart(4, "0")} · {o.device_model}
+              </span>
+              <span className="block text-muted-foreground">
+                {OS_STATUS_LABEL[o.status] ?? o.status} ·{" "}
+                {new Date(o.opened_at).toLocaleDateString("pt-BR")}
+              </span>
+            </span>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </button>
+        ))}
+      </div>
       <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
         Editar cliente
       </Button>
+      {pdf && (
+        <PdfViewerDialog
+          open={!!pdf}
+          onOpenChange={(o) => !o && setPdf(null)}
+          title="Ordem de serviço / garantia"
+          url={pdf.url}
+          fileName={pdf.fileName}
+        />
+      )}
     </div>
   );
 }
@@ -86,6 +142,29 @@ function ClientesPage() {
   const [selected, setSelected] = useState<Customer | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
+  const [osFor, setOsFor] = useState<Customer | null>(null);
+  const [pdf, setPdf] = useState<{ url: string; fileName: string } | null>(null);
+  const receipt = useServerFn(getSaleReceipt);
+
+  const openReceipt = useMutation({
+    mutationFn: async (customer: Customer) => {
+      const { data, error } = await supabase
+        .from("sales")
+        .select("id, created_at")
+        .eq("customer_id", customer.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (error) throw new Error(error.message);
+      const sale = data?.[0];
+      if (!sale) throw new Error("Este cliente ainda não possui vendas registradas");
+      const r = (await receipt({ data: { saleId: sale.id } })) as {
+        token: string;
+        fileName: string;
+      };
+      setPdf({ url: `/api/public/recibo/${r.token}`, fileName: r.fileName });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <AppShell>
@@ -120,19 +199,46 @@ function ClientesPage() {
           </p>
         )}
         {customers.map((c) => (
-          <button
+          <div
             key={c.id}
-            onClick={() => setSelected(c)}
-            className="glass flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-colors hover:bg-foreground/5"
+            className="glass flex w-full items-center justify-between gap-2 rounded-xl pr-2 transition-colors hover:bg-foreground/5"
           >
-            <span>
+            <button onClick={() => setSelected(c)} className="flex-1 px-4 py-3 text-left">
               <span className="block text-sm font-medium">{c.name}</span>
               <span className="block text-xs text-muted-foreground">
                 {formatCPF(c.cpf)}
                 {c.phone ? ` · ${c.phone}` : ""}
               </span>
-            </span>
-          </button>
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  aria-label={`Ações de ${c.name}`}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{c.name}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={openReceipt.isPending}
+                  onClick={() => openReceipt.mutate(c)}
+                >
+                  <Receipt className="mr-2 h-4 w-4" /> Visualizar recibo da venda
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setOsFor(c)}>
+                  <Wrench className="mr-2 h-4 w-4" /> Criar garantia / ordem de serviço
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSelected(c)}>
+                  <FileText className="mr-2 h-4 w-4" /> Ver ficha e documentos
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ))}
       </div>
 
@@ -160,6 +266,25 @@ function ClientesPage() {
           open={formOpen}
           onOpenChange={setFormOpen}
           customer={editing}
+        />
+      )}
+
+      {osFor && (
+        <ServiceOrderForm
+          key={osFor.id}
+          open={!!osFor}
+          onOpenChange={(o) => !o && setOsFor(null)}
+          customer={osFor}
+        />
+      )}
+
+      {pdf && (
+        <PdfViewerDialog
+          open={!!pdf}
+          onOpenChange={(o) => !o && setPdf(null)}
+          title="Recibo / contrato de venda"
+          url={pdf.url}
+          fileName={pdf.fileName}
         />
       )}
     </AppShell>
