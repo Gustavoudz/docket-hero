@@ -380,7 +380,7 @@ export function AppointmentForm({
               <select
                 id="device_model"
                 name="device_model"
-                defaultValue={base?.device_model ?? ""}
+                defaultValue={initialModel}
                 required
                 className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
                 onChange={(e) => {
@@ -394,9 +394,9 @@ export function AppointmentForm({
                     {m.name}
                   </option>
                 ))}
-                {base?.device_model &&
-                  !activeModels.some((m) => m.name === base.device_model) && (
-                    <option value={base.device_model}>{base.device_model}</option>
+                {initialModel &&
+                  !activeModels.some((m) => m.name === initialModel) && (
+                    <option value={initialModel}>{initialModel}</option>
                   )}
               </select>
             ) : (
@@ -404,7 +404,7 @@ export function AppointmentForm({
                 id="device_model"
                 name="device_model"
                 placeholder="iPhone 13 128GB"
-                defaultValue={base?.device_model ?? ""}
+                defaultValue={initialModel}
                 required
                 onChange={(e) => {
                   setModel(e.target.value);
@@ -554,7 +554,7 @@ export function AppointmentForm({
               max={100}
               inputMode="numeric"
               placeholder="Ex.: 89"
-              defaultValue={appointment?.battery_health ?? ""}
+              defaultValue={appointment?.battery_health ?? quote?.product_battery_health ?? ""}
             />
           </div>
           <div className="space-y-1.5">
@@ -726,7 +726,7 @@ export function AppointmentForm({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Observações</Label>
-            <Textarea id="notes" name="notes" rows={3} defaultValue={base?.notes ?? ""} />
+            <Textarea id="notes" name="notes" rows={3} defaultValue={initialNotes} />
           </div>
           <p className="text-xs text-muted-foreground">
             Atendente responsável: <span className="font-medium text-foreground">{fullName}</span>
