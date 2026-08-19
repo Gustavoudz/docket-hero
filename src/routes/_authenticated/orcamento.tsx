@@ -386,6 +386,7 @@ function QuoteForm({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const { modelOptions, storageOptions } = useSuggestions();
 
   const price = num(draft.product_price);
   const discount = num(draft.discount);
@@ -410,6 +411,7 @@ function QuoteForm({
         product_storage: draft.product_storage.trim() || null,
         product_condition: draft.product_condition.trim() || null,
         product_price: price,
+        product_battery_health: batteryValue(draft.product_battery),
         discount,
         notes: draft.notes.trim() || null,
         trade_model: kind === "upgrade" ? draft.trade_model.trim() || null : null,
@@ -417,6 +419,7 @@ function QuoteForm({
         trade_storage: kind === "upgrade" ? draft.trade_storage.trim() || null : null,
         trade_condition: kind === "upgrade" ? draft.trade_condition || null : null,
         trade_value: kind === "upgrade" ? tradeValue : null,
+        trade_battery_health: kind === "upgrade" ? batteryValue(draft.trade_battery) : null,
         deadline_at: businessDeadline(),
       };
       const { data, error } = await supabase.from("quotes").insert(payload).select().single();
@@ -474,19 +477,21 @@ function QuoteForm({
           <div className="grid grid-cols-2 gap-2">
             <div className="col-span-2 space-y-1">
               <Label className="text-xs">Modelo</Label>
-              <Input
-                className="rounded-lg"
+              <ComboboxInput
+                ariaLabel="Modelo do aparelho na troca"
+                options={modelOptions}
                 value={draft.trade_model}
-                onChange={(e) => setDraft((prev) => ({ ...prev, trade_model: e.target.value }))}
+                onChange={(value) => setDraft((prev) => ({ ...prev, trade_model: value }))}
               />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Armazenamento</Label>
-              <Input
-                className="rounded-lg"
+              <ComboboxInput
+                ariaLabel="Armazenamento do aparelho na troca"
+                options={storageOptions}
                 placeholder="128GB"
                 value={draft.trade_storage}
-                onChange={(e) => setDraft((prev) => ({ ...prev, trade_storage: e.target.value }))}
+                onChange={(value) => setDraft((prev) => ({ ...prev, trade_storage: value }))}
               />
             </div>
             <div className="space-y-1">
@@ -524,6 +529,16 @@ function QuoteForm({
                 inputMode="decimal"
                 value={draft.trade_value}
                 onChange={(e) => setDraft((prev) => ({ ...prev, trade_value: e.target.value }))}
+              />
+            </div>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs">Saúde da bateria da troca (%)</Label>
+              <Input
+                className="rounded-lg"
+                inputMode="numeric"
+                placeholder="Ex.: 82"
+                value={draft.trade_battery}
+                onChange={(e) => setDraft((prev) => ({ ...prev, trade_battery: e.target.value }))}
               />
             </div>
           </div>
