@@ -5,7 +5,7 @@ export function CardListSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className="space-y-2" aria-hidden>
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+        <div key={i} className="rounded-lg border bg-card p-3">
           <div className="flex items-start gap-3">
             <Skeleton className="mt-1 h-10 w-1.5 shrink-0 rounded-full" />
             <div className="min-w-0 flex-1 space-y-2">

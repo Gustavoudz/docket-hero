@@ -90,7 +90,7 @@ export function InventoryTurnover() {
   }
 
   return (
-    <section className="mt-5 rounded-lg border bg-card p-3 backdrop-blur-xl">
+    <section className="mt-5 rounded-lg border bg-card p-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-medium">
           <Gauge className="h-4 w-4 text-primary" /> Giro de estoque

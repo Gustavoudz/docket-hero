@@ -60,7 +60,7 @@ function TrocaPage() {
         <Lock className="h-3.5 w-3.5" /> Uso interno — não mostrar esta tela ao cliente.
       </p>
 
-      <section className="mt-4 space-y-3 rounded-lg border bg-card p-3 backdrop-blur-xl">
+      <section className="mt-4 space-y-3 rounded-lg border bg-card p-3">
         <div className="space-y-1.5">
           <Label htmlFor="trade-model">Modelo trazido pelo cliente</Label>
           <select

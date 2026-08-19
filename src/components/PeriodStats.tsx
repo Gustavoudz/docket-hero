@@ -22,7 +22,7 @@ export function useRangeAppointments(from: string, to: string) {
 
 export function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border bg-card p-3 backdrop-blur-xl">
+    <div className="rounded-md border bg-card p-3">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="text-xl font-semibold">{value}</dd>
     </div>
@@ -90,7 +90,7 @@ export function AttendantRanking({ items }: { items: Appointment[] }) {
   };
 
   return (
-    <section className="rounded-lg border bg-card p-3 backdrop-blur-xl">
+    <section className="rounded-lg border bg-card p-3">
       <h2 className="text-sm font-medium">Ranking de conclusões</h2>
       <ul className="mt-2 space-y-1.5 text-sm">
         {ranking.map(([id, stat], index) => (

@@ -134,7 +134,7 @@ function RecibosPage() {
           </div>
         </header>
 
-        <div className="overflow-x-auto rounded-xl border border-border/60 bg-card/40 backdrop-blur">
+        <div className="overflow-x-auto rounded-xl border border-border/60 bg-card">
           <table className="w-full min-w-[880px] text-sm">
             <thead className="border-b border-border/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>

@@ -100,7 +100,7 @@ function PainelPeriodoPage() {
       <div
         role="tablist"
         aria-label="Alternar período"
-        className="grid grid-cols-2 gap-1 rounded-xl border border-border/60 bg-card/60 p-1 backdrop-blur-xl"
+        className="grid grid-cols-2 gap-1 rounded-xl border border-border/60 bg-card p-1"
       >
         {(["semana", "mes"] as const).map((v) => (
           <button
@@ -185,7 +185,7 @@ function PainelPeriodoPage() {
                 key={day}
                 onClick={() => openDay(day)}
                 className={cn(
-                  "rounded-xl border bg-card/70 p-3 text-left shadow-sm backdrop-blur-xl transition-all duration-200",
+                  "rounded-xl border bg-card p-3 text-left shadow-sm transition-all duration-200",
                   "hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:translate-y-0 active:scale-[0.98]",
                   isToday && "border-primary/70 ring-1 ring-primary/40",
                 )}
@@ -233,7 +233,7 @@ function PainelPeriodoPage() {
                   key={day}
                   onClick={() => openDay(day)}
                   className={cn(
-                    "flex aspect-square flex-col items-center justify-center gap-0.5 rounded-xl border bg-card/70 backdrop-blur-xl transition-all duration-200",
+                    "flex aspect-square flex-col items-center justify-center gap-0.5 rounded-xl border bg-card transition-all duration-200",
                     "hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 active:translate-y-0 active:scale-95",
                     inMonth ? "" : "opacity-35",
                     isToday && "border-primary/70 ring-1 ring-primary/40",
