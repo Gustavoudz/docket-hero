@@ -82,7 +82,7 @@ export function drawRow(
       height: h,
       borderColor: BORDER,
       borderWidth: 0.8,
-      color: opts.fill ? HEAD_FILL : undefined,
+      ...(opts.fill ? { color: HEAD_FILL } : {}),
     });
     drawCellText(ctx, c, cx, top, h);
     cx += c.w;

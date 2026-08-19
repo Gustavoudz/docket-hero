@@ -48,9 +48,6 @@ const fmtDoc = (v?: string | null) => {
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 };
 
-const brl = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
-
 /** Carrega tudo que o recibo precisa. Recebe um client Supabase já autorizado. */
 export async function loadReceiptData(
   db: any,
