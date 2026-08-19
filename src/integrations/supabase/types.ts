@@ -600,7 +600,12 @@ export type Database = {
     Enums: {
       app_role: "gerente" | "atendente"
       appointment_status: "pendente" | "concluido" | "cancelado"
-      inventory_status: "disponivel" | "reservado" | "vendido" | "manutencao"
+      inventory_status:
+        | "disponivel"
+        | "reservado"
+        | "vendido"
+        | "manutencao"
+        | "incompleto"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -730,7 +735,13 @@ export const Constants = {
     Enums: {
       app_role: ["gerente", "atendente"],
       appointment_status: ["pendente", "concluido", "cancelado"],
-      inventory_status: ["disponivel", "reservado", "vendido", "manutencao"],
+      inventory_status: [
+        "disponivel",
+        "reservado",
+        "vendido",
+        "manutencao",
+        "incompleto",
+      ],
     },
   },
 } as const
