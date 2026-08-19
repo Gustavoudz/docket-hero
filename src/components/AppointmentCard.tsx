@@ -46,6 +46,7 @@ export function AppointmentCard({
   const [revertReason, setRevertReason] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
   const [tradeFormOpen, setTradeFormOpen] = useState(false);
   const { user, role } = useAuth();
   /** Venda marcada com a tag "Upgrade": exige cadastro do aparelho que entra. */
@@ -85,6 +86,10 @@ export function AppointmentCard({
   });
   const { data: availableItems = [] } = useAvailableItems(
     linkOpen || completeOpen ? appointment.device_model : "",
+  );
+  /** Itens do modelo agendado, para avisar qual termo será usado na venda. */
+  const { data: convertItems = [] } = useAvailableItems(
+    convertOpen ? appointment.device_model : "",
   );
   const [reason, setReason] = useState("");
   const [reasonChoice, setReasonChoice] = useState("");
