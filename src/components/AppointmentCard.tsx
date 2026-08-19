@@ -22,8 +22,9 @@ import {
   STATUS_LABEL,
   type Appointment,
 } from "@/lib/agenda";
-import { useAppointmentTags, useCancelReasons, useDeviceModels, useStatusColors } from "@/lib/settings";
-import { itemLabel, logInventoryEvent, todayForInventory, useAvailableItems } from "@/lib/inventory";
+import { useAppointmentTags, useCancelReasons, useStatusColors } from "@/lib/settings";
+import { itemLabel, logInventoryEvent, useAvailableItems } from "@/lib/inventory";
+import { InventoryForm } from "@/components/InventoryForm";
 import { useAuth } from "@/hooks/useAuth";
 
 export function AppointmentCard({
@@ -45,10 +46,22 @@ export function AppointmentCard({
   const [revertReason, setRevertReason] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
-  const [isTrade, setIsTrade] = useState<boolean | null>(null);
-  const [tradeModel, setTradeModel] = useState("");
-  const [tradeCost, setTradeCost] = useState("");
+  const [tradeFormOpen, setTradeFormOpen] = useState(false);
   const { user, role } = useAuth();
+  /** Venda marcada com a tag "Upgrade": exige cadastro do aparelho que entra. */
+  const isUpgrade = (appointment.tag ?? "").trim().toLowerCase() === "upgrade";
+
+  /** Já existe item de estoque criado a partir desta troca? Consulta sempre atual. */
+  async function hasTradeItem() {
+    const { data, error } = await supabase
+      .from("inventory_events")
+      .select("id")
+      .eq("appointment_id", appointment.id)
+      .eq("kind", "criado_via_troca")
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return (data?.length ?? 0) > 0;
+  }
   const isAgendamento = (appointment.record_type ?? "agendamento") === "agendamento";
   const canConvert =
     !!onConvert &&
@@ -73,8 +86,6 @@ export function AppointmentCard({
   const { data: availableItems = [] } = useAvailableItems(
     linkOpen || completeOpen ? appointment.device_model : "",
   );
-  const { data: deviceModels = [] } = useDeviceModels();
-  const activeModels = deviceModels.filter((m) => m.active);
   const [reason, setReason] = useState("");
   const [reasonChoice, setReasonChoice] = useState("");
   const { data: reasons = [] } = useCancelReasons();
@@ -122,56 +133,39 @@ export function AppointmentCard({
     mutationFn: async () => {
       const itemId = appointment.inventory_device_id ?? linkChoice ?? "";
       if (!itemId) throw new Error("Não é possível concluir sem um aparelho vinculado ao estoque.");
+      if (isUpgrade && !(await hasTradeItem())) {
+        throw new Error("Cadastre o aparelho recebido na troca antes de concluir a venda.");
+      }
       const { error } = await supabase
         .from("appointments")
         .update({ status: "concluido", inventory_device_id: itemId })
         .eq("id", appointment.id);
       if (error) throw new Error(error.message);
-
-      if (!isTrade) return;
-      const cost = Number(tradeCost.replace(/\./g, "").replace(",", "."));
-      const { data: created, error: itemError } = await supabase
-        .from("inventory_items")
-        .insert({
-          device_model: tradeModel,
-          condition: "seminovo",
-          status: "incompleto",
-          entered_at: todayForInventory(),
-          created_by: user?.id ?? null,
-        })
-        .select("id")
-        .single();
-      if (itemError) throw new Error(itemError.message);
-      const { error: costError } = await supabase
-        .from("inventory_costs")
-        .insert({ item_id: created!.id, cost_price: cost });
-      if (costError) throw new Error(costError.message);
-      await logInventoryEvent({
-        itemId: created!.id,
-        kind: "criado_via_troca",
-        reason: `Recebido na venda de ${appointment.customer_name}`,
-        appointmentId: appointment.id,
-        actorId: user?.id ?? null,
-      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
-      toast.success(
-        isTrade
-          ? "Venda concluída — aparelho recebido aguardando cadastro completo"
-          : "Venda concluída",
-      );
+      toast.success("Venda concluída");
       setCompleteOpen(false);
-      setIsTrade(null);
-      setTradeModel("");
-      setTradeCost("");
       setLinkChoice("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const tradeCostValue = Number(tradeCost.replace(/\./g, "").replace(",", "."));
+  /** Antes de concluir uma venda Upgrade, o cadastro do aparelho que entra é obrigatório. */
+  async function startComplete() {
+    try {
+      if (isUpgrade && !(await hasTradeItem())) {
+        setCompleteOpen(false);
+        setTradeFormOpen(true);
+        return;
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao verificar a troca");
+      return;
+    }
+    complete.mutate();
+  }
 
   /** Exclusão suave: o registro vira "Legado" e sai das listas ativas, mas fica no histórico. */
   const remove = useMutation({
@@ -191,10 +185,7 @@ export function AppointmentCard({
     },
     onError: (e: Error) => toast.error(e.message),
   });
-  const completeReady =
-    isTrade !== null &&
-    (appointment.inventory_device_id || linkChoice) &&
-    (!isTrade || (tradeModel && Number.isFinite(tradeCostValue) && tradeCostValue > 0));
+  const completeReady = !!(appointment.inventory_device_id || linkChoice);
 
   const revert = useMutation({
     mutationFn: async (why: string) => {
@@ -448,69 +439,20 @@ export function AppointmentCard({
               )}
             </div>
           )}
-          <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3">
-            <p className="text-sm font-medium">Essa venda envolve troca de aparelho (upgrade)? *</p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                className="flex-1"
-                variant={isTrade === true ? "default" : "outline"}
-                onClick={() => setIsTrade(true)}
-              >
-                Sim
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                className="flex-1"
-                variant={isTrade === false ? "default" : "outline"}
-                onClick={() => setIsTrade(false)}
-              >
-                Não
-              </Button>
-            </div>
-          </div>
-          {isTrade === true && (
-            <div className="space-y-3 rounded-md border border-primary/40 bg-primary/5 p-3">
-              <p className="text-sm font-medium">Aparelho que está entrando</p>
-              <div className="space-y-1.5">
-                <Label htmlFor={`trade-model-${appointment.id}`}>Modelo recebido *</Label>
-                <select
-                  id={`trade-model-${appointment.id}`}
-                  value={tradeModel}
-                  onChange={(e) => setTradeModel(e.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
-                >
-                  <option value="">Selecione o modelo…</option>
-                  {activeModels.map((m) => (
-                    <option key={m.id} value={m.name}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor={`trade-cost-${appointment.id}`}>Valor de avaliação (R$) *</Label>
-                <Input
-                  id={`trade-cost-${appointment.id}`}
-                  inputMode="decimal"
-                  placeholder="Ex.: 1800"
-                  value={tradeCost}
-                  onChange={(e) => setTradeCost(e.target.value)}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                O aparelho entra como <strong>Incompleto</strong> e precisa ter série e e-mail
-                cadastrados depois.
-              </p>
-            </div>
+          {isUpgrade && (
+            <p className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
+              Venda com tag <strong>Upgrade</strong>: o cadastro do aparelho que está entrando é
+              obrigatório e será aberto automaticamente se ainda não tiver sido feito.
+            </p>
           )}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setCompleteOpen(false)}>
               Voltar
             </Button>
-            <Button disabled={!completeReady || complete.isPending} onClick={() => complete.mutate()}>
+            <Button
+              disabled={!completeReady || complete.isPending}
+              onClick={() => void startComplete()}
+            >
               Concluir venda
             </Button>
           </DialogFooter>
@@ -596,6 +538,23 @@ export function AppointmentCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {tradeFormOpen && (
+        <InventoryForm
+          open={tradeFormOpen}
+          onOpenChange={setTradeFormOpen}
+          tradeIn={{ appointmentId: appointment.id, customerName: appointment.customer_name }}
+          onSaved={() => {
+            setTradeFormOpen(false);
+            complete.mutate();
+          }}
+          onCancelFlow={() => {
+            setTradeFormOpen(false);
+            setCompleteOpen(false);
+            toast.info("Conclusão cancelada — a venda continua Pendente");
+          }}
+        />
+      )}
     </li>
   );
 }
