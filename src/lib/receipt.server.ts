@@ -1,4 +1,15 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts } from "pdf-lib";
+import {
+  A4,
+  CONTENT_W,
+  MARGIN,
+  brl,
+  dashedLine,
+  drawRow,
+  signatures,
+  wrapText,
+  type Ctx,
+} from "./pdf-layout.server";
 
 export type ReceiptData = {
   number: number;
@@ -125,142 +136,206 @@ export async function loadReceiptData(
   };
 }
 
-/** Contrato / recibo de venda em PDF, no formato de comprovante para o cliente. */
+/** Recibo de venda no formato exato do modelo da loja. */
 export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
-  const page = pdf.addPage([595.28, 841.89]); // A4
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const black = rgb(0, 0, 0);
-  const grey = rgb(0.35, 0.35, 0.35);
-  const soft = rgb(0.82, 0.82, 0.82);
-  const M = 45;
-  const W = 595.28 - M * 2;
-  let y = 795;
+  const page = pdf.addPage(A4);
+  const ctx: Ctx = {
+    page,
+    font: await pdf.embedFont(StandardFonts.Helvetica),
+    bold: await pdf.embedFont(StandardFonts.HelveticaBold),
+  };
+  const X = MARGIN;
+  const W = CONTENT_W;
+  let y = A4[1] - 45;
 
-  const at = (s: string, x: number, size = 9, b = false, color = black) =>
-    page.drawText(s, { x, y, size, font: b ? bold : font, color });
-  const right = (s: string, size = 9, b = false, color = black) => {
-    const f = b ? bold : font;
-    page.drawText(s, { x: M + W - f.widthOfTextAtSize(s, size), y, size, font: f, color });
-  };
-  const rule = (dy = 6) =>
-    page.drawLine({
-      start: { x: M, y: y + dy },
-      end: { x: M + W, y: y + dy },
-      thickness: 0.7,
-      color: soft,
-    });
-  const wrap = (s: string, size: number, max: number) => {
-    const out: string[] = [];
-    for (const raw of s.split("\n")) {
-      let cur = "";
-      for (const w of raw.split(/\s+/)) {
-        const t = cur ? `${cur} ${w}` : w;
-        if (font.widthOfTextAtSize(t, size) > max) {
-          if (cur) out.push(cur);
-          cur = w;
-        } else cur = t;
-      }
-      out.push(cur);
-    }
-    return out;
-  };
-  const section = (title: string) => {
-    y -= 12;
-    page.drawRectangle({ x: M, y: y - 4, width: W, height: 16, color: rgb(0.94, 0.94, 0.94) });
-    at(title.toUpperCase(), M + 6, 9, true, rgb(0.2, 0.2, 0.2));
-    y -= 22;
-  };
-  const pair = (label: string, value: string) => {
-    at(label, M, 7.5, false, grey);
-    at(value, M + 110, 9.5, true);
-    y -= 16;
+  const label = (s: string, dy = 14) => {
+    y -= dy;
+    ctx.page.drawText(s, { x: X, y: y - 9, size: 10, font: ctx.bold });
+    y -= 13;
   };
 
-  // Cabeçalho
-  at(d.store.name, M, 17, true);
-  right(`Recibo Nº ${String(d.number).padStart(4, "0")}`, 13, true);
-  y -= 16;
-  if (d.store.address) {
-    at(d.store.address, M, 8.5, false, grey);
-    y -= 11;
-  }
-  if (d.store.contact) {
-    at(d.store.contact, M, 8.5, false, grey);
-    y -= 11;
-  }
-  at(new Date(d.saleDate).toLocaleString("pt-BR"), M, 8.5, false, grey);
-  right(`Venda ${d.saleReference}`, 8.5, false, grey);
-  y -= 8;
-  rule();
-  y -= 14;
-  at("CONTRATO / RECIBO DE COMPRA E VENDA", M, 12, true);
-  y -= 6;
+  // Faixa superior de recebimento
+  y = drawRow(ctx, X, y, [
+    {
+      w: W,
+      text: `RECIBO DE ${d.store.name.toUpperCase()} OS PRODUTOS E/OU SERVIÇOS CONSTANTES NO PEDIDO`,
+      bold: true,
+      size: 10,
+    },
+  ]);
+  y = drawRow(ctx, X, y, [
+    { w: 160, text: "Data de recebimento", bold: true },
+    { w: 225, text: "Identificação e assinatura do recebedor", bold: true },
+    { w: W - 385, text: `Recibo da venda: ${d.saleReference}`, bold: true },
+  ]);
 
-  section("Dados do cliente");
-  pair("Nome", d.customerName);
-  if (d.customerDoc) pair("CPF", d.customerDoc);
-  if (d.customerPhone) pair("Telefone", d.customerPhone);
-  if (d.customerEmail) pair("E-mail", d.customerEmail);
-  if (d.customerAddress) pair("Endereço", d.customerAddress);
-  pair("Vendedor(a)", d.attendantName);
+  y -= 12;
+  dashedLine(ctx, X, y, W);
+  y -= 12;
 
-  section("Dados do produto");
-  pair("Modelo", d.device.model);
-  if (d.device.color) pair("Cor", d.device.color);
-  if (d.device.storage) pair("Armazenamento", d.device.storage);
-  if (d.device.serial) pair("Nº de série", d.device.serial);
-  pair("Condição", d.device.condition === "lacrado" ? "Lacrado" : "Seminovo");
-  y -= 4;
-  rule();
-  y -= 14;
-  at("Valor total", M, 10, true);
-  right(brl(d.total), 13, true);
-  y -= 10;
+  // Cabeçalho da loja
+  const storeLines = [d.store.name];
+  if (d.store.address) storeLines.push(...wrapText(ctx.font, d.store.address, 9.5, 235));
+  if (d.store.contact) storeLines.push(`Telefone: ${d.store.contact}`);
+  const rightLines = [
+    new Date(d.saleDate).toLocaleDateString("pt-BR"),
+    `VENDEDOR: ${d.attendantName.toUpperCase()}`,
+    "RECIBO DA VENDA:",
+    d.saleReference,
+  ];
+  y = drawRow(
+    ctx,
+    X,
+    y,
+    [
+      { w: 140, text: d.store.name.toUpperCase(), bold: true, align: "center", size: 12 },
+      { w: 245, lines: storeLines, align: "center" },
+      { w: W - 385, lines: rightLines, align: "center", bold: true },
+    ],
+    { height: 78 },
+  );
 
-  section("Pagamento");
+  // Destinatário
+  label("DESTINATÁRIO/REMETENTE");
+  const c4 = [200, 120, 110, W - 430];
+  y = drawRow(
+    ctx,
+    X,
+    y,
+    [
+      { w: c4[0], text: "Nome/Razão social", bold: true, align: "center" },
+      { w: c4[1], text: "Telefone", bold: true, align: "center" },
+      { w: c4[2], text: "CPF/CNPJ", bold: true, align: "center" },
+      { w: c4[3], text: "E-mail", bold: true, align: "center" },
+    ],
+    { fill: true },
+  );
+  y = drawRow(ctx, X, y, [
+    { w: c4[0], text: d.customerName.toUpperCase() },
+    { w: c4[1], text: d.customerPhone ?? "" },
+    { w: c4[2], text: d.customerDoc ?? "" },
+    { w: c4[3], text: d.customerEmail ?? "", size: 8 },
+  ]);
+  y = drawRow(
+    ctx,
+    X,
+    y,
+    [
+      { w: c4[0], text: "Endereço", bold: true, align: "center" },
+      { w: c4[1], text: "CEP", bold: true, align: "center" },
+      { w: c4[2], text: "Cidade", bold: true, align: "center" },
+      { w: c4[3], text: "Estado", bold: true, align: "center" },
+    ],
+    { fill: true },
+  );
+  y = drawRow(ctx, X, y, [
+    { w: c4[0], lines: wrapText(ctx.font, d.customerAddress ?? "", 9.5, c4[0] - 12) },
+    { w: c4[1], text: d.customerCep ?? "" },
+    { w: c4[2], text: d.customerCity ?? "" },
+    { w: c4[3], text: d.customerState ?? "" },
+  ]);
+
+  // Produto
+  label("DADOS DO PRODUTO");
+  const cp = [50, 225, 35, 75, 60, W - 445];
+  y = drawRow(
+    ctx,
+    X,
+    y,
+    [
+      { w: cp[0], text: "Cód", bold: true, align: "center" },
+      { w: cp[1], text: "Produto", bold: true, align: "center" },
+      { w: cp[2], text: "Qtd", bold: true, align: "center" },
+      { w: cp[3], text: "Valor Unitário", bold: true, align: "center", size: 8.5 },
+      { w: cp[4], text: "Desconto", bold: true, align: "center" },
+      { w: cp[5], text: "Valor Total", bold: true, align: "center", size: 8.5 },
+    ],
+    { fill: true },
+  );
+  const productName = [
+    d.device.model,
+    d.device.storage,
+    d.device.color,
+    d.device.serial ? `Série: ${d.device.serial}` : null,
+  ]
+    .filter(Boolean)
+    .join(" - ")
+    .toUpperCase();
+  y = drawRow(ctx, X, y, [
+    { w: cp[0], text: String(d.number).padStart(6, "0"), align: "center" },
+    { w: cp[1], lines: wrapText(ctx.font, productName, 9.5, cp[1] - 12) },
+    { w: cp[2], text: "1", align: "right" },
+    { w: cp[3], text: brl(d.total), align: "right" },
+    { w: cp[4], text: "R$", align: "right" },
+    { w: cp[5], text: brl(d.total), align: "right" },
+  ]);
+  y = drawRow(ctx, X, y, [
+    { w: cp[0], text: "" },
+    { w: cp[1], text: "Total", bold: true, align: "right" },
+    { w: cp[2], text: "" },
+    { w: cp[3], text: brl(d.total), align: "right" },
+    { w: cp[4], text: "R$", align: "right" },
+    { w: cp[5], text: brl(d.total), align: "right" },
+  ]);
+
+  // Pagamento
+  label("PAGAMENTO");
+  const cg = [180, 180, 100, W - 460];
+  y = drawRow(
+    ctx,
+    X,
+    y,
+    [
+      { w: cg[0], text: "Forma de Pagamento", bold: true, align: "center" },
+      { w: cg[1], text: "Detalhes", bold: true, align: "center" },
+      { w: cg[2], text: "Valor Pago", bold: true, align: "center" },
+      { w: cg[3], text: "Parcelas", bold: true, align: "center", size: 8.5 },
+    ],
+    { fill: true },
+  );
   const list = d.payments.length
     ? d.payments
     : [{ method: d.paymentMethod, amount: d.total, installments: d.installments }];
-  at("Forma de pagamento", M, 7.5, false, grey);
-  at("Parcelas", M + 260, 7.5, false, grey);
-  at("Valor", M + 340, 7.5, false, grey);
-  y -= 14;
   for (const p of list) {
-    at(p.method, M, 9.5);
-    at(`${p.installments}x`, M + 260, 9.5);
-    at(brl(p.amount), M + 340, 9.5, true);
-    y -= 14;
+    y = drawRow(ctx, X, y, [
+      { w: cg[0], text: p.method.toUpperCase() },
+      { w: cg[1], text: "" },
+      { w: cg[2], text: brl(p.amount), align: "right" },
+      { w: cg[3], text: String(p.installments), align: "center", size: 8 },
+    ]);
   }
+  y = drawRow(ctx, X, y, [
+    { w: cg[0], text: "" },
+    { w: cg[1], text: "Total", bold: true, align: "right" },
+    { w: cg[2], text: brl(list.reduce((a, p) => a + p.amount, 0)), align: "right" },
+    { w: cg[3], text: "" },
+  ]);
 
+  label("OBSERVAÇÃO");
   if (d.warranty) {
-    section("Garantia");
-    for (const l of wrap(d.warranty, 9, W)) {
-      at(l, M, 9);
+    for (const l of wrapText(ctx.font, d.warranty, 9, W)) {
+      ctx.page.drawText(l, { x: X, y: y - 9, size: 9, font: ctx.font });
       y -= 12;
     }
   }
+  label("DADOS ADICIONAIS", 10);
 
-  y -= 14;
-  for (const l of wrap(
-    "O comprador declara ter conferido o aparelho, seus acessórios e o funcionamento no ato da entrega, aceitando as condições descritas neste documento. Este documento é um recibo/comprovante de compra e venda e não possui valor fiscal.",
-    8.5,
-    W,
-  )) {
-    at(l, M, 8.5, false, grey);
-    y -= 11;
-  }
-
-  y = Math.min(y, 130);
-  page.drawLine({ start: { x: M, y }, end: { x: M + 210, y }, thickness: 0.7, color: soft });
-  page.drawLine({ start: { x: M + W - 210, y }, end: { x: M + W, y }, thickness: 0.7, color: soft });
-  y -= 12;
-  at("Assinatura do cliente", M, 8.5, false, grey);
-  at("Assinatura da loja", M + W - 210, 8.5, false, grey);
-  y -= 12;
-  at(d.customerName, M, 9);
-  at(d.store.name, M + W - 210, 9);
+  signatures(
+    ctx,
+    Math.min(y - 120, 250),
+    { name: d.customerName.toUpperCase() },
+    {
+      name: d.store.name,
+      date: new Date(d.saleDate).toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    },
+  );
 
   return pdf.save();
 }
