@@ -70,7 +70,16 @@ export function InventoryForm({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item?: InventoryItem | null;
-  defaults?: { device_model?: string; cost_price?: number };
+  defaults?: {
+    device_model?: string;
+    cost_price?: number;
+    sale_price?: number;
+    color?: string;
+    storage?: string;
+    battery_health?: number | null;
+    condition?: "lacrado" | "seminovo";
+    notes?: string;
+  };
   /** Fluxo de troca/upgrade: o modal fica travado até o cadastro ser salvo. */
   tradeIn?:
     | { appointmentId: string; customerName: string; payments?: PaymentEntry[] | null }
@@ -85,7 +94,19 @@ export function InventoryForm({
   const { data: models = [] } = useDeviceModels();
   const activeModels = models.filter((m) => m.active);
   const [status, setStatus] = useState<InventoryStatus>(item?.status ?? "disponivel");
-  const [condition, setCondition] = useState<"lacrado" | "seminovo">(item?.condition ?? "seminovo");
+  const [condition, setCondition] = useState<"lacrado" | "seminovo">(
+    item?.condition ?? defaults?.condition ?? "seminovo",
+  );
+  const [costPrice, setCostPrice] = useState(
+    defaults?.cost_price != null ? String(defaults.cost_price) : "",
+  );
+  const [salePrice, setSalePrice] = useState(
+    item?.sale_price != null
+      ? String(item.sale_price)
+      : defaults?.sale_price != null
+        ? String(defaults.sale_price)
+        : "",
+  );
   const fileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const extract = useServerFn(extractDeviceFromPhoto);
@@ -191,6 +212,9 @@ export function InventoryForm({
 
       if (locked && cleanPayments.length === 0) {
         throw new Error("Informe como o cliente pagou (Pix, débito, crédito ou dinheiro)");
+      }
+      if (locked && !toNumber(v.sale_price)) {
+        throw new Error("Informe o valor de venda do aparelho recebido na troca");
       }
 
       const completingIncomplete =
