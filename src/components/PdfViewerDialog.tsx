@@ -1,6 +1,7 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PdfCanvasViewer } from "@/components/PdfCanvasViewer";
 
 /** Visualizador de PDF dentro do app (evita bloqueio de nova aba pelo navegador). */
 export function PdfViewerDialog({
@@ -23,11 +24,7 @@ export function PdfViewerDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <iframe
-            src={url}
-            title={title}
-            className="h-[70vh] w-full rounded-lg border border-border/60 bg-white"
-          />
+          <PdfCanvasViewer src={url} />
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" asChild>
               <a href={url} download={fileName}>
