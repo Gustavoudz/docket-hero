@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Info, Plus, Trash2 } from "lucide-react";
 import {
   formatTime,
   PAYMENT_METHODS,
@@ -24,7 +24,12 @@ import {
   type PaymentEntry,
 } from "@/lib/agenda";
 import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
-import { findAutoReserveItem, itemLabel, useAvailableItems } from "@/lib/inventory";
+import {
+  findAutoReserveItem,
+  itemLabel,
+  useAvailableItems,
+  type InventoryItem,
+} from "@/lib/inventory";
 import { CustomerPicker } from "@/components/CustomerPicker";
 import type { Customer } from "@/lib/customers";
 import type { RecordType } from "@/lib/permissions";
@@ -93,10 +98,33 @@ export function AppointmentForm({
   );
   const [inventoryItemId, setInventoryItemId] = useState(appointment?.inventory_device_id ?? "");
   const [manualLink, setManualLink] = useState(false);
+  const [showTechnical, setShowTechnical] = useState(false);
+  const [priceTouched, setPriceTouched] = useState(false);
+  const [swapAsk, setSwapAsk] = useState<{ price: number } | null>(null);
   const { data: availableItems = [] } = useAvailableItems(
     model,
     appointment?.inventory_device_id ?? null,
   );
+
+  /** Item que será efetivamente vinculado: escolhido manualmente ou o mais antigo (reserva automática). */
+  const linkedItem: InventoryItem | undefined = inventoryItemId
+    ? availableItems.find((i) => i.id === inventoryItemId)
+    : availableItems[0];
+
+  const lastLinkedId = useRef<string | null>(appointment?.inventory_device_id ?? null);
+  useEffect(() => {
+    if (!linkedItem) return;
+    if (lastLinkedId.current === linkedItem.id) return;
+    const price = linkedItem.sale_price != null ? Number(linkedItem.sale_price) : null;
+    lastLinkedId.current = linkedItem.id;
+    if (price == null) return;
+    const current = Number(productPrice.replace(",", "."));
+    if (!priceTouched || !Number.isFinite(current) || current === price) {
+      setProductPrice(String(price));
+      return;
+    }
+    setSwapAsk({ price });
+  }, [linkedItem, priceTouched, productPrice]);
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
