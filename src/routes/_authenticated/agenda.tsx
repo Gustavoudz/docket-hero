@@ -193,6 +193,7 @@ function AgendaPage() {
 
   const startNew = () => {
     setEditing(null);
+    setConverting(null);
     if (creatable.length === 1) {
       setNewType(creatable[0]!);
       setFormOpen(true);
