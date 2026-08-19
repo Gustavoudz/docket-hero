@@ -100,6 +100,7 @@ function AgendaPage() {
   const [closedSummary, setClosedSummary] = useState<DaySummary | null>(null);
   const [typePickerOpen, setTypePickerOpen] = useState(false);
   const [newType, setNewType] = useState<RecordType>("agendamento");
+  const [converting, setConverting] = useState<Appointment | null>(null);
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments", "day", date],
@@ -259,6 +260,12 @@ function AgendaPage() {
                   }
                 : undefined
             }
+            onConvert={(item) => {
+              setEditing(null);
+              setConverting(item);
+              setNewType("venda");
+              setFormOpen(true);
+            }}
           />
         ))}
       </ul>
@@ -314,11 +321,15 @@ function AgendaPage() {
 
       {formOpen && (
         <AppointmentForm
-          key={editing?.id ?? `new-${newType}`}
+          key={editing?.id ?? converting?.id ?? `new-${newType}`}
           open={formOpen}
-          onOpenChange={setFormOpen}
+          onOpenChange={(o) => {
+            setFormOpen(o);
+            if (!o) setConverting(null);
+          }}
           defaultDate={date}
           appointment={editing}
+          convertFrom={editing ? null : converting}
           recordType={editing ? undefined : newType}
         />
       )}

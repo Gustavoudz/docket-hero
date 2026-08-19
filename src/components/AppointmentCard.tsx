@@ -121,7 +121,7 @@ export function AppointmentCard({
   const complete = useMutation({
     mutationFn: async () => {
       const itemId = appointment.inventory_device_id ?? linkChoice ?? "";
-      if (!itemId) throw new Error("Vincule um aparelho do estoque antes de concluir");
+      if (!itemId) throw new Error("Não é possível concluir sem um aparelho vinculado ao estoque.");
       const { error } = await supabase
         .from("appointments")
         .update({ status: "concluido", inventory_device_id: itemId })
