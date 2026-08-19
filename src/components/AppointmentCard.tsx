@@ -641,6 +641,23 @@ export function AppointmentCard({
         <InventoryForm
           open={tradeFormOpen}
           onOpenChange={setTradeFormOpen}
+          {...(sourceQuote?.trade_model
+            ? {
+                defaults: {
+                  device_model: sourceQuote.trade_model,
+                  color: sourceQuote.trade_color ?? "",
+                  storage: sourceQuote.trade_storage ?? "",
+                  battery_health: sourceQuote.trade_battery_health ?? null,
+                  condition: "seminovo" as const,
+                  ...(sourceQuote.trade_value != null
+                    ? { cost_price: Number(sourceQuote.trade_value) }
+                    : {}),
+                  ...(sourceQuote.trade_condition
+                    ? { notes: `Estado avaliado no orçamento: ${sourceQuote.trade_condition}` }
+                    : {}),
+                },
+              }
+            : {})}
           tradeIn={{
             appointmentId: appointment.id,
             customerName: appointment.customer_name,
