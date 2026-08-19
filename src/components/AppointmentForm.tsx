@@ -180,10 +180,12 @@ export function AppointmentForm({
     if (lastLinkedId.current === linkedItem.id) return;
     const price = linkedItem.sale_price != null ? Number(linkedItem.sale_price) : null;
     lastLinkedId.current = linkedItem.id;
+    // Orçamento manda no preço: já vem com desconto e troca aplicados.
+    if (quote) return;
     if (price == null) return;
     setListPrice(price);
     setProductPrice(String(applyDiscount(price, discountKind, discountValue)));
-  }, [linkedItem, discountKind, discountValue]);
+  }, [linkedItem, discountKind, discountValue, quote]);
 
   const updatePayment = (index: number, patch: Partial<PaymentEntry>) =>
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -268,6 +270,7 @@ export function AppointmentForm({
         inventory_device_id: linkedId,
         converted_from_appointment_id:
           convertFrom?.id ?? appointment?.converted_from_appointment_id ?? null,
+        quote_id: quote?.id ?? appointment?.quote_id ?? null,
       };
       const query = appointment
         ? supabase.from("appointments").update(payload).eq("id", appointment.id)
@@ -281,11 +284,19 @@ export function AppointmentForm({
           .eq("id", convertFrom.id);
         if (convertError) throw new Error(convertError.message);
       }
+      if (!appointment && quote) {
+        const { error: quoteError } = await supabase
+          .from("quotes")
+          .update({ status: "convertido" })
+          .eq("id", quote.id);
+        if (quoteError) throw new Error(quoteError.message);
+      }
       return notFound;
     },
     onSuccess: (notFound) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
       const noun = isVenda ? "Venda" : "Agendamento";
       toast.success(appointment ? `${noun} atualizado` : `${noun} criado`);
       if (notFound) {
