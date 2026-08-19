@@ -201,7 +201,7 @@ function ConferenciaPage() {
           </div>
           <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
             <p className="text-xs text-muted-foreground">Custo do estoque disponível</p>
-            <p className="text-xl font-semibold text-primary">{formatBRL(availableCost)}</p>
+            <p className="text-xl font-semibold text-emerald-400">{formatBRL(availableCost)}</p>
           </div>
           <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
             <p className="text-xs text-muted-foreground">Reservados</p>
@@ -223,7 +223,7 @@ function ConferenciaPage() {
         </div>
         <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
           <p className="text-xs text-muted-foreground">Custo total que saiu</p>
-          <p className="text-xl font-semibold text-primary">{formatBRL(totalCost)}</p>
+          <p className="text-xl font-semibold text-destructive">{formatBRL(totalCost)}</p>
         </div>
       </div>
 
@@ -259,7 +259,7 @@ function ConferenciaPage() {
         </div>
         <div className="rounded-lg border bg-card p-3 backdrop-blur-xl">
           <p className="text-xs text-muted-foreground">Custo total que entrou</p>
-          <p className="text-xl font-semibold text-primary">{formatBRL(entriesCost)}</p>
+          <p className="text-xl font-semibold text-emerald-400">{formatBRL(entriesCost)}</p>
         </div>
       </div>
 
