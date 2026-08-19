@@ -33,19 +33,45 @@ export function CustomerForm({ open, onOpenChange, customer, defaultName, onSave
   const [whatsapp, setWhatsapp] = useState(customer?.whatsapp ?? "");
   const [email, setEmail] = useState(customer?.email ?? "");
   const [address, setAddress] = useState(customer?.address ?? "");
+  const [street, setStreet] = useState(customer?.street ?? "");
+  const [streetNumber, setStreetNumber] = useState(customer?.street_number ?? "");
+  const [complement, setComplement] = useState(customer?.complement ?? "");
+  const [district, setDistrict] = useState(customer?.district ?? "");
+  const [city, setCity] = useState(customer?.city ?? "");
+  const [uf, setUf] = useState(customer?.state ?? "");
+  const [cep, setCep] = useState(customer?.cep ?? "");
+  const [birthDate, setBirthDate] = useState(customer?.birth_date ?? "");
   const [notes, setNotes] = useState(customer?.notes ?? "");
 
   const mutation = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error("Informe o nome do cliente");
       if (!isValidCPF(cpf)) throw new Error("CPF inválido");
+      /** Endereço em texto único, montado a partir dos campos separados. */
+      const composed = [
+        [street.trim(), streetNumber.trim()].filter(Boolean).join(", "),
+        complement.trim(),
+        district.trim(),
+        [city.trim(), uf.trim().toUpperCase()].filter(Boolean).join(" - "),
+        cep.trim(),
+      ]
+        .filter(Boolean)
+        .join(" — ");
       const payload = {
         name: name.trim(),
         cpf: onlyDigits(cpf),
         phone: phone.trim() || null,
         whatsapp: whatsapp.trim() || null,
         email: email.trim() || null,
-        address: address.trim() || null,
+        address: composed || address.trim() || null,
+        street: street.trim() || null,
+        street_number: streetNumber.trim() || null,
+        complement: complement.trim() || null,
+        district: district.trim() || null,
+        city: city.trim() || null,
+        state: uf.trim().toUpperCase() || null,
+        cep: cep.trim() || null,
+        birth_date: birthDate || null,
         notes: notes.trim() || null,
       };
       const query = customer
@@ -124,8 +150,69 @@ export function CustomerForm({ open, onOpenChange, customer, defaultName, onSave
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="c_address">Endereço</Label>
-            <Input id="c_address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            <Label htmlFor="c_birth">Data de nascimento</Label>
+            <Input
+              id="c_birth"
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="c_street">Rua</Label>
+              <Input id="c_street" value={street} onChange={(e) => setStreet(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="c_number">Número</Label>
+              <Input
+                id="c_number"
+                value={streetNumber}
+                onChange={(e) => setStreetNumber(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="c_comp">Complemento</Label>
+              <Input
+                id="c_comp"
+                value={complement}
+                onChange={(e) => setComplement(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="c_district">Bairro</Label>
+              <Input
+                id="c_district"
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="c_city">Cidade</Label>
+              <Input id="c_city" value={city} onChange={(e) => setCity(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="c_uf">UF</Label>
+              <Input
+                id="c_uf"
+                maxLength={2}
+                value={uf}
+                onChange={(e) => setUf(e.target.value.toUpperCase())}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="c_cep">CEP</Label>
+              <Input
+                id="c_cep"
+                inputMode="numeric"
+                value={cep}
+                onChange={(e) => setCep(e.target.value)}
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="c_notes">Observações</Label>
