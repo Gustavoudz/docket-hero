@@ -43,6 +43,24 @@ const schema = z.object({
   customer_instagram: z.string().trim().max(60).optional(),
   deposit_amount: z.string().trim().max(20).optional(),
   product_price: z.string().trim().max(20).optional(),
+});
+
+function applyDiscount(
+  price: number,
+  kind: "nenhum" | "5" | "10" | "15" | "valor",
+  value: string,
+) {
+  if (kind === "nenhum") return price;
+  if (kind === "valor") {
+    const v = Number(value.replace(",", "."));
+    if (!Number.isFinite(v) || v <= 0) return price;
+    return Math.max(0, Math.round((price - v) * 100) / 100);
+  }
+  const pct = Number(kind);
+  return Math.max(0, Math.round(price * (1 - pct / 100) * 100) / 100);
+}
+
+const _unused = z.object({
   notes: z.string().trim().max(1000).optional(),
   tag: z.string().trim().max(60).optional(),
 });
