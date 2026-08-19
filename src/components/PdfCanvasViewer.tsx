@@ -41,7 +41,7 @@ export function PdfCanvasViewer({ src, className }: { src: string; className?: s
           canvas.className = "rounded-lg bg-white shadow-sm";
           container.appendChild(canvas);
           const ctx = canvas.getContext("2d");
-          if (ctx) await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+          if (ctx) await page.render({ canvasContext: ctx, viewport }).promise;
         }
         if (!cancelled) setLoading(false);
       } catch (e) {
