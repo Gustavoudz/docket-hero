@@ -140,9 +140,7 @@ function ConfigPage() {
   if (role && role !== "gerente") {
     return (
       <AppShell>
-        <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground backdrop-blur-xl">
-          Estas configurações são exclusivas do gerente.
-        </p>
+        <AccessDenied message="Estas configurações são exclusivas do gerente." />
       </AppShell>
     );
   }
