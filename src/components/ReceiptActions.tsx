@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, Eye, Mail } from "lucide-react";
+import { Download, Eye, Loader2, Mail } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -64,8 +64,12 @@ export function ReceiptQuickView({ saleId }: { saleId: string }) {
         onClick={() => load.mutate()}
         className="h-8"
       >
-        <Eye className="mr-1.5 h-4 w-4" />
-        {load.isPending ? "Abrindo…" : "Recibo"}
+        {load.isPending ? (
+          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+        ) : (
+          <Eye className="mr-1.5 h-4 w-4" />
+        )}
+        {load.isPending ? "Gerando…" : "Recibo"}
       </Button>
 
       <Dialog open={!!pdf} onOpenChange={(o) => !o && setPdf(null)}>
@@ -139,7 +143,12 @@ export function ReceiptActions({ saleId }: { saleId: string }) {
     <div className="flex flex-wrap gap-2">
       <ReceiptQuickView saleId={saleId} />
       <Button size="sm" variant="outline" disabled={load.isPending} onClick={() => load.mutate(true)}>
-        <Download className="mr-1.5 h-4 w-4" /> Baixar PDF
+        {load.isPending ? (
+          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+        ) : (
+          <Download className="mr-1.5 h-4 w-4" />
+        )}
+        {load.isPending ? "Gerando…" : "Baixar PDF"}
       </Button>
       <Button
         size="sm"
@@ -147,7 +156,11 @@ export function ReceiptActions({ saleId }: { saleId: string }) {
         disabled={send.isPending || email === null}
         onClick={() => send.mutate()}
       >
-        <Mail className="mr-1.5 h-4 w-4" />
+        {send.isPending ? (
+          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+        ) : (
+          <Mail className="mr-1.5 h-4 w-4" />
+        )}
         {send.isPending ? "Enviando…" : "Reenviar por e-mail"}
       </Button>
     </div>
