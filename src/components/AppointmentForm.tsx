@@ -43,6 +43,8 @@ const schema = z.object({
   customer_instagram: z.string().trim().max(60).optional(),
   deposit_amount: z.string().trim().max(20).optional(),
   product_price: z.string().trim().max(20).optional(),
+  notes: z.string().trim().max(1000).optional(),
+  tag: z.string().trim().max(60).optional(),
 });
 
 function applyDiscount(
@@ -59,11 +61,6 @@ function applyDiscount(
   const pct = Number(kind);
   return Math.max(0, Math.round(price * (1 - pct / 100) * 100) / 100);
 }
-
-const _unused = z.object({
-  notes: z.string().trim().max(1000).optional(),
-  tag: z.string().trim().max(60).optional(),
-});
 
 type Props = {
   open: boolean;
