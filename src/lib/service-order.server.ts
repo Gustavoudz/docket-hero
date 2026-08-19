@@ -164,30 +164,31 @@ export async function buildServiceOrderPdf(d: ServiceOrderData): Promise<Uint8Ar
     color: rgb(1, 1, 1),
   });
 
-  const cx = X + logoW + 145;
+  const rx = X + W - 155;
+  const centerW = rx - (X + logoW) - 16;
+  const cx = X + logoW + centerW / 2;
   let hy = y - 10;
-  center(d.store.name, 11, false, cx, hy);
-  hy -= 14;
-  if (d.store.address) {
-    center(d.store.address, 10, false, cx, hy);
-    hy -= 14;
+  center(d.store.name, 10, false, cx, hy);
+  hy -= 13;
+  for (const l of wrapText(ctx.font, d.store.address ?? "", 9, centerW)) {
+    center(l, 9, false, cx, hy);
+    hy -= 13;
   }
   if (d.store.contact) {
-    center(`Telefone: ${d.store.contact}`, 10, true, cx, hy);
-    hy -= 14;
+    center(`Telefone: ${d.store.contact}`, 9, true, cx, hy);
+    hy -= 13;
   }
 
   let ry = y - 10;
-  const rx = X + W - 165;
   const rline = (lbl: string, val: string) => {
-    ctx.page.drawText(lbl, { x: rx, y: ry, size: 10, font: ctx.bold });
+    ctx.page.drawText(lbl, { x: rx, y: ry, size: 9, font: ctx.bold });
     ctx.page.drawText(val, {
-      x: rx + ctx.bold.widthOfTextAtSize(lbl, 10) + 3,
+      x: rx + ctx.bold.widthOfTextAtSize(lbl, 9) + 3,
       y: ry,
-      size: 10,
+      size: 9,
       font: ctx.font,
     });
-    ry -= 14;
+    ry -= 13;
   };
   rline("N° OS:", String(d.number));
   rline("Emissão:", fmtDate(d.openedAt));

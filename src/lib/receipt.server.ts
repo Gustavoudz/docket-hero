@@ -170,7 +170,12 @@ export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
   y = drawRow(ctx, X, y, [
     { w: 160, text: "Data de recebimento", bold: true },
     { w: 225, text: "Identificação e assinatura do recebedor", bold: true },
-    { w: W - 385, text: `Recibo da venda: ${d.saleReference}`, bold: true },
+    {
+      w: W - 385,
+      lines: wrapText(ctx.bold, `Recibo da venda: ${d.saleReference}`, 8.5, W - 397),
+      bold: true,
+      size: 8.5,
+    },
   ]);
 
   y -= 12;
@@ -183,7 +188,7 @@ export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
   if (d.store.contact) storeLines.push(`Telefone: ${d.store.contact}`);
   const rightLines = [
     new Date(d.saleDate).toLocaleDateString("pt-BR"),
-    `VENDEDOR: ${d.attendantName.toUpperCase()}`,
+    ...wrapText(ctx.bold, `VENDEDOR: ${d.attendantName.toUpperCase()}`, 8.5, W - 397),
     "RECIBO DA VENDA:",
     d.saleReference,
   ];
@@ -194,7 +199,7 @@ export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
     [
       { w: 140, text: d.store.name.toUpperCase(), bold: true, align: "center", size: 12 },
       { w: 245, lines: storeLines, align: "center" },
-      { w: W - 385, lines: rightLines, align: "center", bold: true },
+      { w: W - 385, lines: rightLines, align: "center", bold: true, size: 8.5 },
     ],
     { height: 78 },
   );
