@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
-import { conversionRate, type Appointment } from "@/lib/agenda";
+import { activeRecords, conversionRate, type Appointment } from "@/lib/agenda";
 import { useAttendantColors, useProfiles } from "@/lib/settings";
 
 export function useRangeAppointments(from: string, to: string) {
@@ -15,7 +15,7 @@ export function useRangeAppointments(from: string, to: string) {
         .lte("scheduled_date", to)
         .order("scheduled_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as Appointment[];
+      return activeRecords((data ?? []) as unknown as Appointment[]);
     },
   });
 }
