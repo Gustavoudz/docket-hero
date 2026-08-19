@@ -537,6 +537,85 @@ export type Database = {
         }
         Relationships: []
       }
+      sales: {
+        Row: {
+          appointment_id: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          customer_id: string | null
+          discount: number
+          id: string
+          inventory_item_id: string | null
+          reference: string
+          sale_number: number
+          seller_id: string
+          status: Database["public"]["Enums"]["sale_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          customer_id?: string | null
+          discount?: number
+          id?: string
+          inventory_item_id?: string | null
+          reference?: string
+          sale_number?: number
+          seller_id: string
+          status?: Database["public"]["Enums"]["sale_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          customer_id?: string | null
+          discount?: number
+          id?: string
+          inventory_item_id?: string | null
+          reference?: string
+          sale_number?: number
+          seller_id?: string
+          status?: Database["public"]["Enums"]["sale_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       status_colors: {
         Row: {
           color: string
@@ -659,6 +738,12 @@ export type Database = {
         | "vendido"
         | "manutencao"
         | "incompleto"
+      sale_status:
+        | "rascunho"
+        | "aguardando_pagamento"
+        | "pago"
+        | "cancelado"
+        | "estornado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -794,6 +879,13 @@ export const Constants = {
         "vendido",
         "manutencao",
         "incompleto",
+      ],
+      sale_status: [
+        "rascunho",
+        "aguardando_pagamento",
+        "pago",
+        "cancelado",
+        "estornado",
       ],
     },
   },
