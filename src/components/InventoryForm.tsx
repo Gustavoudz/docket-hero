@@ -515,6 +515,102 @@ export function InventoryForm({
               defaultValue={item?.notes ?? ""}
             />
           </div>
+          {locked && (
+            <div className="space-y-3 rounded-md border border-primary/40 bg-primary/5 p-3">
+              <div className="flex items-center justify-between">
+                <Label>Como o cliente pagou a diferença *</Label>
+                <span className="text-xs text-muted-foreground">
+                  Total: {formatBRL(paymentsTotal(cleanPayments))}
+                </span>
+              </div>
+              {payments.map((p, i) => (
+                <div key={i} className="space-y-2 rounded-md border bg-card/40 p-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      aria-label="Forma de pagamento"
+                      value={p.method}
+                      onChange={(e) => updatePayment(i, { method: e.target.value })}
+                      className={selectClass}
+                    >
+                      {PAYMENT_METHODS.map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                    <Input
+                      aria-label="Valor pago"
+                      inputMode="decimal"
+                      placeholder="Valor (R$)"
+                      value={p.amount ?? ""}
+                      onChange={(e) =>
+                        updatePayment(i, {
+                          amount: e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  {p.method === "credito" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        aria-label="Parcelas"
+                        value={p.installments ?? ""}
+                        onChange={(e) =>
+                          updatePayment(i, {
+                            installments: e.target.value === "" ? null : Number(e.target.value),
+                          })
+                        }
+                        className={selectClass}
+                      >
+                        <option value="">Parcelas…</option>
+                        {Array.from({ length: 18 }, (_, n) => n + 1).map((n) => (
+                          <option key={n} value={n}>
+                            {n}x
+                          </option>
+                        ))}
+                      </select>
+                      <Input
+                        aria-label="Valor da parcela"
+                        inputMode="decimal"
+                        placeholder="Valor da parcela (R$)"
+                        value={p.installment_value ?? ""}
+                        onChange={(e) =>
+                          updatePayment(i, {
+                            installment_value:
+                              e.target.value === "" ? null : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                  )}
+                  {payments.length > 1 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={() => setPayments((prev) => prev.filter((_, idx) => idx !== i))}
+                    >
+                      Remover forma de pagamento
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  setPayments((prev) => [
+                    ...prev,
+                    { method: "pix", amount: null, installments: null, installment_value: null },
+                  ])
+                }
+              >
+                Adicionar outra forma de pagamento
+              </Button>
+            </div>
+          )}
         </form>
         <DialogFooter>
           {locked && (
