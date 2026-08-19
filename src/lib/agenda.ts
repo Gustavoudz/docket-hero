@@ -15,6 +15,7 @@ export type PaymentEntry = {
 export type Appointment = {
   id: string;
   attendant_id: string;
+  seller_id?: string | null;
   customer_name: string;
   customer_phone: string | null;
   customer_instagram?: string | null;

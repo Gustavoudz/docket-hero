@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, Gauge } from "lucide-react";
+import { CalendarDays, Download, Gauge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +52,19 @@ export function InventoryTurnover() {
   const cost = (list: InventoryItem[]) => list.reduce((sum, i) => sum + (costs[i.id] ?? 0), 0);
   const enteredCost = cost(entered);
   const soldCost = cost(sold);
+
+  /** Agenda dia a dia do período: o que entrou e o que saiu em cada data. */
+  const agenda = useMemo(() => {
+    const map = new Map<string, { entered: InventoryItem[]; sold: InventoryItem[] }>();
+    const bucket = (day: string) => {
+      const cur = map.get(day) ?? { entered: [], sold: [] };
+      map.set(day, cur);
+      return cur;
+    };
+    for (const i of entered) bucket(i.entered_at.slice(0, 10)).entered.push(i);
+    for (const i of sold) bucket((i.sold_at ?? "").slice(0, 10)).sold.push(i);
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [entered, sold]);
 
   function setPreset(days: number) {
     setFrom(shiftDate(todayISO(), -days));
@@ -128,6 +141,56 @@ export function InventoryTurnover() {
           Ainda não há vendas registradas para calcular o tempo médio em estoque.
         </p>
       )}
+
+      <div className="mt-4 rounded-md border bg-background/40 p-3">
+        <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <CalendarDays className="h-3.5 w-3.5 text-primary" /> Agenda do período
+        </h3>
+        {agenda.length === 0 ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Nenhuma entrada ou saída de estoque neste período.
+          </p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {agenda.map(([day, group]) => (
+              <li key={day} className="rounded-md border border-border/60 p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">
+                    {new Date(`${day}T00:00:00`).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      weekday: "short",
+                    })}
+                  </span>
+                  <span className="text-[11px]">
+                    <span className="text-sky-400">+{group.entered.length} entrada(s)</span>
+                    {" · "}
+                    <span className="text-amber-400">-{group.sold.length} saída(s)</span>
+                  </span>
+                </div>
+                <ul className="mt-1 space-y-0.5 text-xs">
+                  {group.entered.map((i) => (
+                    <li key={`e-${i.id}`} className="flex justify-between gap-2">
+                      <span className="truncate text-sky-400">↑ {i.device_model}</span>
+                      <span className="shrink-0 text-muted-foreground">
+                        {formatBRL(costs[i.id] ?? 0)}
+                      </span>
+                    </li>
+                  ))}
+                  {group.sold.map((i) => (
+                    <li key={`s-${i.id}`} className="flex justify-between gap-2">
+                      <span className="truncate text-amber-400">↓ {i.device_model}</span>
+                      <span className="shrink-0 text-muted-foreground">
+                        {formatBRL(costs[i.id] ?? 0)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }

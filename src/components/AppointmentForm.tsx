@@ -30,7 +30,7 @@ import {
   type Appointment,
   type PaymentEntry,
 } from "@/lib/agenda";
-import { useAppointmentTags, useDeviceModels } from "@/lib/settings";
+import { useAppointmentTags, useDeviceModels, useProfiles, useUserRoles } from "@/lib/settings";
 import {
   findAutoReserveItem,
   itemLabel,
@@ -133,6 +133,7 @@ export function AppointmentForm({
   );
   const [discountValue, setDiscountValue] = useState("");
   const [manualLink, setManualLink] = useState(false);
+  const [sellerId, setSellerId] = useState<string>(base?.seller_id ?? user?.id ?? "");
   const [showTechnical, setShowTechnical] = useState(false);
   const { data: availableItems = [] } = useAvailableItems(
     model,
@@ -159,6 +160,11 @@ export function AppointmentForm({
     setPayments((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   const { data: models = [] } = useDeviceModels();
   const { data: tags = [] } = useAppointmentTags();
+  const { data: profiles = [] } = useProfiles();
+  const { data: roles = [] } = useUserRoles();
+  const sellerOptions = profiles
+    .filter((p) => roles.some((r) => r.user_id === p.id))
+    .sort((a, b) => (a.full_name ?? "").localeCompare(b.full_name ?? ""));
   const activeModels = models.filter((m) => m.active);
   const activeTags = tags.filter((t) => t.active);
 
@@ -227,6 +233,7 @@ export function AppointmentForm({
         installment_value: first?.installment_value ?? null,
         scheduled_at: new Date(`${v.date}T${v.time}`).toISOString(),
         attendant_id: user!.id,
+        seller_id: sellerId || user!.id,
         inventory_device_id: linkedId,
         converted_from_appointment_id:
           convertFrom?.id ?? appointment?.converted_from_appointment_id ?? null,
@@ -304,6 +311,27 @@ export function AppointmentForm({
               }
             }}
           />
+          <div className="space-y-1.5">
+            <Label htmlFor="seller_id">Vendedor responsável *</Label>
+            <select
+              id="seller_id"
+              value={sellerId}
+              onChange={(e) => setSellerId(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-input/40 px-3 text-sm text-foreground"
+            >
+              {sellerOptions.length === 0 && (
+                <option value={user?.id ?? ""}>{fullName ?? "Eu"}</option>
+              )}
+              {sellerOptions.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.full_name || p.email}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-muted-foreground">
+              A comissão desta venda vai para o vendedor selecionado.
+            </p>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="device_model">Modelo de interesse *</Label>
             {activeModels.length > 0 ? (
