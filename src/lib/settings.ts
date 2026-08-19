@@ -18,6 +18,7 @@ export const DEFAULT_STATUS_COLORS: Record<AppointmentStatus, string> = {
   pendente: "#f59e0b",
   concluido: "#22c55e",
   cancelado: "#ef4444",
+  legado: "#64748b",
 };
 
 export function useDeviceModels() {
