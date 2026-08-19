@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   A4,
   BLACK,
@@ -161,7 +161,7 @@ export async function buildServiceOrderPdf(d: ServiceOrderData): Promise<Uint8Ar
     y: y - 33,
     size: 13,
     font: ctx.bold,
-    color: A4 && ({ type: "RGB", red: 1, green: 1, blue: 1 } as never),
+    color: rgb(1, 1, 1),
   });
 
   const cx = X + logoW + 145;
