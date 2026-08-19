@@ -690,7 +690,14 @@ export function InventoryForm({
               Cancelar conclusão da venda
             </Button>
           )}
-          <Button type="submit" form="inventory-form" disabled={mutation.isPending}>
+          <Button
+            type="submit"
+            form="inventory-form"
+            disabled={
+              mutation.isPending ||
+              (locked && (!toNumber(costPrice) || !toNumber(salePrice)))
+            }
+          >
             {item ? "Salvar" : batch && !locked ? "Cadastrar lote" : "Cadastrar item"}
           </Button>
         </DialogFooter>
