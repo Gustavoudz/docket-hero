@@ -19,6 +19,7 @@ import {
   PAYMENT_METHOD_LABEL,
   PAYMENT_STATUS_LABEL,
 } from "@/components/PaymentForm";
+import { PixAutoPayment } from "@/components/PixAutoPayment";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, toISODate } from "@/lib/agenda";
 
