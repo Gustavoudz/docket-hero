@@ -11,6 +11,7 @@ import {
   Package,
   Receipt,
   ClipboardCheck,
+  Scale,
   ArrowRightLeft,
   PackagePlus,
   Users,
