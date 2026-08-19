@@ -130,10 +130,6 @@ function NotificationBell() {
   );
 }
 
-function SideMenu() {
-  return <SideMenuInner />;
-}
-
 function IncompleteBadge() {
   const { data: incomplete = [] } = useIncompleteItems();
   if (incomplete.length === 0) return null;
@@ -152,7 +148,7 @@ function IncompleteBadge() {
   );
 }
 
-function SideMenuInner() {
+function SideMenu() {
   const [open, setOpen] = useState(false);
   const { role } = useAuth();
   const currentPath = useRouterState({

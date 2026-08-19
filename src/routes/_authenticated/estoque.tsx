@@ -34,6 +34,8 @@ import {
 } from "@/lib/inventory";
 
 export const Route = createFileRoute("/_authenticated/estoque")({
+  validateSearch: (search: Record<string, unknown>): { incompletos?: boolean } =>
+    search['incompletos'] ? { incompletos: true } : {},
   head: () => ({
     meta: [
       { title: "Estoque de aparelhos — Legado Phones" },
@@ -58,13 +60,14 @@ const selectClass =
 
 function EstoquePage() {
   const { role, user } = useAuth();
+  const { incompletos } = Route.useSearch();
   const isGerente = role === "gerente";
   const queryClient = useQueryClient();
   const { data: items = [], isLoading } = useInventoryItems();
   const costs = useInventoryCosts(isGerente);
   const staleDays = useStaleDays();
 
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(incompletos ? "incompleto" : "");
   const [modelFilter, setModelFilter] = useState("");
   const [colorFilter, setColorFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -101,6 +104,7 @@ function EstoquePage() {
   const available = items.filter((i) => i.status === "disponivel");
   const totalAvailableCost = available.reduce((sum, i) => sum + (costs[i.id] ?? 0), 0);
   const staleItems = items.filter((i) => isStale(i, staleDays));
+  const incompleteItems = items.filter((i) => i.status === "incompleto");
 
   const revert = useMutation({
     mutationFn: async ({ item, why }: { item: InventoryItem; why: string }) => {
@@ -142,6 +146,20 @@ function EstoquePage() {
           {available.length} disponíve{available.length === 1 ? "l" : "is"} de {items.length}
         </p>
       </div>
+
+      {incompleteItems.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setStatusFilter("incompleto")}
+          className="mt-3 flex w-full items-center justify-between gap-3 rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-2.5 text-left transition-transform active:scale-[0.99]"
+        >
+          <span className="text-sm font-medium text-amber-300">
+            {incompleteItems.length} aparelho{incompleteItems.length === 1 ? "" : "s"} aguardando
+            cadastro completo
+          </span>
+          <span className="text-xs text-amber-300/80">Ver</span>
+        </button>
+      )}
 
       {isGerente && (
         <div className="mt-3 rounded-lg border bg-card p-4 backdrop-blur-xl">
