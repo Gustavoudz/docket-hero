@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BadgeCheck, Clock, Pencil, Trash2, X } from "lucide-react";
+import { BadgeCheck, Clock, Pencil, ShoppingCart, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -275,6 +275,12 @@ export function AppointmentCard({
             {appointment.customer_instagram && <span>@{appointment.customer_instagram}</span>}
           </div>
           {appointment.notes && <p className="mt-1 text-sm">{appointment.notes}</p>}
+          {sourceAppointment && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Gerado a partir do agendamento de{" "}
+              {new Date(sourceAppointment.scheduled_at).toLocaleDateString("pt-BR")}
+            </p>
+          )}
           {appointment.cancel_reason && (
             <p className="mt-1 text-sm text-destructive">Motivo: {appointment.cancel_reason}</p>
           )}
@@ -283,6 +289,16 @@ export function AppointmentCard({
 
       {appointment.status === "pendente" && (
         <div className="mt-3 flex gap-2">
+          {canConvert && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="flex-1"
+              onClick={() => onConvert!(appointment)}
+            >
+              <ShoppingCart className="mr-1 h-4 w-4" /> Transformar em venda
+            </Button>
+          )}
           <Button
             size="sm"
             className="flex-1"
