@@ -130,15 +130,25 @@ export function AppointmentCard({
   });
 
   const complete = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (extraPayments?: PaymentEntry[]) => {
       const itemId = appointment.inventory_device_id ?? linkChoice ?? "";
       if (!itemId) throw new Error("Não é possível concluir sem um aparelho vinculado ao estoque.");
       if (isUpgrade && !(await hasTradeItem())) {
         throw new Error("Cadastre o aparelho recebido na troca antes de concluir a venda.");
       }
+      const patch: {
+        status: "concluido";
+        inventory_device_id: string;
+        payments?: PaymentEntry[];
+        payment_method?: string | null;
+      } = { status: "concluido", inventory_device_id: itemId };
+      if (extraPayments && extraPayments.length > 0) {
+        patch.payments = extraPayments;
+        patch.payment_method = extraPayments[0]!.method;
+      }
       const { error } = await supabase
         .from("appointments")
-        .update({ status: "concluido", inventory_device_id: itemId })
+        .update(patch)
         .eq("id", appointment.id);
       if (error) throw new Error(error.message);
     },
@@ -562,10 +572,14 @@ export function AppointmentCard({
         <InventoryForm
           open={tradeFormOpen}
           onOpenChange={setTradeFormOpen}
-          tradeIn={{ appointmentId: appointment.id, customerName: appointment.customer_name }}
-          onSaved={() => {
+          tradeIn={{
+            appointmentId: appointment.id,
+            customerName: appointment.customer_name,
+            payments: appointment.payments ?? null,
+          }}
+          onSaved={(_itemId, tradePayments) => {
             setTradeFormOpen(false);
-            complete.mutate();
+            complete.mutate(tradePayments);
           }}
           onCancelFlow={() => {
             setTradeFormOpen(false);
