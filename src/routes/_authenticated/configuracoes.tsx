@@ -366,10 +366,33 @@ function ConfigPage() {
       </Section>
 
       <Section
+        title="Comissões"
+        description="Valor pago à vendedora por venda concluída que veio de um agendamento."
+      >
+        <div className="flex items-center gap-3">
+          <Label htmlFor="commission-amount" className="flex-1">
+            Valor de comissão por venda (R$)
+          </Label>
+          <Input
+            id="commission-amount"
+            type="number"
+            min={0}
+            step="0.01"
+            className="w-28"
+            key={commissionAmount}
+            defaultValue={commissionAmount}
+            onBlur={(e) => {
+              const n = Number(e.target.value);
+              if (Number.isFinite(n) && n >= 0 && n !== commissionAmount) commissionMut.mutate(n);
+            }}
+          />
+        </div>
+      </Section>
+
+      <Section
         title="Avaliação de troca — modelos"
         description="Valor de referência de cada modelo aceito em troca."
       >
-        {null}
         {tradeModels.map((m) => (
           <div key={m.id} className="flex items-center gap-2">
             <Input
