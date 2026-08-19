@@ -146,17 +146,8 @@ export function InventoryForm({
   async function handlePhoto(files: File[]) {
     setReading(true);
     try {
-      const images = await Promise.all(
-        files.slice(0, 5).map(
-          (file) =>
-            new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(String(reader.result));
-              reader.onerror = () => reject(new Error("Não foi possível ler a foto"));
-              reader.readAsDataURL(file);
-            }),
-        ),
-      );
+      // comprime no navegador antes de enviar (envio mais rápido em rede lenta)
+      const images = await compressImageFiles(files.slice(0, 5));
       const result = await extract({
         data: { images, condition, models: activeModels.map((m) => m.name) },
       });
