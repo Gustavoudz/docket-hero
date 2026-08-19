@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
+import { AccessDenied } from "@/components/AccessDenied";
 import { AppointmentCard } from "@/components/AppointmentCard";
 import { InventoryTurnover } from "@/components/InventoryTurnover";
 import { Input } from "@/components/ui/input";
