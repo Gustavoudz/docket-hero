@@ -204,7 +204,7 @@ export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
 
   // Destinatário
   label("DESTINATÁRIO/REMETENTE");
-  const c4 = [200, 120, 110, W - 430];
+  const c4: [number,number,number,number] = [200, 120, 110, W - 430];
   y = drawRow(
     ctx,
     X,
@@ -244,7 +244,7 @@ export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
 
   // Produto
   label("DADOS DO PRODUTO");
-  const cp = [50, 225, 35, 75, 60, W - 445];
+  const cp: [number,number,number,number,number,number] = [50, 225, 35, 75, 60, W - 445];
   y = drawRow(
     ctx,
     X,
@@ -287,7 +287,7 @@ export async function buildReceiptPdf(d: ReceiptData): Promise<Uint8Array> {
 
   // Pagamento
   label("PAGAMENTO");
-  const cg = [180, 180, 100, W - 460];
+  const cg: [number,number,number,number] = [180, 180, 100, W - 460];
   y = drawRow(
     ctx,
     X,

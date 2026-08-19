@@ -229,7 +229,7 @@ export async function buildServiceOrderPdf(d: ServiceOrderData): Promise<Uint8Ar
   y -= 6;
 
   // Aparelho
-  const ca = [130, 90, 95, 60, 40, 50, W - 465];
+  const ca: [number,number,number,number,number,number,number] = [130, 90, 95, 60, 40, 50, W - 465];
   y = drawRow(
     ctx,
     X,
@@ -257,7 +257,7 @@ export async function buildServiceOrderPdf(d: ServiceOrderData): Promise<Uint8Ar
 
   // Produtos (peças)
   y -= 12;
-  const cprod = [W - 250, 80, 85, 85];
+  const cprod: [number,number,number,number] = [W - 250, 80, 85, 85];
   y = drawRow(
     ctx,
     X,
@@ -283,7 +283,7 @@ export async function buildServiceOrderPdf(d: ServiceOrderData): Promise<Uint8Ar
 
   // Serviços
   y -= 12;
-  const cserv = [W - 170, 85, 85];
+  const cserv: [number,number,number] = [W - 170, 85, 85];
   y = drawRow(
     ctx,
     X,
