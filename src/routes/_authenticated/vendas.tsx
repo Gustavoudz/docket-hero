@@ -287,6 +287,13 @@ function VendasPage() {
                   </tr>
                 );
               })}
+              {hasMore && (
+                <tr ref={sentinelRef as unknown as React.Ref<HTMLTableRowElement>}>
+                  <td colSpan={10} className="px-3 py-3 text-center text-xs text-muted-foreground">
+                    Carregando mais vendas…
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
