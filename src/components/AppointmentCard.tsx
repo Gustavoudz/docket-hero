@@ -87,6 +87,22 @@ export function AppointmentCard({
   const { data: availableItems = [] } = useAvailableItems(
     linkOpen || completeOpen ? appointment.device_model : "",
   );
+  /** Orçamento de origem: pré-preenche o cadastro do aparelho recebido na troca. */
+  const { data: sourceQuote } = useQuery({
+    queryKey: ["quote", "source", appointment.quote_id],
+    enabled: !!appointment.quote_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("quotes")
+        .select(
+          "id, trade_model, trade_color, trade_storage, trade_condition, trade_value, trade_battery_health",
+        )
+        .eq("id", appointment.quote_id!)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
   /** Itens do modelo agendado, para avisar qual termo será usado na venda. */
   const { data: convertItems = [] } = useAvailableItems(
     convertOpen ? appointment.device_model : "",
