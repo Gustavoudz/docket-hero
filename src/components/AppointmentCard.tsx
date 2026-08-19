@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BadgeCheck, Clock, Pencil, X } from "lucide-react";
+import { BadgeCheck, Clock, Pencil, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import {
 import { useAppointmentTags, useCancelReasons, useDeviceModels, useStatusColors } from "@/lib/settings";
 import { itemLabel, logInventoryEvent, todayForInventory, useAvailableItems } from "@/lib/inventory";
 import { useAuth } from "@/hooks/useAuth";
+import { MasterPasswordDialog } from "@/components/MasterPasswordDialog";
 
 export function AppointmentCard({
   appointment,
@@ -41,6 +42,7 @@ export function AppointmentCard({
   const [linkChoice, setLinkChoice] = useState("");
   const [revertOpen, setRevertOpen] = useState(false);
   const [revertReason, setRevertReason] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
   const [isTrade, setIsTrade] = useState<boolean | null>(null);
   const [tradeModel, setTradeModel] = useState("");
@@ -148,6 +150,20 @@ export function AppointmentCard({
   });
 
   const tradeCostValue = Number(tradeCost.replace(/\./g, "").replace(",", "."));
+
+  const remove = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("appointments").delete().eq("id", appointment.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
+      toast.success("Agendamento excluído");
+      setDeleteOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const completeReady =
     isTrade !== null &&
     (appointment.inventory_device_id || linkChoice) &&
@@ -256,6 +272,15 @@ export function AppointmentCard({
               <Pencil className="h-4 w-4" />
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label="Excluir agendamento"
+            className="text-destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       )}
 
@@ -279,8 +304,26 @@ export function AppointmentCard({
               Reverter venda
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label="Excluir agendamento"
+            className="text-destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       )}
+
+      <MasterPasswordDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Excluir agendamento"
+        description={`O agendamento de ${appointment.customer_name} será removido permanentemente.`}
+        pending={remove.isPending}
+        onConfirm={() => remove.mutate()}
+      />
 
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
         <DialogContent className="sm:max-w-md">

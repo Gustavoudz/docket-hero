@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Pencil, RotateCcw, History, AlarmClock, Download } from "lucide-react";
+import { Plus, Search, Pencil, RotateCcw, History, AlarmClock, Download, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/AppShell";
 import { InventoryForm } from "@/components/InventoryForm";
 import { InventoryHistory } from "@/components/InventoryHistory";
+import { MasterPasswordDialog } from "@/components/MasterPasswordDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,6 +78,7 @@ function EstoquePage() {
   const [historyItem, setHistoryItem] = useState<InventoryItem | null>(null);
   const [reverting, setReverting] = useState<InventoryItem | null>(null);
   const [reason, setReason] = useState("");
+  const [deleting, setDeleting] = useState<InventoryItem | null>(null);
 
   const models = useMemo(
     () => [...new Set(items.map((i) => i.device_model))].sort(),
@@ -134,6 +136,20 @@ function EstoquePage() {
       toast.success("Venda revertida — aparelho voltou para o estoque");
       setReverting(null);
       setReason("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (item: InventoryItem) => {
+      const { error } = await supabase.from("inventory_items").delete().eq("id", item.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory_items"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory_costs"] });
+      toast.success("Item excluído do estoque");
+      setDeleting(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -329,6 +345,15 @@ function EstoquePage() {
                     <RotateCcw className="h-4 w-4" />
                   </Button>
                 )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Excluir item"
+                  className="text-destructive"
+                  onClick={() => setDeleting(i)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </li>
@@ -357,6 +382,19 @@ function EstoquePage() {
       )}
 
       <InventoryHistory item={historyItem} onOpenChange={(open) => !open && setHistoryItem(null)} />
+
+      <MasterPasswordDialog
+        open={!!deleting}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Excluir item do estoque"
+        description={
+          deleting
+            ? `${deleting.device_model} será removido junto com custo e histórico.`
+            : undefined
+        }
+        pending={remove.isPending}
+        onConfirm={() => deleting && remove.mutate(deleting)}
+      />
 
       <Dialog open={!!reverting} onOpenChange={(open) => !open && setReverting(null)}>
         <DialogContent className="sm:max-w-md">
