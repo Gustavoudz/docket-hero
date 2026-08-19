@@ -129,6 +129,14 @@ function AgendaPage() {
     },
   });
 
+  const { data: daySummary } = useQuery({
+    queryKey: ["daySummary", date, user?.id, appointments.length],
+    enabled: !!user,
+    staleTime: 0,
+    gcTime: 0,
+    queryFn: () => fetchDaySummary(date, user!.id),
+  });
+
   const closeDay = useMutation({
     mutationFn: async () => {
       if (pending.length > 0) {
