@@ -11,7 +11,10 @@ export async function sendReceiptEmail(params: {
   link: string;
 }): Promise<{ sent: boolean; reason?: string; link: string }> {
   try {
-    const mod: any = await import("@lovable.dev/email-js").catch(() => null);
+    // O envio gerenciado só fica disponível depois que o domínio de e-mail da
+    // loja for configurado. Até lá devolvemos o link sem quebrar a venda.
+    const specifier = "@lovable.dev/email-js";
+    const mod: any = await import(/* @vite-ignore */ specifier).catch(() => null);
     if (!mod?.sendEmail) {
       return { sent: false, reason: "email_nao_configurado", link: params.link };
     }
