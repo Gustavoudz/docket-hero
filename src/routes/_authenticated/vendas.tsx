@@ -140,12 +140,13 @@ function useSellers() {
 
 function VendasPage() {
   const [term, setTerm] = useState("");
+  const debouncedTerm = useDebouncedValue(term, 300);
   const [detail, setDetail] = useState<SaleRow | null>(null);
   const { data: sales = [], isLoading } = useSales();
   const { data: sellers = {} } = useSellers();
 
   const filtered = useMemo(() => {
-    const t = term.trim().toLowerCase();
+    const t = debouncedTerm.trim().toLowerCase();
     if (!t) return sales;
     return sales.filter((s) => {
       const client = s.customers?.name ?? s.appointments?.customer_name ?? "";
@@ -158,7 +159,9 @@ function VendasPage() {
         (s.inventory_items?.imei ?? "").includes(t)
       );
     });
-  }, [sales, term]);
+  }, [sales, debouncedTerm]);
+
+  const { visible, hasMore, sentinelRef } = useIncrementalList(filtered, 25);
 
   const current = detail ? (sales.find((s) => s.id === detail.id) ?? detail) : null;
 
@@ -199,11 +202,7 @@ function VendasPage() {
             </thead>
             <tbody>
               {isLoading && (
-                <tr>
-                  <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
-                    Carregando…
-                  </td>
-                </tr>
+                <TableRowsSkeleton rows={6} cols={10} />
               )}
               {!isLoading && filtered.length === 0 && (
                 <tr>
@@ -212,7 +211,7 @@ function VendasPage() {
                   </td>
                 </tr>
               )}
-              {filtered.map((s) => {
+              {visible.map((s) => {
                 const product = s.inventory_items?.device_model ?? s.appointments?.device_model ?? "—";
                 const idcode = s.inventory_items?.imei || s.inventory_items?.serial_number;
                 const date = s.appointments?.scheduled_date ?? toISODate(new Date(s.created_at));
