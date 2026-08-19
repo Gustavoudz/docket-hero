@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ArrowLeft, BadgeDollarSign } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowLeft, BadgeDollarSign, Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AccessDenied } from "@/components/AccessDenied";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,10 @@ import {
   formatBRL,
   groupByDay,
   periodTotals,
+  ranking,
   useCommissions,
   type Commission,
+  type RankingPeriod,
 } from "@/lib/commissions";
 
 export const Route = createFileRoute("/_authenticated/comissoes")({
