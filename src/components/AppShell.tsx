@@ -18,6 +18,7 @@ import {
   Users,
   History,
   BadgeDollarSign,
+  Wallet,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -221,6 +222,12 @@ function SideMenu() {
             url: "/conciliacao",
             icon: Scale,
             active: currentPath === "/conciliacao",
+          },
+          {
+            title: "Financeiro",
+            url: "/financeiro",
+            icon: Wallet,
+            active: currentPath === "/financeiro",
           },
           {
             title: "Histórico / Auditoria",
