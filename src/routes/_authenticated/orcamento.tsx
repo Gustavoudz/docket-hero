@@ -197,18 +197,10 @@ function MessageBox({ quote }: { quote: Quote }) {
   );
 }
 
-function ProductPicker({
-  draft,
-  setDraft,
-}: {
-  draft: Draft;
-  setDraft: (updater: (prev: Draft) => Draft) => void;
-}) {
+/** Sugestões de modelo e armazenamento vindas do cadastro e do estoque. */
+function useSuggestions() {
   const { data: items = [] } = useInventoryItems();
   const { data: deviceModels = [] } = useDeviceModels();
-  const [term, setTerm] = useState("");
-  const [manual, setManual] = useState(false);
-
   const modelOptions = useMemo(() => {
     const names = new Set<string>();
     for (const m of deviceModels) if (m.active) names.add(m.name);
@@ -220,6 +212,20 @@ function ProductPicker({
     for (const i of items) if (i.storage) set.add(i.storage);
     return [...set];
   }, [items]);
+  return { modelOptions, storageOptions };
+}
+
+function ProductPicker({
+  draft,
+  setDraft,
+}: {
+  draft: Draft;
+  setDraft: (updater: (prev: Draft) => Draft) => void;
+}) {
+  const { data: items = [] } = useInventoryItems();
+  const { modelOptions, storageOptions } = useSuggestions();
+  const [term, setTerm] = useState("");
+  const [manual, setManual] = useState(false);
 
   const results = useMemo(() => {
     const q = term.trim().toLowerCase();
