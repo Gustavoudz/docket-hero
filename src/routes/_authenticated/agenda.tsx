@@ -137,6 +137,14 @@ function AgendaPage() {
     queryFn: () => fetchDaySummary(date, user!.id),
   });
 
+  const { data: dayFinance } = useQuery({
+    queryKey: ["dayFinance", date, user?.id, appointments.length],
+    enabled: !!user,
+    staleTime: 0,
+    gcTime: 0,
+    queryFn: () => fetchDayFinance(date, user!.id),
+  });
+
   const closeDay = useMutation({
     mutationFn: async () => {
       if (pending.length > 0) {
@@ -307,6 +315,23 @@ function AgendaPage() {
               </ul>
             </div>
           )}
+          <div className="mt-1">
+            <p className="text-sm font-medium">Financeiro do dia</p>
+            <dl className="mt-2 grid grid-cols-2 gap-3 text-sm">
+              <Stat label="Total recebido" value={formatCents(dayFinance?.receivedCents ?? 0)} />
+              <Stat label="Líquido" value={formatCents(dayFinance?.netCents ?? 0)} />
+              <Stat label="PIX" value={formatCents(dayFinance?.byMethodCents.pix ?? 0)} />
+              <Stat label="Débito" value={formatCents(dayFinance?.byMethodCents.debito ?? 0)} />
+              <Stat label="Crédito" value={formatCents(dayFinance?.byMethodCents.credito ?? 0)} />
+              <Stat label="Taxas" value={formatCents(dayFinance?.feesCents ?? 0)} />
+              <Stat label="Vendas pagas" value={dayFinance?.paidSales ?? 0} />
+              <Stat label="Aguardando pagamento" value={dayFinance?.awaitingSales ?? 0} />
+              <Stat
+                label="Estornos/cancelamentos"
+                value={dayFinance?.refundedSales ?? 0}
+              />
+            </dl>
+          </div>
         </DialogContent>
       </Dialog>
     </AppShell>
